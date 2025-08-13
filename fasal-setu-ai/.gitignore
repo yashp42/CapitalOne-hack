@@ -1,0 +1,14 @@
+node_modules
+.env
+.env.*.local
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv*/
+dist/
+build/
+.data/
+data/models/*
+data/vectors/*
+.DS_Store
