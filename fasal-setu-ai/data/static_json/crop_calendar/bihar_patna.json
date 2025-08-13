@@ -1,0 +1,237 @@
+{
+  "state": "Bihar",
+  "district": "Patna",
+  "agro_climatic_zone": "South Bihar Alluvial Plain Zone (BI-3)",
+  "source_type": "CRIDA_contingency",
+  "source_url": null,
+  "doc_date": "2013-12-28",
+  "last_checked": null,
+  "normal_annual_rain_mm": 1054,
+  "rainfall_pattern_notes": "SW monsoon June-Sep ~906 mm, NE monsoon Oct-Dec ~71 mm, Winter Jan-Feb ~28 mm, Summer Mar-May ~49 mm",
+  "dominant_soils": ["clay to clay loam", "sandy loam", "medium to heavy"],
+  "crops": [
+    {
+      "crop_name": "rice",
+      "season": "Kharif",
+      "planting_window": { "start": "05-04", "end": "07-01" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": null, "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "delayed_onset",
+          "stage_window": "early season drought",
+          "measures": [
+            "direct seeding of drought tolerant varieties",
+            "use medium to short duration varieties",
+            "community nursery raising",
+            "life saving irrigation"
+          ],
+          "alt_crops": ["blackgram", "sesame", "tulsi", "finger millet", "maize"],
+          "inputs_support_notes": "Seeds from BRBN, BAU, Sabour, NSC, TDC",
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "mid_season_drought",
+          "stage_window": "vegetative to flowering",
+          "measures": [
+            "gap filling",
+            "postponement of top dressing",
+            "mulching",
+            "foliar spray with MOP",
+            "life saving irrigation"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "late_season_drought",
+          "stage_window": "terminal drought",
+          "measures": [
+            "mulching",
+            "life saving irrigation",
+            "foliar spray with MOP",
+            "early land preparation for rabi crops"
+          ],
+          "alt_crops": ["wheat", "rabi maize", "pulses", "oilseeds", "vegetables"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "flooding",
+          "stage_window": "transient waterlogging",
+          "measures": [
+            "drainage management",
+            "gap filling",
+            "re-transplanting",
+            "double transplanting"
+          ],
+          "alt_crops": ["lentil", "toria", "late wheat"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "maize",
+      "season": "Kharif",
+      "planting_window": { "start": "05-28", "end": "06-14" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": null, "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "delayed_onset",
+          "stage_window": "early season drought",
+          "measures": [
+            "direct sowing",
+            "sowing on ridges and furrows",
+            "life saving irrigation"
+          ],
+          "alt_crops": ["rabi maize", "wheat", "pulses"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["maize", "corn"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "flooding",
+          "stage_window": "transient waterlogging",
+          "measures": [
+            "drainage management",
+            "replanting",
+            "resowing after flood recession"
+          ],
+          "alt_crops": ["toria", "late wheat"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["maize", "corn"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "pigeonpea",
+      "season": "Kharif",
+      "planting_window": { "start": "05-01", "end": "07-28" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": null, "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "delayed_onset",
+          "stage_window": "early season drought",
+          "measures": ["resowing in September if kharif crop fails", "sowing on ridges and furrows"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["pigeonpea", "arhar", "tur"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "flooding",
+          "stage_window": "transient waterlogging",
+          "measures": ["drainage management", "resowing", "rabi maize if damaged"],
+          "alt_crops": ["spring maize"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["pigeonpea", "arhar", "tur"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "wheat",
+      "season": "Rabi",
+      "planting_window": { "start": "11-01", "end": "12-01" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": null, "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "heat_wave",
+          "stage_window": "various",
+          "measures": ["life saving irrigation"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["wheat"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "cold_wave",
+          "stage_window": "various",
+          "measures": ["light irrigation", "mulching"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["wheat"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "lentil",
+      "season": "Rabi",
+      "planting_window": { "start": "10-01", "end": "11-01" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": null, "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "cold_wave",
+          "stage_window": "various",
+          "measures": ["light irrigation", "mulching"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["lentil", "masoor"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "flooding",
+          "stage_window": "paira crop after rice",
+          "measures": ["drainage management", "use as follow-up after flood recession"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["lentil", "masoor"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    }
+  ],
+  "dataset_sources": [
+        {
+        "key": "CRIDA_2013",
+        "title": "CRIDA Contingency Crop Planning for Bihar",
+        "url": "https://icar-crida.res.in/CP/Bihar/BR27_Patna_28.12.2013.pdf",
+        "tier": "primary",
+        "last_checked": null
+        }
+    ]
+}

@@ -1,2 +1,19 @@
-// TODO: define schema
-{}
+{
+  "crop_name": null,
+  "target": null,
+  "active_ingredient": null,
+  "formulation": null,
+  "dose_ai_g_ha": null,
+  "dose_formulation_qty_per_ha": null,
+  "spray_volume_l_ha": null,
+  "application_method": null,
+  "phi_days": null,
+  "ppe_notes": null,
+  "who_class": null,
+  "label_source_url": null,
+  "as_on_date": null,
+  "last_checked": null,
+  "status": null,
+  "notes": null,
+  "sources": []
+}
