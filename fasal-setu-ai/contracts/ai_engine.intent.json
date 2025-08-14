@@ -25,8 +25,7 @@
 							"policy_match",
 							"pesticide_lookup",
 							"storage_find",
-							"rag_search",
-							"personal_rag_search"
+                                                        "rag_search"
 						]
 					},
 					"args": { "type": "object" }

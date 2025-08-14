@@ -1,43 +1,40 @@
+"""Utility for building a Pinecone index from local JSON data."""
 
-
-"""
-build_index.py: Ingests all static JSON/text files from data/static_json/, chunks them
-(JSON-aware), embeds with the `all-MiniLM-L6-v2` sentence-transformer (384‑dimensional),
-and upserts to a Pinecone index.
-"""
+import os
 import json
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from dotenv import load_dotenv
-from pinecone import Pinecone, ServerlessSpec
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
+from .embed_utils import embed_query, EMBEDDING_DIM
 
-from embed_utils import embed_query, EMBEDDING_DIM
-
-
-
-# Use HuggingFaceEmbeddings for free, local embedding
-try:
-
-    from langchain_community.embeddings import HuggingFaceEmbeddings
-
-except ImportError:
-    raise ImportError("Please install langchain-community: pip install langchain-community")
-
-try:
+try:  # pragma: no cover - dependency is required at runtime
     from pinecone import Pinecone, ServerlessSpec
+except ImportError as exc:  # pragma: no cover - provide a clear message
+    raise ImportError(
+        "Pinecone v7+ SDK is required. Please install with: pip install 'pinecone'"
+    ) from exc
 
-except ImportError:
-    raise ImportError("Pinecone v7+ SDK is required. Please install with: pip install 'pinecone[grpc]'")
+load_dotenv()
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data" / "static_json"
 INDEX_NAME = "rag-index"
 
-# Pinecone API key and environment should be set as env vars
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
-PINECONE_ENV = os.environ.get("PINECONE_ENV", "us-central1")
+PINECONE_ENV = os.environ.get("PINECONE_ENV", "us-east-1-aws")
+
+
+def _cloud_region_from_env(env: str) -> Tuple[str, str]:
+    """Return (cloud, region) parsed from a Pinecone environment string."""
+
+    if "-" in env:
+        region, cloud = env.rsplit("-", 1)
+    else:
+        region, cloud = env, "aws"
+    return cloud, region
+
 
 def get_all_json_files(data_dir: Path) -> List[Path]:
     files = []
@@ -47,98 +44,108 @@ def get_all_json_files(data_dir: Path) -> List[Path]:
                 files.append(Path(root) / fname)
     return files
 
+
 def _tags_from_path(file_path: Path) -> Dict[str, str]:
-        """Derive tags like state and district from the file name."""
-        tags: Dict[str, str] = {}
-        parts = file_path.stem.split("_")
-        if parts:
-                tags["state"] = parts[0].lower()
-                if len(parts) > 1:
-                        tags["district"] = "_".join(parts[1:]).lower()
-        return tags
+    """Derive tags like state and district from the file name."""
+
+    tags: Dict[str, str] = {}
+    parts = file_path.stem.split("_")
+    if parts:
+        tags["state"] = parts[0].lower()
+        if len(parts) > 1:
+            tags["district"] = "_".join(parts[1:]).lower()
+    return tags
 
 
 def _tags_from_obj(obj: Any) -> Dict[str, str]:
-        """Extract known tags from a JSON object."""
-        tags: Dict[str, str] = {}
-        if isinstance(obj, dict):
-                if obj.get("state"):
-                        tags["state"] = str(obj["state"]).lower()
-                if obj.get("district"):
-                        tags["district"] = str(obj["district"]).lower()
-                # crop may appear as "crop" or "crop_name"
-                crop_val = obj.get("crop") or obj.get("crop_name")
-                if crop_val:
-                        tags["crop"] = str(crop_val).lower()
-        return tags
+    """Extract known tags from a JSON object."""
+
+    tags: Dict[str, str] = {}
+    if isinstance(obj, dict):
+        if obj.get("state"):
+            tags["state"] = str(obj["state"]).lower()
+        if obj.get("district"):
+            tags["district"] = str(obj["district"]).lower()
+        crop_val = obj.get("crop") or obj.get("crop_name")
+        if crop_val:
+            tags["crop"] = str(crop_val).lower()
+    return tags
 
 
 def load_and_chunk_json(file_path: Path, chunk_size=1024, chunk_overlap=100) -> List[Dict[str, Any]]:
-
-
     """Load JSON and chunk by top-level array/object or recursively by text."""
+
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
-    # If it's a list of dicts, treat each as a chunk
+
+    base_tags = _tags_from_path(file_path)
+
     if isinstance(data, list):
-        return [{"text": json.dumps(item, ensure_ascii=False), "source": str(file_path)} for item in data]
-    # If it's a dict, chunk by keys or by text
+        chunks = []
+        for item in data:
+            tags = {**base_tags, **_tags_from_obj(item)}
+            chunks.append({"text": json.dumps(item, ensure_ascii=False), "source": str(file_path), "tags": tags})
+        return chunks
     elif isinstance(data, dict):
         chunks = []
         for k, v in data.items():
+            tags = {**base_tags, **_tags_from_obj(v if isinstance(v, dict) else {k: v})}
             if isinstance(v, str) and len(v) > chunk_size:
                 splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
                 for chunk in splitter.split_text(v):
-                    chunks.append({"text": chunk, "source": f"{file_path}:{k}"})
+                    chunks.append({"text": chunk, "source": f"{file_path}:{k}", "tags": tags})
             else:
-                chunks.append({"text": json.dumps({k: v}, ensure_ascii=False), "source": f"{file_path}:{k}"})
+                chunk_text = json.dumps({k: v}, ensure_ascii=False)
+                chunks.append({"text": chunk_text, "source": f"{file_path}:{k}", "tags": tags})
         return chunks
     else:
-        # Fallback: treat as a single chunk
-        return [{"text": json.dumps(data, ensure_ascii=False), "source": str(file_path)}]
-
-def embed_and_upsert(chunks: List[Dict[str, Any]], index):
+        tags = {**base_tags, **_tags_from_obj(data)}
+        return [{"text": json.dumps(data, ensure_ascii=False), "source": str(file_path), "tags": tags}]
 
 
-        batch = []
-        for i, chunk in enumerate(chunks):
-                text = chunk["text"]
-                source = chunk["source"]
+def embed_and_upsert(chunks: List[Dict[str, Any]], index) -> None:
+    batch = []
+    for i, chunk in enumerate(chunks):
+        text = chunk["text"]
+        source = chunk["source"]
+        tags = chunk.get("tags", {})
 
-                embedding = embed_query(text)
-                batch.append({"id": f"{source}-{i}", "values": embedding, "metadata": {"source": source, "text": text}})
+        embedding = embed_query(text)
+        metadata = {"source": source, "text": text, **tags}
+        batch.append({"id": f"{source}-{i}", "values": embedding, "metadata": metadata})
 
-                if len(batch) >= 32:
-                        index.upsert(vectors=batch)
-                        batch = []
-        if batch:
-                index.upsert(vectors=batch)
+        if len(batch) >= 32:
+            index.upsert(vectors=batch)
+            batch = []
+    if batch:
+        index.upsert(vectors=batch)
 
 
-def main():
-	if not PINECONE_API_KEY:
-		raise RuntimeError("PINECONE_API_KEY not set in environment.")
-	pc = Pinecone(api_key=PINECONE_API_KEY)
-	# Check/create index
-	if INDEX_NAME not in [idx.name for idx in pc.list_indexes()]:
-                pc.create_index(
-                        name=INDEX_NAME,
-                        dimension=EMBEDDING_DIM,
-                        metric="cosine",
-                        spec=ServerlessSpec(cloud="gcp", region="us-central1")
-                )
-	index = pc.Index(INDEX_NAME)
-	files = get_all_json_files(DATA_DIR)
-	print(f"Found {len(files)} files.")
-	for file_path in files:
-		print(f"Processing {file_path}")
-		chunks = load_and_chunk_json(file_path)
-		embed_and_upsert(chunks, index)
-	print("Ingestion complete.")
+def main() -> None:
+    if not PINECONE_API_KEY:
+        raise RuntimeError("PINECONE_API_KEY not set in environment.")
+
+    pc = Pinecone(api_key=PINECONE_API_KEY, environment=PINECONE_ENV)
+    cloud, region = _cloud_region_from_env(PINECONE_ENV)
+
+    if INDEX_NAME not in [idx.name for idx in pc.list_indexes()]:
+        pc.create_index(
+            name=INDEX_NAME,
+            dimension=EMBEDDING_DIM,
+            metric="cosine",
+            spec=ServerlessSpec(cloud=cloud, region=region),
+        )
+
+    index = pc.Index(INDEX_NAME)
+    files = get_all_json_files(DATA_DIR)
+    print(f"Found {len(files)} files.")
+    for file_path in files:
+        print(f"Processing {file_path}")
+        chunks = load_and_chunk_json(file_path)
+        embed_and_upsert(chunks, index)
+    print("Ingestion complete.")
 
 
 if __name__ == "__main__":
-
     main()
-
 
