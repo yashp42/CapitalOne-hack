@@ -7,7 +7,7 @@ from ..tools.rag_search import rag_search
 from ..tools.weather_api import weather_outlook
 from ..tools.mandi_api import prices_fetch
 from ..tools.dataset_lookup import calendar_lookup
-from ..tools.policy_match import policy_match
+
 from ..tools.pesticide_lookup import pesticide_lookup
 from ..tools.storage_find import storage_find
 
@@ -16,7 +16,6 @@ TOOL_MAP = {
 	"weather_outlook": Tool.from_function(weather_outlook, name="weather_outlook", description="Get weather outlook for a location."),
 	"prices_fetch": Tool.from_function(prices_fetch, name="prices_fetch", description="Fetch mandi prices for a commodity."),
 	"calendar_lookup": Tool.from_function(calendar_lookup, name="calendar_lookup", description="Lookup crop calendar information."),
-	"policy_match": Tool.from_function(policy_match, name="policy_match", description="Match relevant policy information."),
 	"pesticide_lookup": Tool.from_function(pesticide_lookup, name="pesticide_lookup", description="Lookup pesticide information."),
 	"storage_find": Tool.from_function(storage_find, name="storage_find", description="Find storage options."),
 	"rag_search": Tool.from_function(rag_search, name="rag_search", description="Retrieve relevant knowledge passages (RAG)."),
