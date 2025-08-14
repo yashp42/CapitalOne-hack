@@ -35,6 +35,7 @@ def rag_search(args: Dict[str, Any]) -> Dict[str, Any]:
 
     """Return passages similar to ``args['query']`` from the Pinecone index."""
 
+
     query = args.get("query")
     top_k = args.get("top_k", 5)
     if not query:
@@ -47,7 +48,9 @@ def rag_search(args: Dict[str, Any]) -> Dict[str, Any]:
 
     index = pc.Index(INDEX_NAME)
     query_vec = embed_query(query)
+
     res = index.query(vector=query_vec, top_k=top_k, include_metadata=True)
+
 
     # Pinecone v7 returns .matches (list), or dict with "matches"
     matches = getattr(res, "matches", None)
@@ -64,5 +67,6 @@ def rag_search(args: Dict[str, Any]) -> Dict[str, Any]:
         })
 
     return {"data": passages, "source_stamp": "pinecone_rag"}
+
 
 

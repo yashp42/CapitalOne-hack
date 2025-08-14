@@ -47,7 +47,34 @@ def get_all_json_files(data_dir: Path) -> List[Path]:
                 files.append(Path(root) / fname)
     return files
 
+def _tags_from_path(file_path: Path) -> Dict[str, str]:
+        """Derive tags like state and district from the file name."""
+        tags: Dict[str, str] = {}
+        parts = file_path.stem.split("_")
+        if parts:
+                tags["state"] = parts[0].lower()
+                if len(parts) > 1:
+                        tags["district"] = "_".join(parts[1:]).lower()
+        return tags
+
+
+def _tags_from_obj(obj: Any) -> Dict[str, str]:
+        """Extract known tags from a JSON object."""
+        tags: Dict[str, str] = {}
+        if isinstance(obj, dict):
+                if obj.get("state"):
+                        tags["state"] = str(obj["state"]).lower()
+                if obj.get("district"):
+                        tags["district"] = str(obj["district"]).lower()
+                # crop may appear as "crop" or "crop_name"
+                crop_val = obj.get("crop") or obj.get("crop_name")
+                if crop_val:
+                        tags["crop"] = str(crop_val).lower()
+        return tags
+
+
 def load_and_chunk_json(file_path: Path, chunk_size=1024, chunk_overlap=100) -> List[Dict[str, Any]]:
+
 
     """Load JSON and chunk by top-level array/object or recursively by text."""
     with open(file_path, "r", encoding="utf-8") as f:
@@ -72,12 +99,15 @@ def load_and_chunk_json(file_path: Path, chunk_size=1024, chunk_overlap=100) -> 
 
 def embed_and_upsert(chunks: List[Dict[str, Any]], index):
 
+
         batch = []
         for i, chunk in enumerate(chunks):
                 text = chunk["text"]
                 source = chunk["source"]
+
                 embedding = embed_query(text)
                 batch.append({"id": f"{source}-{i}", "values": embedding, "metadata": {"source": source, "text": text}})
+
                 if len(batch) >= 32:
                         index.upsert(vectors=batch)
                         batch = []
