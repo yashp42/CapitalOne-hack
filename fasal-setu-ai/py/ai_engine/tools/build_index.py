@@ -2,13 +2,14 @@
 """
 build_index.py: Ingests all static JSON/text files from data/static_json/, chunks them (JSON-aware), embeds with llama-text-embed-v2, and upserts to Pinecone index.
 """
-import os
 import json
 import os
 from pathlib import Path
-from typing import List, Dict, Any
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from typing import Any, Dict, List
+
 from dotenv import load_dotenv
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
 load_dotenv()
 
 

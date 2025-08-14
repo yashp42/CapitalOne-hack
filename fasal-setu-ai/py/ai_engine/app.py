@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+
 from .schemas.act_request import ActRequest
 from .schemas.act_response import ActResponse
 
