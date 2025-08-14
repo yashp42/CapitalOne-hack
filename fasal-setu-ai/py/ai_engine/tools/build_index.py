@@ -6,11 +6,11 @@ and upserts to a Pinecone index.
 """
 import os
 import json
-import os
 from pathlib import Path
 from typing import List, Dict, Any
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from dotenv import load_dotenv
+
 load_dotenv()
 
 
@@ -18,12 +18,15 @@ load_dotenv()
 
 # Use HuggingFaceEmbeddings for free, local embedding
 try:
+
     from langchain_community.embeddings import HuggingFaceEmbeddings
+
 except ImportError:
     raise ImportError("Please install langchain-community: pip install langchain-community")
 
 try:
     from pinecone import Pinecone, ServerlessSpec
+
 except ImportError:
     raise ImportError("Pinecone v7+ SDK is required. Please install with: pip install 'pinecone[grpc]'")
 
@@ -43,6 +46,7 @@ def get_all_json_files(data_dir: Path) -> List[Path]:
     return files
 
 def load_and_chunk_json(file_path: Path, chunk_size=1024, chunk_overlap=100) -> List[Dict[str, Any]]:
+
     """Load JSON and chunk by top-level array/object or recursively by text."""
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -103,3 +107,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

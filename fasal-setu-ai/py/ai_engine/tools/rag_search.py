@@ -32,7 +32,15 @@ def rag_search(args: Dict[str, Any]) -> Dict[str, Any]:
         query: str
         top_k: int (default 5)
     Returns:
-        {data: [{text, source_stamp}], source_stamp}
+        {
+            data: [
+                {
+                    text: str,
+                    source_stamp: {"title": str, "url": str, "date": str}
+                }
+            ],
+            source_stamp: str
+        }
     """
     query = args.get("query")
     top_k = args.get("top_k", 5)
@@ -51,8 +59,10 @@ def rag_search(args: Dict[str, Any]) -> Dict[str, Any]:
     passages = []
     for match in matches or []:
         meta = match.get("metadata", {})
+
         passages.append({
             "text": meta.get("text", ""),
             "source_stamp": meta.get("source", "")
         })
+
     return {"data": passages, "source_stamp": "pinecone_rag"}
