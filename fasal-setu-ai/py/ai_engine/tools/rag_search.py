@@ -48,7 +48,7 @@ def rag_search(args: Dict[str, Any]) -> Dict[str, Any]:
         return {"data": [], "source_stamp": "no_query"}
     if not PINECONE_API_KEY:
         raise RuntimeError("PINECONE_API_KEY not set in environment.")
-    pc = Pinecone(api_key=PINECONE_API_KEY)
+    pc = Pinecone(api_key=PINECONE_API_KEY, environment=PINECONE_ENV)
     index = pc.Index(INDEX_NAME)
     query_vec = embed_query(query)
     res = index.query(vector=query_vec, top_k=top_k, include_metadata=True)
@@ -59,14 +59,10 @@ def rag_search(args: Dict[str, Any]) -> Dict[str, Any]:
     passages = []
     for match in matches or []:
         meta = match.get("metadata", {})
-        passages.append(
-            {
-                "text": meta.get("text", ""),
-                "source_stamp": {
-                    "title": meta.get("title", ""),
-                    "url": meta.get("url", ""),
-                    "date": meta.get("date", ""),
-                },
-            }
-        )
+
+        passages.append({
+            "text": meta.get("text", ""),
+            "source_stamp": meta.get("source", "")
+        })
+
     return {"data": passages, "source_stamp": "pinecone_rag"}
