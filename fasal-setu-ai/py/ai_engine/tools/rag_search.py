@@ -1,58 +1,67 @@
-"""Query Pinecone for top-k similar passages using shared embeddings."""
+"""Query Pinecone for top-k similar passages using shared embeddings.
+
+Optional ``state``, ``district`` and ``crop`` parameters narrow results using
+metadata tags stored with each chunk.
+"""
 
 import os
 from typing import Any, Dict
 
 from dotenv import load_dotenv
 
+from .embed_utils import embed_query
+
+try:  # pragma: no cover - dependency is required at runtime
+    from pinecone import Pinecone
+except ImportError as exc:  # pragma: no cover - provide a clear message
+    raise ImportError(
+        "Please install pinecone: pip install pinecone"
+    ) from exc
+
 load_dotenv()
-
-# Use Pinecone's built-in embedder if available (v7+), else fallback to HuggingFaceEmbeddings
-try:
-    from pinecone import EmbeddingModel, Pinecone
-    EMBEDDER = EmbeddingModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
-    def embed_query(text):
-        return EMBEDDER.embed_documents([text])[0]
-except ImportError:
-    try:
-        from langchain_community.embeddings import HuggingFaceEmbeddings
-        EMBEDDER = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-        def embed_query(text):
-            return EMBEDDER.embed_query(text)
-    except ImportError:
-        raise ImportError("Please install pinecone[grpc] or langchain-community: pip install pinecone[grpc] langchain-community")
-
 
 INDEX_NAME = "rag-index"
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
 PINECONE_ENV = os.environ.get("PINECONE_ENV", "us-east-1-aws")
-# You can find your Pinecone environment string in the Pinecone Console
-# (https://console.pinecone.io/) under your project settings or API keys. It
-# looks like "gcp-starter", "us-east1-gcp", "us-east-1-aws", etc.
 
 
 def rag_search(args: Dict[str, Any]) -> Dict[str, Any]:
-
     """Return passages similar to ``args['query']`` from the Pinecone index."""
-
 
     query = args.get("query")
     top_k = args.get("top_k", 5)
+    state = args.get("state")
+    district = args.get("district")
+    crop = args.get("crop")
+
     if not query:
         return {"data": [], "source_stamp": "no_query"}
     if not PINECONE_API_KEY:
         raise RuntimeError("PINECONE_API_KEY not set in environment.")
 
-
-    pc = Pinecone(api_key=PINECONE_API_KEY)
+    pc = Pinecone(api_key=PINECONE_API_KEY, environment=PINECONE_ENV)
 
     index = pc.Index(INDEX_NAME)
     query_vec = embed_query(query)
 
-    res = index.query(vector=query_vec, top_k=top_k, include_metadata=True)
+    filter_dict: Dict[str, str] = {}
+    if state:
+        filter_dict["state"] = str(state).lower()
+    if district:
+        filter_dict["district"] = str(district).lower()
+    if crop:
+        filter_dict["crop"] = str(crop).lower()
 
+    query_kwargs: Dict[str, Any] = {
+        "vector": query_vec,
+        "top_k": top_k,
+        "include_metadata": True,
+    }
+    if filter_dict:
+        query_kwargs["filter"] = filter_dict
 
-    # Pinecone v7 returns .matches (list), or dict with "matches"
+    res = index.query(**query_kwargs)
+
     matches = getattr(res, "matches", None)
     if matches is None and isinstance(res, dict):
         matches = res.get("matches", [])
@@ -63,10 +72,9 @@ def rag_search(args: Dict[str, Any]) -> Dict[str, Any]:
 
         passages.append({
             "text": meta.get("text", ""),
-            "source_stamp": meta.get("source", "")
+            "source_stamp": meta.get("source", ""),
         })
 
     return {"data": passages, "source_stamp": "pinecone_rag"}
-
 
 

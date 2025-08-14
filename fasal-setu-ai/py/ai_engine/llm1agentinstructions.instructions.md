@@ -6,7 +6,7 @@ Your job: implement an end‑to‑end /act FastAPI endpoint that receives a farm
 Follow the mission context and directory layout already present in the repo.
 
 Mission context
-Two modes: Public Advisor (stateless) and My Farm (personalized via profile/timeline RAG).
+Two modes: Public Advisor (stateless) and My Farm (personalized via profile/timeline data).
 
 LLM‑1 plans: decides intent, missing fields, and which tools to call. It does not format the final farmer message.
 
@@ -14,7 +14,7 @@ Server executes tools, builds a DecisionTicket, invokes the deterministic Decisi
 
 Static packs supply crop knowledge, pesticides, policy rules, storage. Live feeds supply weather and mandi prices.
 
-RAG searches return short tagged passages (general or personal) with source stamps; live tools return structured data with source stamps.
+RAG searches return short tagged passages with source stamps; live tools return structured data with source stamps.
 
 Repo structure
 py/ai_engine/
@@ -63,7 +63,7 @@ RAG search (rag_search.py):
 
 Build vector DB from static packs using build_index.py into data/vectors/rag.index/.
 
-Support general RAG (static packs) and personal RAG (profile/timeline snippets).
+Support general RAG (static packs).
 
 Return top passages with {text, source_stamp}.
 
@@ -84,7 +84,7 @@ intent, decision_template, optional missing, tool_calls (array of {tool, args}).
 
 Vector DB
 
-build_index.py: ingest texts from data/static_json/ and (for personal mode) per‑user docs, embed them, store in data/vectors/rag.index/.
+build_index.py: ingest texts from data/static_json/, embed them, and store in data/vectors/rag.index/.
 
 rag_search.py: load the index, filter by tags (state, district, crop, etc.), and return passages.
 
@@ -96,7 +96,7 @@ Implement /ping for health check (already present).
 
 Facts bundle
 
-Aggregate tool outputs under facts: weather, prices, calendar, varieties, policy, pesticide, storage, rag, personal_rag, etc.
+Aggregate tool outputs under facts: weather, prices, calendar, varieties, policy, pesticide, storage, rag, etc.
 
 Make structure consistent with DecisionTicket needs (stage, DAS, signals, citations).
 
