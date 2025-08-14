@@ -1,7 +1,7 @@
 
-import os
 import json
-from typing import Dict, Any
+import os
+from typing import Any, Dict
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), '../../..', 'data', 'static_json', 'crop_calendar')
 

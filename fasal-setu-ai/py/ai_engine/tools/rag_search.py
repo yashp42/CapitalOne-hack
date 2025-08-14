@@ -2,13 +2,15 @@
 rag_search.py: Query Pinecone for top-k similar passages given a query, using local or Pinecone embedder.
 """
 import os
+from typing import Any, Dict
+
 from dotenv import load_dotenv
+
 load_dotenv()
-from typing import Dict, Any
 
 # Use Pinecone's built-in embedder if available (v7+), else fallback to HuggingFaceEmbeddings
 try:
-    from pinecone import Pinecone, EmbeddingModel
+    from pinecone import EmbeddingModel, Pinecone
     EMBEDDER = EmbeddingModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
     def embed_query(text):
         return EMBEDDER.embed_documents([text])[0]

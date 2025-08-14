@@ -1,9 +1,7 @@
 
-from typing import Any, Dict, List, Optional, Literal
+from typing import Any, Dict, List, Literal, Optional
+
 from pydantic import BaseModel
-
-
-
 
 # Standardized tool names for LangChain (contract tools only)
 TOOL_NAMES = [

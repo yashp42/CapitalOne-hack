@@ -4,12 +4,12 @@ build_index.py: Ingests all static JSON/text files from data/static_json/, chunk
 (JSON-aware), embeds with the `all-MiniLM-L6-v2` sentence-transformer (384‑dimensional),
 and upserts to a Pinecone index.
 """
-import os
 import json
 from pathlib import Path
-from typing import List, Dict, Any
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from typing import Any, Dict, List
+
 from dotenv import load_dotenv
+
 
 load_dotenv()
 
