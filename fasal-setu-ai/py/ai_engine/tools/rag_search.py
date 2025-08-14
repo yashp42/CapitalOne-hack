@@ -1,14 +1,27 @@
 """Query Pinecone for top-k similar passages using shared embeddings."""
 
 import os
-from typing import Dict, Any
+from typing import Any, Dict
 
 from dotenv import load_dotenv
-from pinecone import Pinecone
-
-from embed_utils import embed_query
 
 load_dotenv()
+
+# Use Pinecone's built-in embedder if available (v7+), else fallback to HuggingFaceEmbeddings
+try:
+    from pinecone import EmbeddingModel, Pinecone
+    EMBEDDER = EmbeddingModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+    def embed_query(text):
+        return EMBEDDER.embed_documents([text])[0]
+except ImportError:
+    try:
+        from langchain_community.embeddings import HuggingFaceEmbeddings
+        EMBEDDER = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        def embed_query(text):
+            return EMBEDDER.embed_query(text)
+    except ImportError:
+        raise ImportError("Please install pinecone[grpc] or langchain-community: pip install pinecone[grpc] langchain-community")
+
 
 INDEX_NAME = "rag-index"
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
@@ -19,6 +32,7 @@ PINECONE_ENV = os.environ.get("PINECONE_ENV", "us-east-1-aws")
 
 
 def rag_search(args: Dict[str, Any]) -> Dict[str, Any]:
+
     """Return passages similar to ``args['query']`` from the Pinecone index."""
 
     query = args.get("query")
@@ -28,7 +42,9 @@ def rag_search(args: Dict[str, Any]) -> Dict[str, Any]:
     if not PINECONE_API_KEY:
         raise RuntimeError("PINECONE_API_KEY not set in environment.")
 
+
     pc = Pinecone(api_key=PINECONE_API_KEY)
+
     index = pc.Index(INDEX_NAME)
     query_vec = embed_query(query)
     res = index.query(vector=query_vec, top_k=top_k, include_metadata=True)
@@ -41,10 +57,12 @@ def rag_search(args: Dict[str, Any]) -> Dict[str, Any]:
     passages = []
     for match in matches or []:
         meta = match.get("metadata", {})
+
         passages.append({
             "text": meta.get("text", ""),
             "source_stamp": meta.get("source", "")
         })
 
     return {"data": passages, "source_stamp": "pinecone_rag"}
+
 
