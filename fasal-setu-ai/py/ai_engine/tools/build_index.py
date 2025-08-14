@@ -30,7 +30,7 @@ INDEX_NAME = "rag-index"
 
 # Pinecone API key and environment should be set as env vars
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
-PINECONE_ENV = os.environ.get("PINECONE_ENV", "gcp-starter")
+PINECONE_ENV = os.environ.get("PINECONE_ENV", "us-central1")
 
 def get_all_json_files(data_dir: Path) -> List[Path]:
 	files = []
@@ -78,18 +78,18 @@ def embed_and_upsert(chunks: List[Dict[str, Any]], index):
 
 
 def main():
-	if not PINECONE_API_KEY:
-		raise RuntimeError("PINECONE_API_KEY not set in environment.")
-	pc = Pinecone(api_key=PINECONE_API_KEY)
-	# Check/create index
-	if INDEX_NAME not in [idx.name for idx in pc.list_indexes()]:
-		pc.create_index(
-			name=INDEX_NAME,
-			dimension=1024,  # Make sure this matches your embedding size
-			metric="cosine",
-			spec=ServerlessSpec(cloud="gcp", region="us-central1")
-		)
-	index = pc.Index(INDEX_NAME)
+        if not PINECONE_API_KEY:
+                raise RuntimeError("PINECONE_API_KEY not set in environment.")
+        pc = Pinecone(api_key=PINECONE_API_KEY, environment=PINECONE_ENV)
+        # Check/create index
+        if INDEX_NAME not in [idx.name for idx in pc.list_indexes()]:
+                pc.create_index(
+                        name=INDEX_NAME,
+                        dimension=1024,  # Make sure this matches your embedding size
+                        metric="cosine",
+                        spec=ServerlessSpec(cloud="gcp", region=PINECONE_ENV)
+                )
+        index = pc.Index(INDEX_NAME)
 	files = get_all_json_files(DATA_DIR)
 	print(f"Found {len(files)} files.")
 	for file_path in files:
