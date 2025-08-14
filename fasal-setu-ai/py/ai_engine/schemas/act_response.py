@@ -1,6 +1,9 @@
 from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel
+
 from ..graph.state import ToolCall
+
 
 class ActResponse(BaseModel):
     intent: str
