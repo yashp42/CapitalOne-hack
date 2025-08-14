@@ -31,6 +31,7 @@ def rag_search(args: Dict[str, Any]) -> Dict[str, Any]:
     Args should include:
         query: str
         top_k: int (default 5)
+        filters: dict or individual keys like state/district/crop
     Returns:
         {data: [{text, source_stamp}], source_stamp}
     """
@@ -43,7 +44,12 @@ def rag_search(args: Dict[str, Any]) -> Dict[str, Any]:
     pc = Pinecone(api_key=PINECONE_API_KEY)
     index = pc.Index(INDEX_NAME)
     query_vec = embed_query(query)
-    res = index.query(vector=query_vec, top_k=top_k, include_metadata=True)
+    filter_params = args.get("filters", {})
+    # Allow simple equality filters via top-level args
+    for key in ("state", "district", "crop"):
+        if key in args:
+            filter_params[key] = {"$eq": args[key]}
+    res = index.query(vector=query_vec, top_k=top_k, include_metadata=True, filter=filter_params or None)
     # Pinecone v7 returns .matches (list), or dict with "matches"
     matches = getattr(res, "matches", None)
     if matches is None and isinstance(res, dict):
