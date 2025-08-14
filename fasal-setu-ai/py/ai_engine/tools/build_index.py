@@ -32,7 +32,7 @@ INDEX_NAME = "rag-index"
 
 # Pinecone API key and environment should be set as env vars
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
-PINECONE_ENV = os.environ.get("PINECONE_ENV", "gcp-starter")
+PINECONE_ENV = os.environ.get("PINECONE_ENV", "us-central1")
 
 def get_all_json_files(data_dir: Path) -> List[Path]:
     files = []
@@ -99,6 +99,7 @@ def main():
         chunks = load_and_chunk_json(file_path)
         embed_and_upsert(chunks, index)
     print("Ingestion complete.")
+
 
 if __name__ == "__main__":
     main()
