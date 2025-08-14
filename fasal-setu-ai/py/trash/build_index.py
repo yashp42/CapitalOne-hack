@@ -20,7 +20,7 @@ except ImportError as exc:  # pragma: no cover - provide a clear message
 load_dotenv()
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data" / "static_json"
-INDEX_NAME = "rag-index"
+INDEX_NAME = "capitalone"
 
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
 PINECONE_ENV = os.environ.get("PINECONE_ENV", "us-east-1-aws")

@@ -1,0 +1,145 @@
+. District Level Crop Weather Calendars and Advisories for Kharif Rice in Odisha
+Scope: Developed for medium-duration (125 days) and long-duration (150 days) paddy varieties for coastal Odisha districts: Khordha, Puri, Kendrapara, Jagatsinghpur.
+
+Agro-climatic characteristics: Hot and humid climate with lateritic, alluvial, and saline soils.
+
+Length of growing period: ~168 to 266 days depending on district; cropping intensity ranges 163–205%.
+
+Climate normals used: 30 years data (1993–2023) of Tmax, Tmin, RH, rainfall, sunshine hours, wind speed, evaporation.
+
+SMW season window:
+
+Medium duration rice: SMW 25–42 (Late June to mid-Oct).
+
+Long duration rice: SMW 26–49 (Late June to early Dec).
+
+Favourable weather conditions for high yield:
+
+Tmax: 30–34°C (sowing) dropping to ~30–32°C (grain filling)
+
+Tmin: ~26–28°C at sowing → ~21–24°C at maturity.
+
+Rainfall: ~78–110 mm/week at transplanting.
+
+RH: 80–90% during flowering.
+
+Water requirements: Stage-wise PET × crop coefficient; ~250–300 mm at sowing, ~500–550 mm at tillering, dropping to ~50–100 mm at maturity.
+
+Pest and disease congenial weather:
+
+Stem borer, leaf folder, BPH/WBPH: Temp 20–30°C, RH >70%, wind <5 km/h, 0–50 mm rain.
+
+Blast, BLB: Temp 20–30°C, RH >90%, 30–50 mm rain, wind <5 km/h.
+
+Sheath blight, brown spot have similar high humidity requirements.
+
+Phenophases:
+
+Sowing & seedling: 25–28 SMW (Medium); 26–29 SMW (Long)
+
+Transplanting: 29–31 (Medium); 30–32 (Long)
+
+Tillering–Panicle: 32–34 (Medium); 33–39 (Long)
+
+Flowering: 35–38 (Medium); 40–43 (Long)
+
+Grain filling–Maturity: 39–42 (Medium); 44–49 (Long)
+
+Varieties suggested:
+
+Upland (100–120 days): Short-duration drought/blast tolerant types (e.g., Sahabhagi, Khandagiri, MTU-1010).
+
+Medium land (120–140 days): MTU 1156, CR Dhan 310, Sampada, Lalat, Nua acharmati.
+
+Lowland (>140 days): Swarna, Pooja, Durga, Pratikshya, etc.
+
+Cultural practices:
+
+Seed treatment with fungicides before sowing
+
+Wet or dry nursery preparation; recommended spacing 20 × 15 cm; basal fertilizer dose (DAP + MOP + urea) depending on soil.
+
+Weed management with pre-emergence Pretilachlor/Oxadiargyl or post-emergence Bispyribac sodium.
+
+Beushaning after 25–30 days in unweeded fields, followed by urea top-dress.
+
+Pest & disease management:
+
+Chemical sprays for stem borer, leaf folder, WBPH, and case worm based on early detection.
+
+Fungicidal sprays for blast, BLB, sheath rot, foot rot depending on weather conditions.
+
+2. Agriculture Contingency Plan – Gondia District (Maharashtra)
+Agro-climatic zone: Eastern Vidarbha zone; hot sub-humid, dry; ~1378 mm annual rainfall over ~60 days.
+
+Soils: Deep black (~79%), medium black (~8%), shallow black (~13%).
+
+Net sown area: ~183,000 ha; ~54% irrigated (mainly canals).
+
+Main Kharif crops: Paddy (~205,000 ha total), pigeon pea, sesame.
+
+Rabi crops: Wheat, gram, linseed.
+
+Sowing windows:
+
+Kharif paddy (rainfed): Early July; irrigated: Early June.
+
+Gram, wheat: mid-November to mid-December.
+
+Major weather risks: Drought (regular), flood (occasional), pest & disease outbreaks.
+
+Drought contingency (rainfed):
+
+Delayed onset up to 2–4 weeks: Use medium & short-duration paddy varieties, re-sow with higher seed rate, use community nurseries.
+
+Delay 6–8 weeks: Switch to short-duration paddy, pigeon pea on bunds, or alternate crops like sesame, sunflower, mustard, maize, gram in Rabi.
+
+Mid-season drought: Mulching in pigeon pea/sesame, relay cropping of Lathyrus/Gram in standing paddy.
+
+Terminal drought: Life-saving irrigation to paddy in October; relay Gram, Lathyrus, mustard; harvest paddy for fodder if crop failure imminent.
+
+Flood/Excess rain contingency:
+
+Ensure drainage; harvest at physiological maturity; salt water treatment of wet paddy seed; relocate produce to safe storage.
+
+Pest/disease treatments for paddy (Monocrotophos, Cypermethrin), pulse pod borers, gram caterpillars.
+
+3. Agriculture Contingency Plan – Bhandara District (Maharashtra)
+Agro-climatic zone: Eastern Vidarbha Zone, hot moist sub-humid; ~1361 mm rainfall over ~60 days.
+
+Soils: Mostly deep soils (79%), with shallow (13%) and medium-deep (8%) mixed red and black soils.
+
+Net sown area: ~178,000 ha; 60% irrigated (mainly canals).
+
+Main Kharif crops: Paddy (~191,000 ha), soybean (~9,200 ha), pigeonpea (~4,200 ha), sesame (~1,000 ha).
+
+Rabi crops: Wheat, gram, linseed.
+
+Sowing windows:
+
+Rainfed paddy: mid-June–early July; irrigated: early June.
+
+Soybean/pigeonpea: mid-June–early July.
+
+Rabi linseed & gram: October.
+
+Drought contingencies:
+
+Delayed onset: Mid-duration paddy, direct seeding with drum seeder, early soybean varieties, pigeonpea on bunds.
+
+Severe delay (6–8 weeks): Short-duration paddy, early soybean, or switch to semi-rabi sesame, sunflower, pigeonpea-lathyrus intercrops.
+
+Mid-season drought: Protective irrigation, nitrogen topdressing at adequate moisture, interculture, furrow opening for rainwater harvesting.
+
+Terminal drought: Supplemental irrigation in September; plan rabi crops like gram, linseed, lathyrus.
+
+Flood/Excess rain contingency:
+
+Field drainage, delayed harvest, salt treatment of wet paddy seed, safe storage of produce.
+
+Pest/disease interventions similar to Gondia (Monocrotophos, Cypermethrin for paddy insects; neem extract, HANPV for pod borers).
+
+Livestock and fodder measures:
+
+Reserve fodder from crop residue; grow sorghum, bajra, maize for green fodder; fodder banks at village level; harvest top fodder from trees (Leucaena, Glyricidia); urea molasses treatment of straw.
+
