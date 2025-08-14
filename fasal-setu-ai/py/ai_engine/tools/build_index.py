@@ -1,4 +1,5 @@
 
+
 """
 build_index.py: Ingests all static JSON/text files from data/static_json/, chunks them
 (JSON-aware), embeds with the `all-MiniLM-L6-v2` sentence-transformer (384‑dimensional),
@@ -6,13 +7,14 @@ and upserts to a Pinecone index.
 """
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import List, Dict, Any
 
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from dotenv import load_dotenv
+from pinecone import Pinecone, ServerlessSpec
 
 
-load_dotenv()
-
+from embed_utils import embed_query, EMBEDDING_DIM
 
 
 
@@ -69,42 +71,44 @@ def load_and_chunk_json(file_path: Path, chunk_size=1024, chunk_overlap=100) -> 
         return [{"text": json.dumps(data, ensure_ascii=False), "source": str(file_path)}]
 
 def embed_and_upsert(chunks: List[Dict[str, Any]], index):
-    embedder = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-    batch = []
-    for i, chunk in enumerate(chunks):
-        text = chunk["text"]
-        source = chunk["source"]
-        embedding = embedder.embed_query(text)
-        batch.append({"id": f"{source}-{i}", "values": embedding, "metadata": {"source": source, "text": text}})
-        if len(batch) >= 32:
-            index.upsert(vectors=batch)
-            batch = []
-    if batch:
-        index.upsert(vectors=batch)
+
+        batch = []
+        for i, chunk in enumerate(chunks):
+                text = chunk["text"]
+                source = chunk["source"]
+                embedding = embed_query(text)
+                batch.append({"id": f"{source}-{i}", "values": embedding, "metadata": {"source": source, "text": text}})
+                if len(batch) >= 32:
+                        index.upsert(vectors=batch)
+                        batch = []
+        if batch:
+                index.upsert(vectors=batch)
 
 
 def main():
-    if not PINECONE_API_KEY:
-        raise RuntimeError("PINECONE_API_KEY not set in environment.")
-    pc = Pinecone(api_key=PINECONE_API_KEY)
-    # Check/create index
-    if INDEX_NAME not in [idx.name for idx in pc.list_indexes()]:
-        pc.create_index(
-            name=INDEX_NAME,
-            dimension=384,  # all-MiniLM-L6-v2 outputs 384-dim embeddings
-            metric="cosine",
-            spec=ServerlessSpec(cloud="gcp", region="us-central1")
-        )
-    index = pc.Index(INDEX_NAME)
-    files = get_all_json_files(DATA_DIR)
-    print(f"Found {len(files)} files.")
-    for file_path in files:
-        print(f"Processing {file_path}")
-        chunks = load_and_chunk_json(file_path)
-        embed_and_upsert(chunks, index)
-    print("Ingestion complete.")
+	if not PINECONE_API_KEY:
+		raise RuntimeError("PINECONE_API_KEY not set in environment.")
+	pc = Pinecone(api_key=PINECONE_API_KEY)
+	# Check/create index
+	if INDEX_NAME not in [idx.name for idx in pc.list_indexes()]:
+                pc.create_index(
+                        name=INDEX_NAME,
+                        dimension=EMBEDDING_DIM,
+                        metric="cosine",
+                        spec=ServerlessSpec(cloud="gcp", region="us-central1")
+                )
+	index = pc.Index(INDEX_NAME)
+	files = get_all_json_files(DATA_DIR)
+	print(f"Found {len(files)} files.")
+	for file_path in files:
+		print(f"Processing {file_path}")
+		chunks = load_and_chunk_json(file_path)
+		embed_and_upsert(chunks, index)
+	print("Ingestion complete.")
 
 
 if __name__ == "__main__":
+
     main()
+
 
