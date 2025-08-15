@@ -2,7 +2,9 @@ Given a farmer's query and profile, output a JSON object with:
 - intent: one of {intents}
 - decision_template: one of {templates}
 - missing: (optional) list of missing fields
-- tool_calls: array of {{tool, args}} to fetch facts needed for the decision
+- tool_calls: array of {{tool, args}} using only tools from {tools} to fetch facts needed for the decision
+
+Make reasonable assumptions and always return a plan. If some information is missing, include it in "missing" and still suggest relevant tool_calls.
 
 Query: {query}
 Profile: {profile}

@@ -1,32 +1,12 @@
-
-'''fastapi==0.116.1
-uvicorn==0.35.0
-pydantic==2.8.2
-
-langchain==0.3.27
-langchain-core==0.3.74
-langgraph==0.2.*          # or latest compatible
-langgraph-checkpoint-sqlite==0.1.*   # dev
-# swap to one of these in prod:
-# langgraph-checkpoint-postgres==0.1.*  # or mongodb/redis variants
-
-langchain-milvus==0.1.*   # maintained Milvus integration
-pymilvus==2.6.*           # matches Milvus 2.6.x server
-langchain-groq==0.3.7
-langchain-huggingface==0.3.*
-sentence-transformers==3.*
-
-python-dotenv==1.*
-tenacity==9.*
-orjson==3.*
-loguru==0.7.*
-'''
 fastapi
 uvicorn
 pydantic
 langchain
 langchain-core
+langchain-community
 langchain-text-splitters
+langchain-openai
+langchain-google-genai
 nbimporter
 python-dotenv
 requests
@@ -34,9 +14,7 @@ tqdm
 pandas
 numpy
 pinecone
-dateutil
-# Optional: for notebook-based development
+python-dateutil
 jupyter
-# For HTML parsing in mandi_api.ipynb (if scraping is used)
 beautifulsoup4
 lxml

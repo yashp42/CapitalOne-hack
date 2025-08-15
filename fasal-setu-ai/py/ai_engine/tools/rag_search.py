@@ -44,5 +44,6 @@ def rag_search(args: Dict[str, Any]) -> Dict[str, Any]:
     for key in ("state", "district", "crop"):
         if args.get(key):
             filt[key] = str(args[key]).lower()
-    index.query(vector=vector, top_k=3, filter=filt)
-    return {"data": [], "source_stamp": "pinecone_rag"}
+    resp = index.query(vector=vector, top_k=3, filter=filt)
+    matches = getattr(resp, "matches", [])
+    return {"data": matches, "source_stamp": "pinecone_rag"}
