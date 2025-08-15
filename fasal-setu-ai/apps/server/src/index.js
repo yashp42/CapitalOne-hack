@@ -1,8 +1,11 @@
 import dotenv from "dotenv";
+
+// Configure environment variables first
+dotenv.config();
+
 import dbConnect from "./db/index.js";
 import { app } from "./app.js";
 
-dotenv.config();
 const port = process.env.PORT;
 
 // Connect to database
