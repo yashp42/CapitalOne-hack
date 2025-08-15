@@ -18,9 +18,7 @@ def act_endpoint(request: ActRequest):
     # Build initial planner state, respecting mode
     profile = request.profile if request.mode != "public_advisor" else None
     state = PlannerState(query=request.query or "", profile=profile)
-    # Run planner LLM
     state = router_node(state)
-    # Run tools
     state = tools_node(state)
     # Build response
     response = ActResponse(
