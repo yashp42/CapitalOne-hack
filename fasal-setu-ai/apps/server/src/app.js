@@ -2,17 +2,40 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
-const app=express();
+// Import routes
+import userRoutes from "./routes/user.routes.js";
+import queryRoutes from "./routes/query.js";
+import voiceRoutes from "./routes/voice.js";
 
-app.use(cors(
-    {
-        origin: "*"
-    }
-));
+// Import middleware
+import errorHandler from "./middleware/errorHandler.middleware.js";
+
+const app = express();
+
+app.use(cors({
+    origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 200
+}));
 
 app.use(express.json({ limit: "20kb" }));
 app.use(express.urlencoded({ extended: true, limit: "20kb" }));
 app.use(express.static("public"));
 app.use(cookieParser());
 
-export {app};
+// Routes
+app.use("/api/users", userRoutes);
+app.use("/api/query", queryRoutes);
+app.use("/api/voice", voiceRoutes);
+
+// Health check
+app.get("/health", (req, res) => {
+    res.status(200).json({ status: "OK", message: "Server is running" });
+});
+
+// Error handling middleware (must be last)
+app.use(errorHandler);
+
+export { app };
