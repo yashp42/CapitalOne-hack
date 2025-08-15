@@ -105,20 +105,7 @@ export const signup = asyncErrorHandler(async (req, res) => {
   });
 
   if (existingUser) {
-    // If user exists, return a more helpful response suggesting login
-    return res.status(200).json(
-      new ApiResponse(200, {
-        userExists: true,
-        shouldLogin: true,
-        user: {
-          id: existingUser._id,
-          firstName: existingUser.firstName,
-          lastName: existingUser.lastName,
-          phoneNumber: existingUser.phoneNumber,
-          hasCompleteProfile: existingUser.hasCompleteProfile()
-        }
-      }, "User already exists. Please login instead.")
-    );
+    throw new ApiError(409, "User with this phone number or Firebase UID already exists");
   }
 
   // Prepare user data with defaults and validation
@@ -138,63 +125,21 @@ export const signup = asyncErrorHandler(async (req, res) => {
     if (location.state) userData.location.state = location.state.trim();
     if (location.district) userData.location.district = location.district.trim();
     
-    // Prioritize precise GPS coordinates over district-based estimation
-    if (location.lat !== undefined && location.lon !== undefined && 
-        location.lat !== '' && location.lon !== '') {
-      // Use precise GPS coordinates provided by user
-      const lat = parseFloat(location.lat);
-      const lon = parseFloat(location.lon);
-      
-      // Validate coordinate ranges for India (approximately)
-      if (lat >= 6.0 && lat <= 37.0 && lon >= 68.0 && lon <= 97.5) {
-        userData.location.lat = lat;
-        userData.location.lon = lon;
-        userData.location.coordinate_source = 'gps'; // Mark as GPS-sourced
-        console.log(`Using precise GPS coordinates: ${lat}, ${lon}`);
-      } else {
-        console.warn('GPS coordinates outside India bounds, falling back to district estimation');
-        // Fall back to district-based estimation
-        if (location.state && location.district) {
-          try {
-            const coordinates = await fetchCoordinatesForLocation(location.state, location.district);
-            if (coordinates) {
-              userData.location.lat = coordinates.lat;
-              userData.location.lon = coordinates.lon;
-              userData.location.coordinate_source = 'district_estimated';
-            }
-          } catch (error) {
-            console.warn('Failed to fetch district coordinates:', error.message);
-          }
-        }
-      }
-    } else if (location.state && location.district) {
-      // Only use district-based estimation if no GPS coordinates provided
+    // Auto-fetch coordinates if state and district provided but no coordinates
+    if (location.state && location.district && !location.lat && !location.lon) {
       try {
         const coordinates = await fetchCoordinatesForLocation(location.state, location.district);
         if (coordinates) {
           userData.location.lat = coordinates.lat;
           userData.location.lon = coordinates.lon;
-          userData.location.coordinate_source = 'district_estimated';
-          console.log(`Using district-based coordinates for ${location.state}, ${location.district}: ${coordinates.lat}, ${coordinates.lon}`);
         }
       } catch (error) {
-        console.warn('Failed to fetch district coordinates:', error.message);
+        console.warn('Failed to fetch coordinates:', error.message);
+        // Continue without coordinates - they can be added later
       }
-    }
-    
-    // Final validation for any coordinates that were set
-    if (userData.location.lat !== undefined && userData.location.lon !== undefined) {
-      // Additional validation for reasonable coordinate ranges
-      if (userData.location.lat < -90 || userData.location.lat > 90) {
-        console.warn('Invalid latitude value:', userData.location.lat);
-        delete userData.location.lat;
-        delete userData.location.coordinate_source;
-      }
-      if (userData.location.lon < -180 || userData.location.lon > 180) {
-        console.warn('Invalid longitude value:', userData.location.lon);
-        delete userData.location.lon;
-        delete userData.location.coordinate_source;
-      }
+    } else if (location.lat && location.lon) {
+      userData.location.lat = parseFloat(location.lat);
+      userData.location.lon = parseFloat(location.lon);
     }
   }
 
@@ -449,13 +394,12 @@ export const putProfile = asyncErrorHandler(async (req, res) => {
     if (location.state) user.location.state = location.state.trim();
     if (location.district) user.location.district = location.district.trim();
     
-    // Handle coordinates - prioritize provided coordinates, then auto-fetch
+    // Handle coordinates
     if (location.lat !== undefined && location.lon !== undefined) {
-      // Use provided coordinates
       user.location.lat = parseFloat(location.lat);
       user.location.lon = parseFloat(location.lon);
     } else if (location.state && location.district && !user.location.lat) {
-      // Auto-fetch coordinates if not already set
+      // Auto-fetch coordinates if not provided
       try {
         const coordinates = await fetchCoordinatesForLocation(location.state, location.district);
         if (coordinates) {
@@ -464,18 +408,6 @@ export const putProfile = asyncErrorHandler(async (req, res) => {
         }
       } catch (error) {
         console.warn('Failed to fetch coordinates:', error.message);
-      }
-    }
-    
-    // Validate coordinates if they exist
-    if (user.location.lat !== undefined && user.location.lon !== undefined) {
-      if (user.location.lat < -90 || user.location.lat > 90) {
-        console.warn('Invalid latitude value:', user.location.lat);
-        delete user.location.lat;
-      }
-      if (user.location.lon < -180 || user.location.lon > 180) {
-        console.warn('Invalid longitude value:', user.location.lon);
-        delete user.location.lon;
       }
     }
   }
@@ -547,40 +479,21 @@ export const completeProfile = asyncErrorHandler(async (req, res) => {
   user.preferred_language = preferred_language || user.preferred_language;
   user.land_area_acres = landArea;
 
-  // Update location with coordinates
+  // Update location with auto-coordinates
   user.location = {
     state: location.state.trim(),
     district: location.district.trim()
   };
 
-  // Handle coordinates - prioritize provided coordinates, then auto-fetch
-  if (location.lat !== undefined && location.lon !== undefined) {
-    // Use provided coordinates
-    user.location.lat = parseFloat(location.lat);
-    user.location.lon = parseFloat(location.lon);
-  } else {
-    // Auto-fetch coordinates
-    try {
-      const coordinates = await fetchCoordinatesForLocation(location.state, location.district);
-      if (coordinates) {
-        user.location.lat = coordinates.lat;
-        user.location.lon = coordinates.lon;
-      }
-    } catch (error) {
-      console.warn('Failed to fetch coordinates:', error.message);
+  // Fetch coordinates
+  try {
+    const coordinates = await fetchCoordinatesForLocation(location.state, location.district);
+    if (coordinates) {
+      user.location.lat = coordinates.lat;
+      user.location.lon = coordinates.lon;
     }
-  }
-
-  // Validate coordinates if they exist
-  if (user.location.lat !== undefined && user.location.lon !== undefined) {
-    if (user.location.lat < -90 || user.location.lat > 90) {
-      console.warn('Invalid latitude value:', user.location.lat);
-      delete user.location.lat;
-    }
-    if (user.location.lon < -180 || user.location.lon > 180) {
-      console.warn('Invalid longitude value:', user.location.lon);
-      delete user.location.lon;
-    }
+  } catch (error) {
+    console.warn('Failed to fetch coordinates:', error.message);
   }
 
   // Update finance info if provided

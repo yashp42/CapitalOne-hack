@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8081/api';
 
 // Simple token management using localStorage
 const tokenManager = {
@@ -180,15 +180,23 @@ export const authAPI = {
   },
 
   // Get user profile
-  getProfile: async (userId) => {
-    return apiRequest(`/users/profile/${userId}`);
+  getProfile: async () => {
+    return apiRequest('/users/profile');
   },
 
   // Update user profile
-  updateProfile: async (userId, userData) => {
-    return apiRequest(`/users/profile/${userId}`, {
+  updateProfile: async (userData) => {
+    return apiRequest('/users/profile', {
       method: 'PUT',
       body: JSON.stringify(userData),
+    });
+  },
+
+  // Complete profile setup
+  completeProfile: async (profileData) => {
+    return apiRequest('/users/complete-profile', {
+      method: 'POST',
+      body: JSON.stringify(profileData),
     });
   },
 
@@ -201,6 +209,14 @@ export const authAPI = {
   refreshToken: async () => {
     return apiRequest('/users/refresh-token', {
       method: 'POST',
+    });
+  },
+
+  // Get coordinates for location
+  getCoordinates: async (state, district) => {
+    return apiRequest('/users/get-coordinates', {
+      method: 'POST',
+      body: JSON.stringify({ state, district }),
     });
   }
 };

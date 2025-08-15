@@ -5,6 +5,7 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Chatbot from './pages/Chatbot';
+import CropSimulation from './pages/CropSimulation';
 
 function AppContent() {
   const location = useLocation();
@@ -18,6 +19,7 @@ function AppContent() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/chatbot" element={<Chatbot />} />
+        <Route path="/crop-simulation" element={<CropSimulation />} />
       </Routes>
     </div>
   );

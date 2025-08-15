@@ -31,57 +31,6 @@ export const sendOTP = asyncErrorHandler(async (req, res) => {
   }
 });
 
-// Helper function to fetch coordinates for location
-const fetchCoordinatesForLocation = async (state, district) => {
-  try {
-    // Using a simple mapping for major Indian districts
-    const locationMap = {
-      // Punjab
-      'punjab_ludhiana': { lat: 30.9010, lon: 75.8573 },
-      'punjab_amritsar': { lat: 31.6340, lon: 74.8723 },
-      'punjab_jalandhar': { lat: 31.3260, lon: 75.5762 },
-      'punjab_patiala': { lat: 30.3365, lon: 76.3922 },
-      
-      // Haryana
-      'haryana_gurgaon': { lat: 28.4595, lon: 77.0266 },
-      'haryana_faridabad': { lat: 28.4089, lon: 77.3178 },
-      'haryana_rohtak': { lat: 28.8955, lon: 76.6066 },
-      
-      // Uttar Pradesh
-      'uttar pradesh_lucknow': { lat: 26.8467, lon: 80.9462 },
-      'uttar pradesh_kanpur': { lat: 26.4499, lon: 80.3319 },
-      'uttar pradesh_agra': { lat: 27.1767, lon: 78.0081 },
-      'uttar pradesh_varanasi': { lat: 25.3176, lon: 82.9739 },
-      'uttar pradesh_meerut': { lat: 28.9845, lon: 77.7064 },
-      
-      // Maharashtra
-      'maharashtra_mumbai': { lat: 19.0760, lon: 72.8777 },
-      'maharashtra_pune': { lat: 18.5204, lon: 73.8567 },
-      'maharashtra_nagpur': { lat: 21.1458, lon: 79.0882 },
-      'maharashtra_nashik': { lat: 19.9975, lon: 73.7898 },
-      
-      // Tamil Nadu
-      'tamil nadu_chennai': { lat: 13.0827, lon: 80.2707 },
-      'tamil nadu_coimbatore': { lat: 11.0168, lon: 76.9558 },
-      'tamil nadu_madurai': { lat: 9.9252, lon: 78.1198 },
-      
-      // Karnataka
-      'karnataka_bangalore': { lat: 12.9716, lon: 77.5946 },
-      'karnataka_mysore': { lat: 12.2958, lon: 76.6394 },
-      'karnataka_hubli': { lat: 15.3647, lon: 75.1240 },
-      
-      // Add more states and districts as needed
-    };
-    
-    const key = `${state.toLowerCase()}_${district.toLowerCase()}`;
-    return locationMap[key] || null;
-    
-  } catch (error) {
-    console.error('Error fetching coordinates:', error);
-    return null;
-  }
-};
-
 // Enhanced Signup with comprehensive profile data
 export const signup = asyncErrorHandler(async (req, res) => {
   const { 
@@ -105,20 +54,7 @@ export const signup = asyncErrorHandler(async (req, res) => {
   });
 
   if (existingUser) {
-    // If user exists, return a more helpful response suggesting login
-    return res.status(200).json(
-      new ApiResponse(200, {
-        userExists: true,
-        shouldLogin: true,
-        user: {
-          id: existingUser._id,
-          firstName: existingUser.firstName,
-          lastName: existingUser.lastName,
-          phoneNumber: existingUser.phoneNumber,
-          hasCompleteProfile: existingUser.hasCompleteProfile()
-        }
-      }, "User already exists. Please login instead.")
-    );
+    throw new ApiError(409, "User with this phone number or Firebase UID already exists");
   }
 
   // Prepare user data with defaults and validation
@@ -138,63 +74,21 @@ export const signup = asyncErrorHandler(async (req, res) => {
     if (location.state) userData.location.state = location.state.trim();
     if (location.district) userData.location.district = location.district.trim();
     
-    // Prioritize precise GPS coordinates over district-based estimation
-    if (location.lat !== undefined && location.lon !== undefined && 
-        location.lat !== '' && location.lon !== '') {
-      // Use precise GPS coordinates provided by user
-      const lat = parseFloat(location.lat);
-      const lon = parseFloat(location.lon);
-      
-      // Validate coordinate ranges for India (approximately)
-      if (lat >= 6.0 && lat <= 37.0 && lon >= 68.0 && lon <= 97.5) {
-        userData.location.lat = lat;
-        userData.location.lon = lon;
-        userData.location.coordinate_source = 'gps'; // Mark as GPS-sourced
-        console.log(`Using precise GPS coordinates: ${lat}, ${lon}`);
-      } else {
-        console.warn('GPS coordinates outside India bounds, falling back to district estimation');
-        // Fall back to district-based estimation
-        if (location.state && location.district) {
-          try {
-            const coordinates = await fetchCoordinatesForLocation(location.state, location.district);
-            if (coordinates) {
-              userData.location.lat = coordinates.lat;
-              userData.location.lon = coordinates.lon;
-              userData.location.coordinate_source = 'district_estimated';
-            }
-          } catch (error) {
-            console.warn('Failed to fetch district coordinates:', error.message);
-          }
-        }
-      }
-    } else if (location.state && location.district) {
-      // Only use district-based estimation if no GPS coordinates provided
+    // Auto-fetch coordinates if state and district provided but no coordinates
+    if (location.state && location.district && !location.lat && !location.lon) {
       try {
         const coordinates = await fetchCoordinatesForLocation(location.state, location.district);
         if (coordinates) {
           userData.location.lat = coordinates.lat;
           userData.location.lon = coordinates.lon;
-          userData.location.coordinate_source = 'district_estimated';
-          console.log(`Using district-based coordinates for ${location.state}, ${location.district}: ${coordinates.lat}, ${coordinates.lon}`);
         }
       } catch (error) {
-        console.warn('Failed to fetch district coordinates:', error.message);
+        console.warn('Failed to fetch coordinates:', error.message);
+        // Continue without coordinates - they can be added later
       }
-    }
-    
-    // Final validation for any coordinates that were set
-    if (userData.location.lat !== undefined && userData.location.lon !== undefined) {
-      // Additional validation for reasonable coordinate ranges
-      if (userData.location.lat < -90 || userData.location.lat > 90) {
-        console.warn('Invalid latitude value:', userData.location.lat);
-        delete userData.location.lat;
-        delete userData.location.coordinate_source;
-      }
-      if (userData.location.lon < -180 || userData.location.lon > 180) {
-        console.warn('Invalid longitude value:', userData.location.lon);
-        delete userData.location.lon;
-        delete userData.location.coordinate_source;
-      }
+    } else if (location.lat && location.lon) {
+      userData.location.lat = parseFloat(location.lat);
+      userData.location.lon = parseFloat(location.lon);
     }
   }
 
@@ -257,6 +151,58 @@ export const signup = asyncErrorHandler(async (req, res) => {
     );
 });
 
+// Helper function to fetch coordinates for location
+const fetchCoordinatesForLocation = async (state, district) => {
+  try {
+    // Using a geocoding service (you can use Google Maps API, OpenCage, etc.)
+    // For now, we'll use a simple mapping for major Indian districts
+    const locationMap = {
+      // Punjab
+      'punjab_ludhiana': { lat: 30.9010, lon: 75.8573 },
+      'punjab_amritsar': { lat: 31.6340, lon: 74.8723 },
+      'punjab_jalandhar': { lat: 31.3260, lon: 75.5762 },
+      'punjab_patiala': { lat: 30.3365, lon: 76.3922 },
+      
+      // Haryana
+      'haryana_gurgaon': { lat: 28.4595, lon: 77.0266 },
+      'haryana_faridabad': { lat: 28.4089, lon: 77.3178 },
+      'haryana_rohtak': { lat: 28.8955, lon: 76.6066 },
+      
+      // Uttar Pradesh
+      'uttar pradesh_lucknow': { lat: 26.8467, lon: 80.9462 },
+      'uttar pradesh_kanpur': { lat: 26.4499, lon: 80.3319 },
+      'uttar pradesh_agra': { lat: 27.1767, lon: 78.0081 },
+      'uttar pradesh_varanasi': { lat: 25.3176, lon: 82.9739 },
+      'uttar pradesh_meerut': { lat: 28.9845, lon: 77.7064 },
+      
+      // Maharashtra
+      'maharashtra_mumbai': { lat: 19.0760, lon: 72.8777 },
+      'maharashtra_pune': { lat: 18.5204, lon: 73.8567 },
+      'maharashtra_nagpur': { lat: 21.1458, lon: 79.0882 },
+      'maharashtra_nashik': { lat: 19.9975, lon: 73.7898 },
+      
+      // Tamil Nadu
+      'tamil nadu_chennai': { lat: 13.0827, lon: 80.2707 },
+      'tamil nadu_coimbatore': { lat: 11.0168, lon: 76.9558 },
+      'tamil nadu_madurai': { lat: 9.9252, lon: 78.1198 },
+      
+      // Karnataka
+      'karnataka_bangalore': { lat: 12.9716, lon: 77.5946 },
+      'karnataka_mysore': { lat: 12.2958, lon: 76.6394 },
+      'karnataka_hubli': { lat: 15.3647, lon: 75.1240 },
+      
+      // Add more states and districts as needed
+    };
+    
+    const key = `${state.toLowerCase()}_${district.toLowerCase()}`;
+    return locationMap[key] || null;
+    
+  } catch (error) {
+    console.error('Error fetching coordinates:', error);
+    return null;
+  }
+};
+
 // Login
 export const login = asyncErrorHandler(async (req, res) => {
   const { firebaseUid } = req.body;
@@ -282,18 +228,12 @@ export const login = asyncErrorHandler(async (req, res) => {
     lastName: user.lastName,
     phoneNumber: user.phoneNumber,
     isPhoneVerified: user.isPhoneVerified,
-    preferred_language: user.preferred_language,
-    location: user.location,
-    land_area_acres: user.land_area_acres,
-    finance: user.finance,
-    profile_version: user.profile_version,
-    hasCompleteProfile: user.hasCompleteProfile(),
-    createdAt: user.created_at,
-    updatedAt: user.updated_at
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt
   };
 
   const options = {
-    httpOnly: false,
+    httpOnly: false, // Changed to false to allow JavaScript access
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
@@ -310,6 +250,33 @@ export const login = asyncErrorHandler(async (req, res) => {
         refreshToken
       }, "Login successful")
     );
+});
+  const { id } = req.params;
+  const { firstName, lastName } = req.body;
+
+  const user = await User.findById(id);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // Update only allowed fields
+  if (firstName) user.firstName = firstName;
+  if (lastName) user.lastName = lastName;
+
+  await user.save();
+
+  const userResponse = {
+    id: user._id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    phoneNumber: user.phoneNumber,
+    isPhoneVerified: user.isPhoneVerified,
+    updatedAt: user.updatedAt
+  };
+
+  res.status(200).json(
+    new ApiResponse(200, userResponse, "Profile updated successfully")
+  );
 });
 
 // Refresh Access Token
@@ -336,7 +303,7 @@ export const refreshAccessToken = asyncErrorHandler(async (req, res) => {
     const { accessToken, refreshToken: newRefreshToken } = await user.generateTokens();
 
     const options = {
-      httpOnly: false,
+      httpOnly: false, // Changed to false to allow JavaScript access
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
@@ -372,7 +339,7 @@ export const logout = asyncErrorHandler(async (req, res) => {
   );
 
   const options = {
-    httpOnly: false,
+    httpOnly: false, // Changed to false to allow JavaScript access
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict'
   };
@@ -449,13 +416,12 @@ export const putProfile = asyncErrorHandler(async (req, res) => {
     if (location.state) user.location.state = location.state.trim();
     if (location.district) user.location.district = location.district.trim();
     
-    // Handle coordinates - prioritize provided coordinates, then auto-fetch
+    // Handle coordinates
     if (location.lat !== undefined && location.lon !== undefined) {
-      // Use provided coordinates
       user.location.lat = parseFloat(location.lat);
       user.location.lon = parseFloat(location.lon);
     } else if (location.state && location.district && !user.location.lat) {
-      // Auto-fetch coordinates if not already set
+      // Auto-fetch coordinates if not provided
       try {
         const coordinates = await fetchCoordinatesForLocation(location.state, location.district);
         if (coordinates) {
@@ -464,18 +430,6 @@ export const putProfile = asyncErrorHandler(async (req, res) => {
         }
       } catch (error) {
         console.warn('Failed to fetch coordinates:', error.message);
-      }
-    }
-    
-    // Validate coordinates if they exist
-    if (user.location.lat !== undefined && user.location.lon !== undefined) {
-      if (user.location.lat < -90 || user.location.lat > 90) {
-        console.warn('Invalid latitude value:', user.location.lat);
-        delete user.location.lat;
-      }
-      if (user.location.lon < -180 || user.location.lon > 180) {
-        console.warn('Invalid longitude value:', user.location.lon);
-        delete user.location.lon;
       }
     }
   }
@@ -547,40 +501,21 @@ export const completeProfile = asyncErrorHandler(async (req, res) => {
   user.preferred_language = preferred_language || user.preferred_language;
   user.land_area_acres = landArea;
 
-  // Update location with coordinates
+  // Update location with auto-coordinates
   user.location = {
     state: location.state.trim(),
     district: location.district.trim()
   };
 
-  // Handle coordinates - prioritize provided coordinates, then auto-fetch
-  if (location.lat !== undefined && location.lon !== undefined) {
-    // Use provided coordinates
-    user.location.lat = parseFloat(location.lat);
-    user.location.lon = parseFloat(location.lon);
-  } else {
-    // Auto-fetch coordinates
-    try {
-      const coordinates = await fetchCoordinatesForLocation(location.state, location.district);
-      if (coordinates) {
-        user.location.lat = coordinates.lat;
-        user.location.lon = coordinates.lon;
-      }
-    } catch (error) {
-      console.warn('Failed to fetch coordinates:', error.message);
+  // Fetch coordinates
+  try {
+    const coordinates = await fetchCoordinatesForLocation(location.state, location.district);
+    if (coordinates) {
+      user.location.lat = coordinates.lat;
+      user.location.lon = coordinates.lon;
     }
-  }
-
-  // Validate coordinates if they exist
-  if (user.location.lat !== undefined && user.location.lon !== undefined) {
-    if (user.location.lat < -90 || user.location.lat > 90) {
-      console.warn('Invalid latitude value:', user.location.lat);
-      delete user.location.lat;
-    }
-    if (user.location.lon < -180 || user.location.lon > 180) {
-      console.warn('Invalid longitude value:', user.location.lon);
-      delete user.location.lon;
-    }
+  } catch (error) {
+    console.warn('Failed to fetch coordinates:', error.message);
   }
 
   // Update finance info if provided

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
-import { FaBars, FaTimes, FaHome, FaRobot, FaSignInAlt, FaSignOutAlt, FaUser } from 'react-icons/fa';
+import { FaBars, FaTimes, FaHome, FaRobot, FaSignInAlt, FaSignOutAlt, FaUser, FaSeedling } from 'react-icons/fa';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout, authKey } = useAuth();
@@ -63,16 +63,20 @@ const Navbar = () => {
   const navItems = [
     { to: '/', label: 'Home', icon: FaHome },
     { to: '/chatbot', label: 'Chatbot', icon: FaRobot },
+    { to: '/crop-simulation', label: 'Crop Sim', icon: FaSeedling },
   ];
 
   return (
     <>
       {/* Floating Navbar */}
       <motion.nav 
-        className="fixed top-4 left-4 right-4 z-40 rounded-2xl bg-primary-600/60 backdrop-blur-sm shadow-lg border border-primary-500"
+        className="fixed top-4 left-4 right-4 z-40 rounded-2xl bg-primary-200 backdrop-blur-xl shadow-lg border border-gray-200/50"
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
+        style={{
+          backdropFilter: 'blur(20px) saturate(150%)',
+        }}
       >
         <div className="px-4 sm:px-6 py-3">
           <div className="flex justify-between items-center">
@@ -84,7 +88,7 @@ const Navbar = () => {
             >
               <Link 
                 to="/" 
-                className="text-lg sm:text-xl font-bold text-white hover:text-primary-200 transition-colors"
+                className="text-lg sm:text-xl font-bold text-primary-600 hover:text-primary-700 transition-colors"
               >
                 FasalSetu.ai
               </Link>
@@ -102,8 +106,8 @@ const Navbar = () => {
                     to={item.to}
                     className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       location.pathname === item.to
-                        ? 'bg-primary-700 text-white border border-primary-500'
-                        : 'text-primary-100 hover:text-white hover:bg-primary-700'
+                        ? 'bg-primary-100 text-primary-700 border border-primary-200'
+                        : 'text-gray-600 hover:text-primary-600 hover:bg-gray-100/50'
                     }`}
                   >
                     <item.icon className="text-xs" />
@@ -113,11 +117,11 @@ const Navbar = () => {
               ))}
               
               {/* Desktop Auth Section */}
-              <div className="flex items-center space-x-3 ml-4 pl-4 border-l border-primary-400">
+              <div className="flex items-center space-x-3 ml-4 pl-4 border-l border-gray-300">
                 {isAuthenticated && user ? (
                   <>
-                    <div className="flex items-center space-x-2 text-sm text-primary-100">
-                      <FaUser className="text-xs text-primary-200" />
+                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                      <FaUser className="text-xs text-primary-500" />
                       <span className="hidden lg:inline">{user.firstName}</span>
                     </div>
                     <motion.button
@@ -135,7 +139,7 @@ const Navbar = () => {
                   <motion.div whileHover={{ scale: 1.05 }}>
                     <Link 
                       to="/login" 
-                      className="flex items-center space-x-2 bg-secondary-500 hover:bg-secondary-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+                      className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
                     >
                       <FaSignInAlt className="text-xs" />
                       <span>Login</span>
@@ -148,7 +152,7 @@ const Navbar = () => {
             {/* Mobile Menu Button */}
             <motion.button
               onClick={toggleSidebar}
-              className="md:hidden p-2 rounded-lg text-primary-100 hover:text-white hover:bg-primary-700 transition-all duration-200"
+              className="md:hidden p-2 rounded-lg text-gray-600 hover:text-primary-600 hover:bg-gray-100/50 transition-all duration-200"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -177,19 +181,22 @@ const Navbar = () => {
             
             {/* Sidebar */}
             <motion.div
-              className="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-primary-600 border-l border-primary-500 shadow-2xl z-40 md:hidden"
+              className="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-white/95 backdrop-blur-xl border-l border-gray-200/50 shadow-2xl z-40 md:hidden"
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              style={{
+                backdropFilter: 'blur(20px) saturate(150%)',
+              }}
             >
               <div className="p-6">
                 {/* Sidebar Header */}
                 <div className="flex justify-between items-center mb-8">
-                  <h3 className="text-xl font-bold text-white">Menu</h3>
+                  <h3 className="text-xl font-bold text-gray-800">Menu</h3>
                   <button
                     onClick={toggleSidebar}
-                    className="p-2 rounded-lg text-primary-200 hover:text-white hover:bg-primary-700 transition-all duration-200"
+                    className="p-2 rounded-lg text-gray-600 hover:text-primary-600 hover:bg-gray-100/50 transition-all duration-200"
                   >
                     <FaTimes className="text-lg" />
                   </button>
@@ -203,8 +210,8 @@ const Navbar = () => {
                       to={item.to}
                       className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 ${
                         location.pathname === item.to
-                          ? 'bg-primary-700 text-white border border-primary-500'
-                          : 'text-primary-100 hover:text-white hover:bg-primary-700'
+                          ? 'bg-primary-100 text-primary-700 border border-primary-200'
+                          : 'text-gray-600 hover:text-primary-600 hover:bg-gray-100/50'
                       }`}
                     >
                       <item.icon className="text-lg" />
@@ -214,14 +221,14 @@ const Navbar = () => {
                 </div>
 
                 {/* Mobile Auth Section */}
-                <div className="border-t border-primary-500 pt-6">
+                <div className="border-t border-gray-200 pt-6">
                   {isAuthenticated && user ? (
                     <div className="space-y-4">
-                      <div className="flex items-center space-x-3 px-4 py-3 bg-primary-700 rounded-xl">
-                        <FaUser className="text-primary-200" />
+                      <div className="flex items-center space-x-3 px-4 py-3 bg-gray-100/80 rounded-xl">
+                        <FaUser className="text-primary-500" />
                         <div>
-                          <p className="text-sm font-medium text-white">Welcome back!</p>
-                          <p className="text-xs text-primary-200">{user.firstName}</p>
+                          <p className="text-sm font-medium text-gray-800">Welcome back!</p>
+                          <p className="text-xs text-gray-600">{user.firstName}</p>
                         </div>
                       </div>
                       <button
@@ -236,7 +243,7 @@ const Navbar = () => {
                   ) : (
                     <Link 
                       to="/login" 
-                      className="w-full flex items-center justify-center space-x-3 bg-secondary-500 hover:bg-secondary-600 text-white px-4 py-3 rounded-xl font-medium transition-all duration-200"
+                      className="w-full flex items-center justify-center space-x-3 bg-primary-600 hover:bg-primary-700 text-white px-4 py-3 rounded-xl font-medium transition-all duration-200"
                     >
                       <FaSignInAlt />
                       <span>Login</span>

@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import userRoutes from "./routes/user.routes.js";
 import queryRoutes from "./routes/query.js";
 import voiceRoutes from "./routes/voice.js";
+import cropRoutes from "./routes/crop.routes.js";
 
 // Import middleware
 import errorHandler from "./middleware/errorHandler.middleware.js";
@@ -29,6 +30,7 @@ app.use(cookieParser());
 app.use("/api/users", userRoutes);
 app.use("/api/query", queryRoutes);
 app.use("/api/voice", voiceRoutes);
+app.use("/api/crops", cropRoutes);
 
 // Health check
 app.get("/health", (req, res) => {
