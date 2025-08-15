@@ -26,7 +26,8 @@
                                                         "pesticide_lookup",
                                                         "storage_find",
                                                         "rag_search",
-                                                        "soil_api"
+                                                        "soil_api",
+                                                        "web_search"
                                                 ]
                                         },
 					"args": { "type": "object" }
