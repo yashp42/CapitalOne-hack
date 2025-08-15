@@ -1,13 +1,13 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from ..graph.state import ToolCall
+from graph.state import ToolCall
 
 
 class ActResponse(BaseModel):
     intent: str
     decision_template: str
-    missing: Optional[List[str]] = None
-    tool_calls: Optional[List[ToolCall]] = None
+    missing: List[str] | None = None
+    tool_calls: List[ToolCall] = Field(default_factory=list)
     facts: Dict[str, Any]

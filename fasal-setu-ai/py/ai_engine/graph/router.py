@@ -3,6 +3,7 @@ from .state import PlannerState, ToolCall
 # --- LLM-1 planner logic using LangChain and OpenRouter ---
 import os
 import json
+from pathlib import Path
 from langchain.chat_models import ChatOpenAI
 
 def _build_planner_prompt(state: PlannerState) -> str:
@@ -16,21 +17,19 @@ def _build_planner_prompt(state: PlannerState) -> str:
         "temperature_risk": "frost_or_heat_risk_assessment",
         "market_advice": "sell_or_hold_decision",
         "credit_policy_match": "ranked_credit_options",
-        "pesticide_advice": "pesticide_safe_recommendation"
+        "pesticide_advice": "pesticide_safe_recommendation",
     }
-    prompt = f"""
-You are the LLM-1 planner for a farm advisory system. Given a farmer's query and profile, output a JSON object with:
-- intent: one of {list(intent_templates.keys())}
-- decision_template: one of {list(intent_templates.values())}
-- missing: (optional) list of missing fields
-- tool_calls: array of {{tool, args}} to fetch facts needed for the decision
 
-Query: {state.query}
-Profile: {json.dumps(state.profile or {}, ensure_ascii=False)}
-
-Respond ONLY with a JSON object with keys: intent, decision_template, missing (optional), tool_calls.
-"""
-    return prompt
+    prompts_dir = Path(__file__).resolve().parent.parent / "prompts"
+    system_prompt = (prompts_dir / "system.txt").read_text()
+    instruction_template = (prompts_dir / "instruction.txt").read_text()
+    instruction = instruction_template.format(
+        intents=list(intent_templates.keys()),
+        templates=list(intent_templates.values()),
+        query=state.query,
+        profile=json.dumps(state.profile or {}, ensure_ascii=False),
+    )
+    return f"{system_prompt}\n\n{instruction}"
 
 def router_node(state: PlannerState) -> PlannerState:
     api_key = os.environ.get("OPENROUTER_API_KEY")
