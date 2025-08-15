@@ -1,10 +1,18 @@
 from .state import PlannerState, ToolCall
 
-# --- LLM-1 planner logic using LangChain and OpenRouter ---
 import os
 import json
 from pathlib import Path
-from langchain.chat_models import ChatOpenAI
+import google.generativeai as genai
+from dotenv import load_dotenv
+load_dotenv()
+
+# Configure Gemini once at import time
+api_key = os.environ.get("GEMINI_API_KEY")
+if not api_key:
+    raise RuntimeError("GEMINI_API_KEY environment variable not set.")
+genai.configure(api_key=api_key)
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 def _build_planner_prompt(state: PlannerState) -> str:
     """
@@ -32,19 +40,10 @@ def _build_planner_prompt(state: PlannerState) -> str:
     return f"{system_prompt}\n\n{instruction}"
 
 def router_node(state: PlannerState) -> PlannerState:
-    api_key = os.environ.get("OPENROUTER_API_KEY")
-    api_url = os.environ.get("OPENROUTER_API_URL")
-    llm = ChatOpenAI(
-        openai_api_key=api_key,
-        openai_api_base=api_url,
-        model="gpt-oss-20b",
-        temperature=0.0,
-    )
-
     prompt = _build_planner_prompt(state)
     try:
-        response = llm.predict(prompt)
-        plan = json.loads(response)
+        response = model.generate_content(prompt)
+        plan = json.loads(response.text)
         state.intent = plan.get("intent")
         state.decision_template = plan.get("decision_template")
         state.missing = plan.get("missing")

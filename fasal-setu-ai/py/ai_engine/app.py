@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
-from schemas.act_request import ActRequest
-from schemas.act_response import ActResponse
-from graph.state import PlannerState
-from graph.router import router_node
-from graph.tools_node import tools_node
+from py.ai_engine.schemas.act_request import ActRequest
+from py.ai_engine.schemas.act_response import ActResponse
+from py.ai_engine.graph.state import PlannerState
+from py.ai_engine.graph.router import router_node
+from py.ai_engine.graph.tools_node import tools_node
 
 app = FastAPI(title="AI Engine (LLM-1 + Tools)")
 

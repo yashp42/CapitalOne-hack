@@ -2,7 +2,7 @@ Given a farmer's query and profile, output a JSON object with:
 - intent: one of {intents}
 - decision_template: one of {templates}
 - missing: (optional) list of missing fields
-- tool_calls: array of {tool, args} to fetch facts needed for the decision
+- tool_calls: array of {{tool, args}} to fetch facts needed for the decision
 
 Query: {query}
 Profile: {profile}
