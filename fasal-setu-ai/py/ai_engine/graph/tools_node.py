@@ -1,33 +1,73 @@
+# NOTE: This file imports some tools from Jupyter notebooks (weather_api.ipynb, mandi_api.ipynb, rag_tool.ipynb).
+# To use these imports in a pure Python environment, you must install nbimporter and ensure the notebooks are in the correct location.
+# If running in Jupyter or with nbimporter, the tools will be available as modules. Otherwise, stub functions are used.
 
 
 
-from langchain.tools import Tool
+
+# Import notebook tools using nbimporter or direct notebook execution
+try:
+	import nbimporter
+except ImportError:
+	nbimporter = None
 
 from ..tools.dataset_lookup import calendar_lookup
-from ..tools.mandi_api import prices_fetch
 from ..tools.pesticide_lookup import pesticide_lookup
-from ...trash.rag_search import rag_search
 from ..tools.storage_find import storage_find
-from ..tools.weather_api import weather_outlook
 from .state import PlannerState, ToolCall
+
+# Import weather tool from notebook
+try:
+	if nbimporter:
+		from ..tools.weather_api import LC_TOOL as weather_outlook
+	else:
+		from ..tools.weather_api import LC_TOOL as weather_outlook
+except ImportError:
+	def weather_outlook(args):
+		return {"data": {}, "source_stamp": "weather_stub"}
+
+# Import mandi tool from notebook
+try:
+	if nbimporter:
+		from ..tools.mandi_api import prices_fetch
+	else:
+		from ..tools.mandi_api import prices_fetch
+except ImportError:
+	def prices_fetch(args):
+		return {"data": [], "source_stamp": "mandi_stub"}
+
+# Import rag tool from notebook
+try:
+	if nbimporter:
+		from ..tools.rag_tool import rag_search
+	else:
+		from ..tools.rag_tool import rag_search
+except ImportError:
+	def rag_search(args):
+		return {"data": [], "source_stamp": "rag_stub"}
 
 # Register tools with LangChain (contract tools only)
 TOOL_MAP = {
-	"weather_outlook": Tool.from_function(weather_outlook, name="weather_outlook", description="Get weather outlook for a location."),
-	"prices_fetch": Tool.from_function(prices_fetch, name="prices_fetch", description="Fetch mandi prices for a commodity."),
-	"calendar_lookup": Tool.from_function(calendar_lookup, name="calendar_lookup", description="Lookup crop calendar information."),
-	"pesticide_lookup": Tool.from_function(pesticide_lookup, name="pesticide_lookup", description="Lookup pesticide information."),
-	"storage_find": Tool.from_function(storage_find, name="storage_find", description="Find storage options."),
-	"rag_search": Tool.from_function(rag_search, name="rag_search", description="Retrieve relevant knowledge passages (RAG)."),
+	"weather_outlook": weather_outlook,
+	"prices_fetch": prices_fetch,
+	"calendar_lookup": calendar_lookup,
+	"pesticide_lookup": pesticide_lookup,
+	"storage_find": storage_find,
+	"rag_search": rag_search,
 }
 
 def tools_node(state: PlannerState) -> PlannerState:
-	# TODO: Replace stub with LangChain tool execution logic
-	# Iterate over pending_tool_calls and execute each tool using LangChain's tool registry
+	# Iterate over pending_tool_calls and execute each tool using TOOL_MAP
 	for call in state.pending_tool_calls:
 		tool = TOOL_MAP.get(call.tool)
 		if tool:
-			result = tool.run(call.args)
+			# Support both LangChain Tool/StructuredTool and plain function
+			if hasattr(tool, "invoke"):
+				result = tool.invoke(call.args)
+			elif hasattr(tool, "run"):
+				result = tool.run(call.args)
+			else:
+				result = tool(call.args)
 			state.facts[call.tool] = result
 		else:
 			state.facts[call.tool] = {"error": "Tool not found"}
