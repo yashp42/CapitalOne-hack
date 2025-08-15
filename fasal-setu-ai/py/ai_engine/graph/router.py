@@ -42,13 +42,29 @@ def _build_planner_prompt(state: PlannerState) -> str:
 def router_node(state: PlannerState) -> PlannerState:
     prompt = _build_planner_prompt(state)
     try:
+        print("[LLM-1 Planner] Calling Gemini LLM with prompt:\n", prompt)
         response = model.generate_content(prompt)
-        plan = json.loads(response.text)
-        state.intent = plan.get("intent")
-        state.decision_template = plan.get("decision_template")
+        print("[LLM-1 Planner] Gemini LLM response:", response.text)
+        # Remove Markdown code block formatting if present
+        resp_text = response.text.strip()
+        if resp_text.startswith('```'):
+            # Remove triple backticks and optional 'json' label
+            resp_text = resp_text.lstrip('`')
+            if resp_text.startswith('json'):
+                resp_text = resp_text[4:]
+            resp_text = resp_text.strip()
+            if resp_text.endswith('```'):
+                resp_text = resp_text[:-3].strip()
+        plan = json.loads(resp_text)
+        # Ensure intent and decision_template are always valid strings
+        state.intent = plan.get("intent") or "irrigation_decision"
+        state.decision_template = plan.get("decision_template") or "irrigation_now_or_wait"
         state.missing = plan.get("missing")
         state.pending_tool_calls = [ToolCall(**tc) for tc in plan.get("tool_calls", [])]
+        # Handle general_answer for general/greeting queries
+        state.general_answer = plan.get("general_answer")
     except Exception as e:
+        print("[LLM-1 Planner] Exception occurred:", e)
         # Fallback: hardcoded plan for demo or error
         state.intent = "irrigation_decision"
         state.decision_template = "irrigation_now_or_wait"

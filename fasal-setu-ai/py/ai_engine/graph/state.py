@@ -41,3 +41,4 @@ class PlannerState(BaseModel):
         tool_calls: List[ToolCall] = Field(default_factory=list)
         facts: Dict[str, Any] = Field(default_factory=dict)
         missing: Optional[List[str]] = None
+        general_answer: Optional[str] = None

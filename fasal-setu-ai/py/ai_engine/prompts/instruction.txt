@@ -1,10 +1,29 @@
+
 Given a farmer's query and profile, output a JSON object with:
 - intent: one of {intents}
 - decision_template: one of {templates}
 - missing: (optional) list of missing fields
 - tool_calls: array of {{tool, args}} to fetch facts needed for the decision
 
+
+If the query is a greeting (like "hi", "hello") or a general question not related to farm advice, respond with a field "general_answer" containing a conversational reply, and leave intent, decision_template, missing, and tool_calls as null or empty.
+
+For queries that require factual data (weather, crop calendar, mandi prices, etc.), always propose a tool call in the tool_calls array. Use the following tool names and argument formats:
+- For weather queries: use tool "weather_outlook" with args {{"lat": <latitude>, "lon": <longitude>}}.
+- For crop calendar queries: use tool "calendar_lookup" with args {{"state": <state>, "district": <district>, "crop": <crop>}}.
+- For retrieval-augmented answers: use tool "rag_search" with args {{"query": <query>}}.
+
+Examples:
+1. Query: "check weather at 22.3452, 87.3047 use open meteo"
+	Output: {{"intent": "irrigation_decision", "decision_template": "irrigation_now_or_wait", "missing": [], "tool_calls": [{{"tool": "weather_outlook", "args": {{"lat": 22.3452, "lon": 87.3047}}}}]}}
+
+2. Query: "show crop calendar for rice in Patna, Bihar"
+	Output: {{"intent": "variety_selection", "decision_template": "variety_ranked_list", "missing": [], "tool_calls": [{{"tool": "calendar_lookup", "args": {{"state": "Bihar", "district": "Patna", "crop": "rice"}}}}]}}
+
+3. Query: "What is the best practice for wheat irrigation?"
+	Output: {{"intent": "irrigation_decision", "decision_template": "irrigation_now_or_wait", "missing": [], "tool_calls": [{{"tool": "rag_search", "args": {{"query": "best practice for wheat irrigation"}}}}]}}
+
 Query: {query}
 Profile: {profile}
 
-Respond ONLY with a JSON object with keys: intent, decision_template, missing (optional), tool_calls.
+Respond ONLY with a JSON object with keys: intent, decision_template, missing (optional), tool_calls, and (if applicable) general_answer.

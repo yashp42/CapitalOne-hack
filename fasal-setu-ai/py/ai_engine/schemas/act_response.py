@@ -11,3 +11,4 @@ class ActResponse(BaseModel):
     missing: List[str] | None = None
     tool_calls: List[ToolCall] = Field(default_factory=list)
     facts: Dict[str, Any]
+    general_answer: str | None = None

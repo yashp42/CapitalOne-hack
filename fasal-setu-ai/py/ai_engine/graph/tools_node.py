@@ -19,15 +19,17 @@ from ..tools.soil_api import soil_api
 from ..tools.variety_lookup import variety_lookup
 from .state import PlannerState, ToolCall
 
+
 # Import weather tool from notebook
 try:
-	if nbimporter:
-		from ..tools.weather_api import LC_TOOL as weather_outlook
-	else:
-		from ..tools.weather_api import LC_TOOL as weather_outlook
+        if nbimporter:
+                from ..tools.weather_api import LC_TOOL
+        else:
+                from ..tools.weather_api import LC_TOOL
+        weather_lookup = LC_TOOL
 except ImportError:
-	def weather_outlook(args):
-		return {"data": {}, "source_stamp": "weather_stub"}
+        def weather_lookup(args):
+                return {"data": {}, "source_stamp": "weather_stub"}
 
 # Import mandi tool from notebook
 try:
@@ -39,16 +41,20 @@ except ImportError:
 	def prices_fetch(args):
 		return {"data": [], "source_stamp": "mandi_stub"}
 
-# Import rag tool from module (fallback to stub if unavailable)
+
+# Import rag tool from rag_tool notebook (or fallback to stub)
 try:
-        from ..tools.rag_search import rag_search
-except Exception:  # pragma: no cover - provide graceful fallback
+        if nbimporter:
+                from ..tools.rag_tool import rag_search
+        else:
+                from ..tools.rag_tool import rag_search
+except Exception:
         def rag_search(args):
                 return {"data": [], "source_stamp": "rag_stub"}
 
 # Register tools with LangChain (contract tools only)
 TOOL_MAP = {
-        "weather_outlook": weather_outlook,
+        "weather_lookup": weather_lookup,
         "prices_fetch": prices_fetch,
         "calendar_lookup": calendar_lookup,
         "variety_lookup": variety_lookup,

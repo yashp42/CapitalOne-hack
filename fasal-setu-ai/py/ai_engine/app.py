@@ -27,5 +27,6 @@ def act_endpoint(request: ActRequest):
         missing=state.missing,
         tool_calls=state.tool_calls,
         facts=state.facts,
+        general_answer=state.general_answer,
     )
     return response
