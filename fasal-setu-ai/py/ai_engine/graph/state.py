@@ -13,7 +13,6 @@ TOOL_NAMES = [
         "storage_find",
         "rag_search",
         "soil_api",
-        "variety_lookup",
 ]
 
 
@@ -27,7 +26,6 @@ class ToolCall(BaseModel):
                 "storage_find",
                 "rag_search",
                 "soil_api",
-                "variety_lookup",
         ]
         args: Dict[str, Any]
 

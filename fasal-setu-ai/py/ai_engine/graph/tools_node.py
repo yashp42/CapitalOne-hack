@@ -16,7 +16,6 @@ from ..tools.pesticide_lookup import pesticide_lookup
 from ..tools.storage_find import storage_find
 from ..tools.policy_match import policy_match
 from ..tools.soil_api import soil_api
-from ..tools.variety_lookup import variety_lookup
 from .state import PlannerState, ToolCall
 
 # Import weather tool from notebook
@@ -59,7 +58,6 @@ TOOL_MAP = {
         "storage_find": storage_find,
         "rag_search": rag_search,
         "soil_api": soil_api,
-        "variety_lookup": variety_lookup,
 }
 
 def tools_node(state: PlannerState) -> PlannerState:

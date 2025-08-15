@@ -21,9 +21,8 @@
 							"weather_outlook",
 							"prices_fetch",
 							"calendar_lookup",
-							"variety_lookup",
-							"policy_match",
-							"pesticide_lookup",
+                                                        "policy_match",
+                                                        "pesticide_lookup",
 							"storage_find",
                                                         "rag_search"
 						]
