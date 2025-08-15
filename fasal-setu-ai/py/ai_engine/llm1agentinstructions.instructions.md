@@ -32,7 +32,7 @@ py/ai_engine/
     mandi_api.py           # live mandi prices
     dataset_lookup.py      # local crop calendar/policy/etc lookup
     soil_api.py            # optional soil lookup
-    (add variety_lookup.py, policy_match.py, pesticide_lookup.py, storage_find.py as needed)
+    (add policy_match.py, pesticide_lookup.py, storage_find.py as needed)
 contracts/
   ai_engine.intent.json       # schema for planner output
   ai_engine.facts_bundle.json # schema for aggregated facts
@@ -73,7 +73,7 @@ Prices fetch (mandi_api.py): state, district, commodity, date range → price ro
 
 Dataset lookup (dataset_lookup.py): access data/static_json/ for crop calendars, pesticides, policy, soil, storage, etc.
 
-Add specialized wrappers (variety_lookup.py, policy_match.py, pesticide_lookup.py, storage_find.py, soil_api.py) that return structured data + source_stamp.
+Add specialized wrappers (policy_match.py, pesticide_lookup.py, storage_find.py, soil_api.py) that return structured data + source_stamp.
 
 Each tool exposes a callable returning {data, source_stamp}; validate inputs/output against a small schema.
 

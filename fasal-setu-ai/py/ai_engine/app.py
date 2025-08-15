@@ -15,8 +15,9 @@ def ping():
 
 @app.post("/act", response_model=ActResponse)
 def act_endpoint(request: ActRequest):
-    # Build initial planner state
-    state = PlannerState(query=request.query or "", profile=request.profile)
+    # Build initial planner state, respecting mode
+    profile = request.profile if request.mode != "public_advisor" else None
+    state = PlannerState(query=request.query or "", profile=profile)
     # Run planner LLM
     state = router_node(state)
     # Run tools
@@ -26,7 +27,7 @@ def act_endpoint(request: ActRequest):
         intent=state.intent,
         decision_template=state.decision_template,
         missing=state.missing,
-        tool_calls=[call for call in state.pending_tool_calls] if state.pending_tool_calls else None,
+        tool_calls=state.tool_calls,
         facts=state.facts,
     )
     return response
