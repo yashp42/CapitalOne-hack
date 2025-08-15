@@ -1,15 +1,39 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { FaBars, FaTimes, FaHome, FaRobot, FaSignInAlt, FaSignOutAlt, FaUser } from 'react-icons/fa';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout, authKey } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Handle scroll effect for navbar transparency
+  useEffect(() => {
+    const handleScroll = () => {
+      const isScrolled = window.scrollY > 10;
+      setScrolled(isScrolled);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Close sidebar when route changes
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location]);
 
   // Debug logging
   console.log('Navbar render - User:', user, 'isAuthenticated:', isAuthenticated, 'authKey:', authKey);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -36,78 +60,195 @@ const Navbar = () => {
     }
   };
 
-  return (
-    <motion.nav 
-      className="bg-primary text-white p-4"
-      initial={{ y: -100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="container mx-auto flex justify-between items-center">
-        <motion.div 
-          className="text-xl font-bold"
-          whileHover={{ scale: 1.05 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          <Link to="/">FasalSetu.ai</Link>
-        </motion.div>
-        
-        <div className="flex items-center space-x-6">
-          <ul className="flex space-x-6">
-            <motion.li whileHover={{ scale: 1.1 }} transition={{ type: "spring", stiffness: 300 }}>
-              <Link to="/" className="hover:text-secondary-200 transition-colors">
-                Home
-              </Link>
-            </motion.li>
-            <motion.li whileHover={{ scale: 1.1 }} transition={{ type: "spring", stiffness: 300 }}>
-              <Link to="/chatbot" className="hover:text-secondary-200 transition-colors">
-                Chatbot
-              </Link>
-            </motion.li>
-          </ul>
+  const navItems = [
+    { to: '/', label: 'Home', icon: FaHome },
+    { to: '/chatbot', label: 'Chatbot', icon: FaRobot },
+  ];
 
-          {/* Authentication Section */}
-          <div className="flex items-center space-x-4">
-            {isAuthenticated && user ? (
-              <>
-                {/* User Info */}
-                <motion.div 
-                  className="text-sm"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <span className="text-secondary-200">Welcome, </span>
-                  <span className="font-medium">{user.firstName}</span>
-                </motion.div>
-                
-                {/* Logout Button */}
-                <motion.button
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
-                  className="bg-secondary-500 hover:bg-secondary-600 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+  return (
+    <>
+      {/* Floating Navbar */}
+      <motion.nav 
+        className="fixed top-4 left-4 right-4 z-40 rounded-2xl bg-primary-600/50 backdrop-blur-sm shadow-lg border border-primary-500"
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      >
+        <div className="px-4 sm:px-6 py-3">
+          <div className="flex justify-between items-center">
+            {/* Logo */}
+            <motion.div 
+              className="flex items-center"
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <Link 
+                to="/" 
+                className="text-lg sm:text-xl font-bold text-white hover:text-primary-200 transition-colors"
+              >
+                FasalSetu.ai
+              </Link>
+            </motion.div>
+            
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-6">
+              {navItems.map((item) => (
+                <motion.div
+                  key={item.to}
                   whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                   transition={{ type: "spring", stiffness: 300 }}
                 >
-                  {isLoggingOut ? 'Logging out...' : 'Logout'}
-                </motion.button>
-              </>
-            ) : (
-              /* Login Button */
-              <motion.div whileHover={{ scale: 1.1 }} transition={{ type: "spring", stiffness: 300 }}>
-                <Link 
-                  to="/login" 
-                  className="bg-secondary-500 hover:bg-secondary-600 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Login
-                </Link>
-              </motion.div>
-            )}
+                  <Link 
+                    to={item.to}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      location.pathname === item.to
+                        ? 'bg-primary-700 text-white border border-primary-500'
+                        : 'text-primary-100 hover:text-white hover:bg-primary-700'
+                    }`}
+                  >
+                    <item.icon className="text-xs" />
+                    <span>{item.label}</span>
+                  </Link>
+                </motion.div>
+              ))}
+              
+              {/* Desktop Auth Section */}
+              <div className="flex items-center space-x-3 ml-4 pl-4 border-l border-primary-400">
+                {isAuthenticated && user ? (
+                  <>
+                    <div className="flex items-center space-x-2 text-sm text-primary-100">
+                      <FaUser className="text-xs text-primary-200" />
+                      <span className="hidden lg:inline">{user.firstName}</span>
+                    </div>
+                    <motion.button
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <FaSignOutAlt className="text-xs" />
+                      <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+                    </motion.button>
+                  </>
+                ) : (
+                  <motion.div whileHover={{ scale: 1.05 }}>
+                    <Link 
+                      to="/login" 
+                      className="flex items-center space-x-2 bg-secondary-500 hover:bg-secondary-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+                    >
+                      <FaSignInAlt className="text-xs" />
+                      <span>Login</span>
+                    </Link>
+                  </motion.div>
+                )}
+              </div>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <motion.button
+              onClick={toggleSidebar}
+              className="md:hidden p-2 rounded-lg text-primary-100 hover:text-white hover:bg-primary-700 transition-all duration-200"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {isSidebarOpen ? (
+                <FaTimes className="text-lg" />
+              ) : (
+                <FaBars className="text-lg" />
+              )}
+            </motion.button>
           </div>
         </div>
-      </div>
-    </motion.nav>
+      </motion.nav>
+
+      {/* Mobile Sidebar */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              className="fixed inset-0 bg-black/20 z-30 md:hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={toggleSidebar}
+            />
+            
+            {/* Sidebar */}
+            <motion.div
+              className="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-primary-600 border-l border-primary-500 shadow-2xl z-40 md:hidden"
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            >
+              <div className="p-6">
+                {/* Sidebar Header */}
+                <div className="flex justify-between items-center mb-8">
+                  <h3 className="text-xl font-bold text-white">Menu</h3>
+                  <button
+                    onClick={toggleSidebar}
+                    className="p-2 rounded-lg text-primary-200 hover:text-white hover:bg-primary-700 transition-all duration-200"
+                  >
+                    <FaTimes className="text-lg" />
+                  </button>
+                </div>
+
+                {/* Navigation Items */}
+                <div className="space-y-3 mb-8">
+                  {navItems.map((item) => (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 ${
+                        location.pathname === item.to
+                          ? 'bg-primary-700 text-white border border-primary-500'
+                          : 'text-primary-100 hover:text-white hover:bg-primary-700'
+                      }`}
+                    >
+                      <item.icon className="text-lg" />
+                      <span>{item.label}</span>
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Mobile Auth Section */}
+                <div className="border-t border-primary-500 pt-6">
+                  {isAuthenticated && user ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-3 px-4 py-3 bg-primary-700 rounded-xl">
+                        <FaUser className="text-primary-200" />
+                        <div>
+                          <p className="text-sm font-medium text-white">Welcome back!</p>
+                          <p className="text-xs text-primary-200">{user.firstName}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleLogout}
+                        disabled={isLoggingOut}
+                        className="w-full flex items-center justify-center space-x-3 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-xl font-medium transition-all duration-200 disabled:opacity-50"
+                      >
+                        <FaSignOutAlt />
+                        <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <Link 
+                      to="/login" 
+                      className="w-full flex items-center justify-center space-x-3 bg-secondary-500 hover:bg-secondary-600 text-white px-4 py-3 rounded-xl font-medium transition-all duration-200"
+                    >
+                      <FaSignInAlt />
+                      <span>Login</span>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
