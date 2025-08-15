@@ -7,8 +7,8 @@
 		"weather": { "type": ["object", "null"], "description": "Weather tool output, if called." },
 		"prices": { "type": ["object", "null"], "description": "Prices tool output, if called." },
 		"calendar": { "type": ["object", "null"], "description": "Calendar tool output, if called." },
-		"varieties": { "type": ["object", "null"], "description": "Variety tool output, if called." },
-		"policy": { "type": ["object", "null"], "description": "Policy tool output, if called." },
+                "soil": { "type": ["object", "null"], "description": "Soil tool output, if called." },
+                "policy": { "type": ["object", "null"], "description": "Policy tool output, if called." },
 		"pesticide": { "type": ["object", "null"], "description": "Pesticide tool output, if called." },
 		"storage": { "type": ["object", "null"], "description": "Storage tool output, if called." },
                 "rag": { "type": ["object", "null"], "description": "General RAG search output, if called." }

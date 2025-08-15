@@ -2,7 +2,7 @@ import pathlib
 import sys
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2] / "py"))
-from ai_engine.tools import build_index as bi
+import ai_engine.tools.build_index as bi
 
 
 def test_load_and_upsert_tags(tmp_path, monkeypatch):

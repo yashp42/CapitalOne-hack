@@ -1,14 +1,29 @@
 
+"""Calendar lookup tool.
+
+This stub reads crop calendar information from local JSON files. In a
+full implementation, this module would call an external calendar API
+endpoint to fetch up-to-date recommendations.
+
+TODO:
+    * Replace local file access with remote API calls.
+    * Validate arguments and handle API errors gracefully.
+"""
+
 import json
 import os
 from typing import Any, Dict
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), '../../..', 'data', 'static_json', 'crop_calendar')
 
+
 def calendar_lookup(args: Dict[str, Any]) -> Dict[str, Any]:
-	"""
-	Args should include at least: state, district, crop
-	"""
+        """Return crop calendar data for the given location.
+
+        Args should include at least: ``state``, ``district`` and ``crop``.
+
+        TODO: Wire this function to the real calendar lookup endpoint.
+        """
 	state = args.get('state')
 	district = args.get('district')
 	crop = args.get('crop')

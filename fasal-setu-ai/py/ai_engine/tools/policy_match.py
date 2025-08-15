@@ -4,6 +4,10 @@ This module provides a stub for matching farmer profiles against
 available credit or subsidy policies. The real implementation should
 call an external policy matching service.
 
+Endpoint notes:
+    The final implementation is expected to interact with a dedicated
+    policy matching API endpoint.
+
 TODO:
     * Integrate with the actual policy matching endpoint.
     * Define argument and response schemas.
