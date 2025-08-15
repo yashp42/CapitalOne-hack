@@ -60,11 +60,21 @@ const Navbar = () => {
     }
   };
 
-  const navItems = [
+  // Basic nav items for all users
+  const publicNavItems = [
     { to: '/', label: 'Home', icon: FaHome },
     { to: '/chatbot', label: 'Chatbot', icon: FaRobot },
-    { to: '/crop-simulation', label: 'Crop Sim', icon: FaSeedling },
   ];
+  
+  // Additional nav items for authenticated users
+  const privateNavItems = [
+    { to: '/my-crops', label: 'My Crops', icon: FaSeedling },
+  ];
+  
+  // Combine nav items based on authentication status
+  const navItems = isAuthenticated ? 
+    [...publicNavItems, ...privateNavItems] :
+    publicNavItems;
 
   return (
     <>

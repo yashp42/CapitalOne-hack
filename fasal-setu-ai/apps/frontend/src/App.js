@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Chatbot from './pages/Chatbot';
 import CropSimulation from './pages/CropSimulation';
+import MyCrops from './pages/MyCrops';
 
 function AppContent() {
   const location = useLocation();
@@ -20,6 +21,7 @@ function AppContent() {
         <Route path="/login" element={<Login />} />
         <Route path="/chatbot" element={<Chatbot />} />
         <Route path="/crop-simulation" element={<CropSimulation />} />
+        <Route path="/my-crops" element={<MyCrops />} />
       </Routes>
     </div>
   );
