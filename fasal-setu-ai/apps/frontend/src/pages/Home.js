@@ -10,6 +10,7 @@ import {
   FaEnvelope, 
   FaMapMarkerAlt
 } from 'react-icons/fa';
+import FloatingChatButton from '../components/FloatingChatButton';
 
 const Home = () => {
   const [mounted, setMounted] = useState(false);
@@ -605,6 +606,9 @@ const Home = () => {
           <p className="text-gray-400 text-sm sm:text-base">Built for Capital One Hackathon 2025</p>
         </div>
       </footer>
+
+      {/* Floating Chat Button */}
+      <FloatingChatButton />
     </div>
   );
 };

@@ -1,73 +1,47 @@
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
-// Cookie utility functions
-const getCookie = (name) => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(';').shift();
-  return null;
-};
-
-const debugCookies = () => {
-  console.log('All cookies:', document.cookie);
-  console.log('Access token cookie:', getCookie('accessToken'));
-  console.log('Refresh token cookie:', getCookie('refreshToken'));
-};
-
-// Token management - primarily relies on httpOnly cookies from backend
+// Simple token management using localStorage
 const tokenManager = {
-  // Check if user has access token cookie (for authentication status)
+  // Get access token
+  getAccessToken: () => {
+    return localStorage.getItem('accessToken');
+  },
+  
+  // Get refresh token
+  getRefreshToken: () => {
+    return localStorage.getItem('refreshToken');
+  },
+  
+  // Set tokens
+  setTokens: (accessToken, refreshToken) => {
+    if (accessToken) {
+      localStorage.setItem('accessToken', accessToken);
+      console.log('Access token saved to localStorage');
+    }
+    if (refreshToken) {
+      localStorage.setItem('refreshToken', refreshToken);
+      console.log('Refresh token saved to localStorage');
+    }
+  },
+  
+  // Check if user has access token
   hasAccessToken: () => {
-    const hasToken = !!getCookie('accessToken');
-    console.log('Checking access token:', hasToken);
-    debugCookies();
-    return hasToken;
+    const token = tokenManager.getAccessToken();
+    console.log('Checking access token:', !!token);
+    return !!token;
   },
   
-  // For fallback - store tokens in memory only (not localStorage for security)
-  _memoryTokens: {
-    accessToken: null,
-    refreshToken: null
+  // Check if user is authenticated
+  isAuthenticated: () => {
+    return tokenManager.hasAccessToken();
   },
   
-  setMemoryTokens: (accessToken, refreshToken) => {
-    tokenManager._memoryTokens.accessToken = accessToken;
-    tokenManager._memoryTokens.refreshToken = refreshToken;
-  },
-  
-  getMemoryAccessToken: () => tokenManager._memoryTokens.accessToken,
-  
+  // Clear all tokens
   clearTokens: () => {
     console.log('Clearing tokens...');
-    
-    // Clear memory tokens
-    tokenManager._memoryTokens.accessToken = null;
-    tokenManager._memoryTokens.refreshToken = null;
-    console.log('Memory tokens cleared');
-    
-    // Clear cookies with multiple possible configurations
-    const cookieConfigs = [
-      // Default
-      'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/',
-      'refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/',
-      // With SameSite
-      'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict',
-      'refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict',
-      // With domain
-      'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=localhost',
-      'refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=localhost',
-    ];
-    
-    cookieConfigs.forEach(config => {
-      document.cookie = config;
-    });
-    
-    console.log('Cookies cleared with multiple configurations');
-    
-    // Debug: check if cookies are actually cleared
-    setTimeout(() => {
-      debugCookies();
-    }, 100);
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    console.log('Tokens cleared from localStorage');
   }
 };
 
@@ -81,7 +55,7 @@ const apiRequest = async (endpoint, options = {}) => {
         'Content-Type': 'application/json',
         ...options.headers,
       },
-      credentials: 'include', // Always include cookies for httpOnly tokens
+      credentials: 'include', // Include cookies for server-side handling
       ...options,
     };
 
@@ -107,12 +81,12 @@ const apiRequest = async (endpoint, options = {}) => {
         if (refreshResponse.ok) {
           const refreshData = await refreshResponse.json();
           
-          // Store memory tokens for immediate use if needed
-          if (refreshData.data.accessToken && refreshData.data.refreshToken) {
-            tokenManager.setMemoryTokens(refreshData.data.accessToken, refreshData.data.refreshToken);
+          // Update cookies with new tokens
+          if (refreshData.data && refreshData.data.accessToken) {
+            tokenManager.setTokens(refreshData.data.accessToken, refreshData.data.refreshToken);
           }
           
-          // Retry original request (new cookies should be set automatically)
+          // Retry original request
           response = await makeRequest();
         } else {
           // Refresh failed, clear tokens and redirect to login
@@ -161,9 +135,11 @@ export const authAPI = {
       body: JSON.stringify(userData),
     });
     
-    // Store memory tokens if provided (cookies are set automatically by backend)
-    if (response.success && response.data.accessToken) {
-      tokenManager.setMemoryTokens(response.data.accessToken, response.data.refreshToken);
+    // Store tokens from response and cookies
+    if (response.success && response.data) {
+      if (response.data.accessToken) {
+        tokenManager.setTokens(response.data.accessToken, response.data.refreshToken);
+      }
     }
     
     return response;
@@ -176,9 +152,11 @@ export const authAPI = {
       body: JSON.stringify({ firebaseUid }),
     });
     
-    // Store memory tokens if provided (cookies are set automatically by backend)
-    if (response.success && response.data.accessToken) {
-      tokenManager.setMemoryTokens(response.data.accessToken, response.data.refreshToken);
+    // Store tokens from response and cookies
+    if (response.success && response.data) {
+      if (response.data.accessToken) {
+        tokenManager.setTokens(response.data.accessToken, response.data.refreshToken);
+      }
     }
     
     return response;
@@ -227,5 +205,5 @@ export const authAPI = {
   }
 };
 
-export { tokenManager, debugCookies };
+export { tokenManager };
 export default apiRequest;

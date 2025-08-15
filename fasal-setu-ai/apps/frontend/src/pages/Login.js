@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { FaShieldAlt, FaCheck, FaSpinner } from 'react-icons/fa';
+import FloatingChatButton from '../components/FloatingChatButton';
 
 const Login = () => {
   const [isSignup, setIsSignup] = useState(false);
@@ -230,12 +231,12 @@ const Login = () => {
       />
       
       {/* Bright Overlay for better readability */}
-      <div className="absolute inset-0 z-0 bg-black/60" />
+      <div className="absolute inset-0 z-0 bg-black/70" />
       
       {/* Additional subtle patterns */}
       <div className="absolute inset-0 z-0">
         {/* Gradient overlays for depth */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-100/10 via-transparent to-secondary-100/20" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-100/10 via-transparent to-secondary-100/10" />
         
         {/* Subtle dot pattern */}
         <div className="absolute inset-0 opacity-10">
@@ -283,7 +284,7 @@ const Login = () => {
           {/* Main Form Card */}
           <motion.div 
             variants={itemVariants}
-            className="bg-gray-400/30 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/30 p-6 sm:p-8 mb-6 backdrop-saturate-150"
+            className="bg-gray-400/20 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/30 p-6 sm:p-8 mb-6 backdrop-saturate-150"
             style={{
               backdropFilter: 'blur(20px) saturate(150%)',
               borderColor: 'rgba(255, 255, 255, 0.3)',
@@ -550,6 +551,9 @@ const Login = () => {
           </motion.div>
         </motion.div>
       </div>
+
+      {/* Floating Chat Button */}
+      <FloatingChatButton />
     </div>
   );
 };

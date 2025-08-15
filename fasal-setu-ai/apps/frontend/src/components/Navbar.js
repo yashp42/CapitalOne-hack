@@ -69,7 +69,7 @@ const Navbar = () => {
     <>
       {/* Floating Navbar */}
       <motion.nav 
-        className="fixed top-4 left-4 right-4 z-40 rounded-2xl bg-primary-600/50 backdrop-blur-sm shadow-lg border border-primary-500"
+        className="fixed top-4 left-4 right-4 z-40 rounded-2xl bg-primary-600/60 backdrop-blur-sm shadow-lg border border-primary-500"
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}

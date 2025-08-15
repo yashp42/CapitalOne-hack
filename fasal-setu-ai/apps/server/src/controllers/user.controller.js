@@ -71,9 +71,10 @@ export const signup = asyncErrorHandler(async (req, res) => {
   };
 
   const options = {
-    httpOnly: true,
+    httpOnly: false, // Changed to false to allow JavaScript access
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict'
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   };
 
   res
@@ -119,9 +120,10 @@ export const login = asyncErrorHandler(async (req, res) => {
   };
 
   const options = {
-    httpOnly: true,
+    httpOnly: false, // Changed to false to allow JavaScript access
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict'
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   };
 
   res
@@ -215,9 +217,10 @@ export const refreshAccessToken = asyncErrorHandler(async (req, res) => {
     const { accessToken, refreshToken: newRefreshToken } = await user.generateTokens();
 
     const options = {
-      httpOnly: true,
+      httpOnly: false, // Changed to false to allow JavaScript access
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict'
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     };
 
     res
@@ -250,7 +253,7 @@ export const logout = asyncErrorHandler(async (req, res) => {
   );
 
   const options = {
-    httpOnly: true,
+    httpOnly: false, // Changed to false to allow JavaScript access
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict'
   };

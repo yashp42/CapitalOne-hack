@@ -52,12 +52,23 @@ const setupRecaptcha = () => {
   // Check if user is authenticated on app load
   const checkAuthStatus = async () => {
     try {
-      // Check if we have access token cookie
+      console.log('Checking auth status...');
+      
+      // Check if we have access token in cookies
       if (authAPI.isAuthenticated()) {
+        console.log('Found access token, fetching user data...');
         const userData = await authAPI.getCurrentUser();
         if (userData && userData.data) {
+          console.log('User data retrieved:', userData.data);
           setUser(userData.data);
+        } else {
+          console.log('No user data found, clearing tokens');
+          tokenManager.clearTokens();
+          setUser(null);
         }
+      } else {
+        console.log('No access token found');
+        setUser(null);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
