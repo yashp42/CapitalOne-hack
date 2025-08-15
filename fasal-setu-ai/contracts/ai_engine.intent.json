@@ -20,13 +20,15 @@
 						"enum": [
 							"weather_outlook",
 							"prices_fetch",
-							"calendar_lookup",
+                                                        "calendar_lookup",
+                                                        "variety_lookup",
                                                         "policy_match",
                                                         "pesticide_lookup",
-							"storage_find",
-                                                        "rag_search"
-						]
-					},
+                                                        "storage_find",
+                                                        "rag_search",
+                                                        "soil_api"
+                                                ]
+                                        },
 					"args": { "type": "object" }
 				},
 				"required": ["tool", "args"]

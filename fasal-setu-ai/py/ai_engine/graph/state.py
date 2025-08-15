@@ -5,14 +5,15 @@ from pydantic import BaseModel, Field
 
 # Standardized tool names for LangChain (contract tools only)
 TOOL_NAMES = [
-        "weather_outlook",
-        "prices_fetch",
-        "calendar_lookup",
-        "policy_match",
-        "pesticide_lookup",
-        "storage_find",
-        "rag_search",
-        "soil_api",
+                "weather_outlook",
+                "prices_fetch",
+                "calendar_lookup",
+                "variety_lookup",
+                "policy_match",
+                "pesticide_lookup",
+                "storage_find",
+                "rag_search",
+                "soil_api",
 ]
 
 
@@ -21,6 +22,7 @@ class ToolCall(BaseModel):
                 "weather_outlook",
                 "prices_fetch",
                 "calendar_lookup",
+                "variety_lookup",
                 "policy_match",
                 "pesticide_lookup",
                 "storage_find",

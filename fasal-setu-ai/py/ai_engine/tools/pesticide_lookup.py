@@ -1,13 +1,29 @@
 
+"""Pesticide lookup tool.
+
+This module reads pesticide recommendations from local JSON files. A
+production version should query an external pesticide information API
+endpoint.
+
+TODO:
+    * Integrate with the real pesticide data service.
+    * Expand filtering and validation logic.
+"""
+
 import json
 import os
 from typing import Any, Dict
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), '../../..', 'data', 'static_json', 'pesticides')
 
+
 def pesticide_lookup(args: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Args should include at least: crop, target (optional: active_ingredient, etc.)
+    """Return pesticide advice for a crop.
+
+    Args should include at least ``crop`` and optionally ``target``
+    (e.g. pest or disease).
+
+    TODO: Replace file-based lookup with external API call.
     """
     crop = args.get('crop')
     target = args.get('target')

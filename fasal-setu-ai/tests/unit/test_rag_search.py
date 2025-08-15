@@ -2,7 +2,7 @@ import pathlib
 import sys
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2] / "py"))
-from ai_engine.tools import rag_search as rs
+import ai_engine.tools.rag_search as rs
 
 
 def test_rag_search_builds_filter(monkeypatch):

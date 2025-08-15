@@ -4,6 +4,9 @@ This module exposes a stub that simulates soil information retrieval.
 In production, this should call an external API that returns soil
 properties for a given location.
 
+Endpoint notes:
+    Designed to interface with a soil data provider API.
+
 TODO:
     * Connect to the real soil data endpoint.
     * Validate request arguments and response structure.
