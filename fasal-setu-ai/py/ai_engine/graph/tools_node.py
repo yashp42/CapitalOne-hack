@@ -14,6 +14,9 @@ except ImportError:
 from ..tools.dataset_lookup import calendar_lookup
 from ..tools.pesticide_lookup import pesticide_lookup
 from ..tools.storage_find import storage_find
+from ..tools.policy_match import policy_match
+from ..tools.soil_api import soil_api
+from ..tools.variety_lookup import variety_lookup
 from .state import PlannerState, ToolCall
 
 # Import weather tool from notebook
@@ -48,28 +51,33 @@ except ImportError:
 
 # Register tools with LangChain (contract tools only)
 TOOL_MAP = {
-	"weather_outlook": weather_outlook,
-	"prices_fetch": prices_fetch,
-	"calendar_lookup": calendar_lookup,
-	"pesticide_lookup": pesticide_lookup,
-	"storage_find": storage_find,
-	"rag_search": rag_search,
+        "weather_outlook": weather_outlook,
+        "prices_fetch": prices_fetch,
+        "calendar_lookup": calendar_lookup,
+        "policy_match": policy_match,
+        "pesticide_lookup": pesticide_lookup,
+        "storage_find": storage_find,
+        "rag_search": rag_search,
+        "soil_api": soil_api,
+        "variety_lookup": variety_lookup,
 }
 
 def tools_node(state: PlannerState) -> PlannerState:
-	# Iterate over pending_tool_calls and execute each tool using TOOL_MAP
-	for call in state.pending_tool_calls:
-		tool = TOOL_MAP.get(call.tool)
-		if tool:
-			# Support both LangChain Tool/StructuredTool and plain function
-			if hasattr(tool, "invoke"):
-				result = tool.invoke(call.args)
-			elif hasattr(tool, "run"):
-				result = tool.run(call.args)
-			else:
-				result = tool(call.args)
-			state.facts[call.tool] = result
-		else:
-			state.facts[call.tool] = {"error": "Tool not found"}
-	state.pending_tool_calls = []  # Clear after execution
-	return state
+        executed_calls = list(state.pending_tool_calls)
+        # Iterate over pending_tool_calls and execute each tool using TOOL_MAP
+        for call in executed_calls:
+                tool = TOOL_MAP.get(call.tool)
+                if tool:
+                        # Support both LangChain Tool/StructuredTool and plain function
+                        if hasattr(tool, "invoke"):
+                                result = tool.invoke(call.args)
+                        elif hasattr(tool, "run"):
+                                result = tool.run(call.args)
+                        else:
+                                result = tool(call.args)
+                        state.facts[call.tool] = result
+                else:
+                        state.facts[call.tool] = {"error": "Tool not found"}
+        state.tool_calls.extend(executed_calls)
+        state.pending_tool_calls = []  # Clear after execution
+        return state
