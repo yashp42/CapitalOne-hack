@@ -11,7 +11,8 @@
                 "policy": { "type": ["object", "null"], "description": "Policy tool output, if called." },
 		"pesticide": { "type": ["object", "null"], "description": "Pesticide tool output, if called." },
 		"storage": { "type": ["object", "null"], "description": "Storage tool output, if called." },
-                "rag": { "type": ["object", "null"], "description": "General RAG search output, if called." }
+                "rag": { "type": ["object", "null"], "description": "General RAG search output, if called." },
+                "web": { "type": ["object", "null"], "description": "Web search output, if called." }
 	},
 	"additionalProperties": true
 }

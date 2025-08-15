@@ -1,4 +1,3 @@
-
 from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
@@ -14,6 +13,7 @@ TOOL_NAMES = [
                 "storage_find",
                 "rag_search",
                 "soil_api",
+                "web_search",
 ]
 
 
@@ -28,6 +28,7 @@ class ToolCall(BaseModel):
                 "storage_find",
                 "rag_search",
                 "soil_api",
+                "web_search",
         ]
         args: Dict[str, Any]
 
