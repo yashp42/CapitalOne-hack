@@ -107,3 +107,24 @@ Ensure each tool can run standalone via simple functions (server will call them 
 Keep prompts, schemas, and tool implementations modular to allow server validation and retries.
 
 Deliverable: a fully functioning py/ai_engine service that, given a farmer query (and optional profile), returns an ActResponse with intent, decision template, missing fields, proposed tool calls, and a normalized facts bundle ready for the server’s Decision Engine.
+
+
+Here’s an updated summary of what’s been accomplished so far, to append to your project instructions:
+
+Progress Update (as of August 2025):
+
+RAG Tool:
+
+All RAG logic (chunking, embedding, upserting, searching) is now implemented in rag_tool.ipynb.
+Uses Pinecone’s hosted embedding API and supports both .txt and .json files from ragdata.
+Exposes a rag_search function (LangChain-tool compatible) that returns passages as {text, source_stamp, score, id}.
+Supports MMR reranking for diverse/relevant passage retrieval.
+No RAG logic remains in rag_search.py, embed_utils.py, or build_index.py—these are now obsolete or empty.
+Next Steps:
+
+Wire up LangChain tools in the main FastAPI service (app.py), using the notebook’s rag_search as the RAG tool.
+Implement and register other tools (weather, mandi, dataset lookup, etc.) following the same callable contract: {data, source_stamp}.
+Ensure all tools validate inputs/outputs against their schemas.
+Complete the planner graph and endpoint as per the original instructions.
+Note:
+All RAG-related development and maintenance should now be done in the notebook. The rest of the pipeline (tool wiring, schemas, planner graph, endpoint) proceeds as described in the mission context.
