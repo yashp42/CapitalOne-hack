@@ -2,23 +2,119 @@ Given a farmer's query and profile, output a STRICT JSON object with:
 - intent: one of {intents}
 - decision_template: one of {templates}
 - missing: []            // array of field names required to proceed
-- tool_calls: array of {{ "tool": <one of {tools}>, "args": {{ ... }} }}
+- tool_calls: array of {{"tool": <one of {tools}>, "args": {{"key": "value"}} }}
 - (optional) general_answer: string   // only for greetings/smalltalk
 
-Planner policy and chaining examples:
+Common Agricultural Queries and Response Patterns:
 
-1. For Weather Queries:
+1. For Irrigation Decisions:
+   When you get: "When should I irrigate my rice field?"
+   You should:
+   a) Get weather data: geocode_tool → weather_outlook (next 3-5 days)
+   b) Get soil data: soil_api with coordinates
+   c) Check recommendations: rag_search for crop-specific irrigation needs
+   d) web_search: "rice field irrigation timing rain forecast"
+   Intent: irrigation_decision
+   Template: irrigation_now_or_wait
+
+2. For Variety Selection:
+   When you get: "Which wheat variety is best for my region?"
+   You should:
+   a) Get location data: geocode_tool with state/district
+   b) Check weather patterns: weather_outlook (longer forecast)
+   c) calendar_lookup for regional varieties
+   d) rag_search for local success stories
+   e) web_search: "wheat varieties [state] [district] climate resilient"
+   Intent: "variety_selection"
+   Template: "variety_ranked_list"
+
+3. For Temperature Risk:
+   When you get: "Will cold weather affect my crops next week?"
+   You should:
+   a) Get precise location: geocode_tool
+   b) Get detailed forecast: weather_outlook with 7 days
+   c) rag_search for crop temperature thresholds
+   d) web_search: "crop frost protection measures [crop] [temperature]"
+   Intent: temperature_risk
+   Template: frost_or_heat_risk_assessment
+Available Intents and Templates:
+- Intents: {intents}
+- Templates: {templates}
+- Tools: {tools}
+
+Your task: For the query below, output a STRICT JSON object with:
+{{
+    "intent": "...",             // one of the intents above
+    "decision_template": "...",  // matching template from above
+    "missing": [],              // array of required fields if any missing
+    "tool_calls": [             // array of tool calls needed
+        {{
+            "tool": "tool_name",
+            "args": {{...}}
+        }}
+    ],
+    "general_answer": "..."    // optional, only for greetings
+}}
+
+Example Patterns:
+
+1. For Weather & Risk Queries:
    When you get: "weather in bengaluru karnataka"
    You should:
    a) First call geocode_tool: {{"state": "Karnataka", "district": "Bengaluru"}}
    b) From result, use coordinates in weather_outlook: {{"lat": <result.lat>, "lon": <result.lon>}}
 
-2. For Market Queries:
-   When you get: "tomato prices in bengaluru"
+2. For Crop Advisory:
+   When you get: "when to plant rice"
    You should:
-   a) Call prices_fetch: {{"state": "Karnataka", "district": "Bengaluru", "commodity": "tomato"}}
-   b) Then storage_find if needed
-   c) Finally rag_search for analysis
+   a) calendar_lookup with state/district
+   b) weather_outlook for current conditions
+   c) rag_search for best practices
+
+3. For Policy & Credit Queries:
+   When you get: "what schemes are available for drip irrigation"
+   You should:
+   a) policy_match with filters from query/profile:
+      {{"category": "scheme", "keywords": "drip irrigation", "issue": "irrigation infrastructure"}}
+   b) Add state/district from profile
+   c) rag_search for additional context
+
+   When you get: "loan for small farmer"
+   You should:
+   a) policy_match: {{"category": "credit", "flags": ["smallholder"]}}
+   b) Add state/district from profile
+   c) Use crop from profile in search if available
+
+4. For Market Decisions:
+   When you get: "Should I sell my tomatoes now or wait?"
+   You should:
+   a) Get current prices: prices_fetch for state/district
+   b) Check storage options: storage_find for nearby facilities
+   c) Get price trends: rag_search for seasonal patterns
+   d) web_search: "tomato price trend forecast [state] [month]"
+   Intent: market_advice
+   Template: sell_or_hold_decision
+
+5. For Credit & Policy:
+   When you get: "Need loan for drip irrigation system"
+   You should:
+   a) Check schemes: policy_match with filters:
+      {{"category": "credit", "issue": "irrigation", "flags": ["kcc"]}}
+   b) Check subsidies: policy_match with:
+      {{"category": "subsidy", "keywords": "drip irrigation"}}
+   c) web_search: "agricultural loans drip irrigation schemes [state]"
+   Intent: credit_policy_match
+   Template: ranked_credit_options
+
+6. For Pest Management:
+   When you get: "How to control aphids in cotton?"
+   You should:
+   a) Get safe options: pesticide_lookup with {"crop": "cotton", "pest": "aphids"}
+   b) Check conditions: weather_outlook for spray timing
+   c) rag_search for IPM practices
+   d) web_search: "organic aphid control cotton natural remedies"
+   Intent: pesticide_advice
+   Template: pesticide_safe_recommendation
 
 3. For Temperature Risk:
    When you get: "heat risk for my rice crop"
@@ -70,9 +166,20 @@ Available Tools and Their Capabilities:
    Input: {{"crop": "<crop>", "pest": "<pest>", "stage": "<stage>"}}
    Output: Recommendations with dosage
 
-   policy_match: Find matching policies
-   Input: {{"state": "<state>"}}
-   Output: Available schemes
+   policy_match: Search for government schemes and credit options
+   Input: {
+     "state": "<state>",              // optional, filter by state
+     "district": "<district>",        // optional, filter by district
+     "category": "<category>",        // credit|subsidy|insurance|scheme|support
+     "issue": "<problem>",            // farmer's problem/need in text
+     "keywords": "<terms>",           // or specific search terms
+     "agency": "<name>",              // filter by implementing agency
+     "crop": "<name>",               // filter by crop
+     "flags": ["<flag>"],            // smallholder|women|sc_st|fpo|tenant|kcc
+     "min_amount": 0,                // filter by minimum amount
+     "max_interest": 0               // filter by max interest rate
+   }
+   Output: Matching schemes and policies ranked by relevance score with eligibility and benefits
 
 4. Knowledge Tools:
    soil_api: Get soil properties
@@ -87,11 +194,12 @@ Available Tools and Their Capabilities:
    Input: {{"query": "detailed search phrase"}}
    Output: Web results
 
-Chain these tools as needed. For example:
-1. Weather: geocode_tool → weather_outlook
-2. Market: prices_fetch → storage_find → rag_search
-3. Crop: calendar_lookup → weather_outlook → rag_search
-- web_search: {{"query": "<search string>"}}
+Chain these tools as needed. Examples:
+1. Weather Chain: geocode_tool → weather_outlook
+2. Market Chain: prices_fetch → storage_find → rag_search
+3. Crop Chain: calendar_lookup → weather_outlook → rag_search
+4. Policy Chain: policy_match → rag_search
+5. Combined Chain: geocode_tool → weather_outlook + calendar_lookup → rag_search
 
 Query: {query}
 Mode: {mode}

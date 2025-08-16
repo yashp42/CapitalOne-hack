@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PolicyMatchResponse",
+  "description": "Result envelope for the policy_match tool. Includes data items, provenance, normalized filters, and meta.",
+  "type": "object",
+  "$defs": {
+    "PolicyRecord": {
+      "type": "object",
+      "description": "One policy/scheme row normalized from CSV/XLSX.",
+      "properties": {
+        "record_id": { "type": ["string", "integer"], "description": "Stable id if present, else row index." },
+        "scheme": { "type": ["string", "null"] },
+        "category": { "type": ["string", "null"], "description": "credit | subsidy | insurance | scheme | support | others" },
+        "agency": { "type": ["string", "null"] },
+        "state": { "type": ["string", "null"] },
+        "district": { "type": ["string", "null"] },
+        "description": { "type": ["string", "null"] },
+        "eligibility": { "type": ["string", "null"] },
+        "benefit": { "type": ["string", "null"] },
+        "amount": { "type": ["number", "string", "null"] },
+        "max_amount": { "type": ["number", "string", "null"] },
+        "interest_rate": { "type": ["number", "string", "null"] },
+        "crops": { "type": ["string", "null"] },
+        "link": { "type": ["string", "null"] },
+        "status": { "type": ["string", "null"] },
+        "as_on_date": { "type": ["string", "null"], "description": "YYYY-MM-DD" },
+        "last_checked": { "type": ["string", "null"], "description": "YYYY-MM-DD" },
+        "sources": { "type": ["array", "null"], "items": { "type": "string" } },
+        "source_file": { "type": ["string", "null"] },
+        "match_score": { "type": ["number", "null"] },
+        "match_reasons": { "type": ["array", "null"], "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "PolicyMatchArgs": {
+      "type": "object",
+      "description": "Filter arguments accepted by the policy_match tool.",
+      "properties": {
+        "state": { "type": ["string", "null"] },
+        "district": { "type": ["string", "null"] },
+        "category": { "type": ["string", "null"], "description": "credit | subsidy | insurance | scheme | support" },
+        "issue": { "type": ["string", "null"], "description": "Farmer issue/problem e.g. 'post-harvest storage', 'warehouse receipt loan', 'drought relief'." },
+        "keywords": { "type": ["string", "null"], "description": "Free-text; use ';' or ',' to separate." },
+        "agency": { "type": ["string", "null"] },
+        "crop": { "type": ["string", "null"] },
+        "smallholder": { "type": ["boolean", "null"] },
+        "women": { "type": ["boolean", "null"] },
+        "sc_st": { "type": ["boolean", "null"] },
+        "fpo": { "type": ["boolean", "null"] },
+        "tenant": { "type": ["boolean", "null"] },
+        "kcc": { "type": ["boolean", "null"] },
+        "min_amount": { "type": ["number", "null"] },
+        "max_interest": { "type": ["number", "null"] },
+        "limit": { "type": ["integer", "null"], "default": 10 },
+        "query": { "type": ["string", "null"], "description": "Alternate free-text, same as keywords; planner may set either." }
+      },
+      "additionalProperties": false
+    },
+    "PolicyMatchData": {
+      "type": "object",
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/$defs/PolicyRecord" } },
+        "count": { "type": "integer" }
+      },
+      "required": ["items", "count"],
+      "additionalProperties": false
+    },
+    "SourceStamp": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["static_pack"] },
+        "path": { "type": "string" },
+        "files": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["type", "path"],
+      "additionalProperties": true
+    },
+    "Matched": {
+      "type": "object",
+      "properties": {
+        "filters": { "$ref": "#/$defs/PolicyMatchArgs" }
+      },
+      "required": ["filters"],
+      "additionalProperties": false
+    },
+    "Meta": {
+      "type": "object",
+      "properties": {
+        "route": { "type": "string", "description": "local_scan" },
+        "sort": { "type": "string", "description": "score(desc)->date(desc)" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "properties": {
+    "data": { "$ref": "#/$defs/PolicyMatchData" },
+    "source_stamp": { "$ref": "#/$defs/SourceStamp" },
+    "matched": { "$ref": "#/$defs/Matched" },
+    "_meta": { "$ref": "#/$defs/Meta" },
+    "error": { "type": ["string", "null"] }
+  },
+  "required": ["data", "source_stamp", "matched", "_meta"],
+  "additionalProperties": true
+}
