@@ -249,12 +249,84 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-yellow-50 pt-24 pb-8">
-        <div className="container mx-auto px-4 flex items-center justify-center">
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-8">
-            <div className="animate-pulse space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-48"></div>
-              <div className="h-4 bg-gray-200 rounded w-32"></div>
+      <div className="min-h-screen bg-gradient-to-br from-secondary-200/60 via-white to-secondary-700/30 pt-24 pb-8">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="space-y-6">
+            {/* Header Skeleton */}
+            <div className="text-center">
+              <div className="h-10 bg-gray-200 rounded-lg w-64 mx-auto mb-2 animate-pulse"></div>
+              <div className="h-5 bg-gray-200 rounded w-96 mx-auto animate-pulse"></div>
+            </div>
+
+            {/* Profile Dashboard Skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Profile Overview Card Skeleton - Second on mobile, first on desktop */}
+              <div className="lg:col-span-2 order-2 lg:order-1 bg-primary/20 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/50 p-6">
+                <div className="flex justify-between items-start mb-6">
+                  <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
+                  <div className="h-10 bg-gray-200 rounded-xl w-32 animate-pulse"></div>
+                </div>
+
+                {/* Profile Info Grid Skeleton */}
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Profile Info Items */}
+                    {[1, 2, 3, 4, 5].map((item) => (
+                      <div key={item} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">
+                        <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse"></div>
+                        <div className="flex-1">
+                          <div className="h-4 bg-gray-200 rounded w-20 mb-2 animate-pulse"></div>
+                          <div className="h-5 bg-gray-200 rounded w-32 animate-pulse"></div>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* Additional item for member since */}
+                    <div className="md:col-span-2 flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">
+                      <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse"></div>
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-200 rounded w-24 mb-2 animate-pulse"></div>
+                        <div className="h-5 bg-gray-200 rounded w-40 animate-pulse"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Profile Stats Sidebar Skeleton - First on mobile, second on desktop */}
+              <div className="order-1 lg:order-2 space-y-6">
+                {/* Profile Picture Card Skeleton */}
+                <div className="bg-primary/20 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/50 p-6 text-center">
+                  <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 animate-pulse"></div>
+                  <div className="h-6 bg-gray-200 rounded w-32 mx-auto mb-2 animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 rounded w-16 mx-auto animate-pulse"></div>
+                </div>
+
+                {/* Quick Stats Skeleton */}
+                <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/50 p-6">
+                  <div className="h-6 bg-gray-200 rounded w-28 mb-4 animate-pulse"></div>
+                  <div className="space-y-4">
+                    {[1, 2, 3, 4].map((stat) => (
+                      <div key={stat} className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
+                          <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                        </div>
+                        <div className="h-5 bg-gray-200 rounded w-8 animate-pulse"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick Actions Skeleton */}
+                <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/50 p-6">
+                  <div className="h-6 bg-gray-200 rounded w-28 mb-4 animate-pulse"></div>
+                  <div className="space-y-3">
+                    <div className="w-full h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                    <div className="w-full h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -584,7 +656,7 @@ const Profile = () => {
                     </div>
                     <span className="font-semibold text-gray-800">
                       {statsLoading ? (
-                        <div className="w-6 h-4 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="w-8 h-5 bg-gray-200 rounded animate-pulse"></div>
                       ) : (
                         cropStats ? cropStats.totalCrops || 0 : 0
                       )}
@@ -598,7 +670,7 @@ const Profile = () => {
                     </div>
                     <span className="font-semibold text-gray-800">
                       {statsLoading ? (
-                        <div className="w-6 h-4 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="w-8 h-5 bg-gray-200 rounded animate-pulse"></div>
                       ) : (
                         cropStats ? cropStats.activeCrops || 0 : 0
                       )}

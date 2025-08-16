@@ -5,7 +5,8 @@
   "version": "0.1.0",
   "main": "src/index.js",
   "scripts": {
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "start": "node server.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

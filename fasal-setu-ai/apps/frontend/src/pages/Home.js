@@ -20,11 +20,18 @@ const Home = () => {
   const taglineLanguages = [
     { text: "Your Intelligent Farming Companion", lang: "English" },
     { text: "आपका बुद्धिमान कृषि साथी", lang: "Hindi" },
+    { text: "উৎপাদনে আপনার বুদ্ধিমত্তার সাথী", lang: "Bengali" },
     { text: "உங்கள் அறிவார்ந்த விவசாய துணை", lang: "Tamil" },
+    { text: "మీ తెలివైన వ్యవసాయ సహచరుడు", lang: "Telugu" },
     { text: "आपले हुशार शेती साथी", lang: "Marathi" },
     { text: "ನಿಮ್ಮ ಬುದ್ಧಿವಂತ ಕೃಷಿ ಸಹಚರ", lang: "Kannada" },
+    { text: "നിങ്ങളുടെ ബുദ്ധിമാനായ കൃഷി സഹചാരി", lang: "Malayalam" },
     { text: "તમારા બુદ્ધિશાળી ખેતી સાથી", lang: "Gujarati" },
-    { text: "ਤੁਹਾਡਾ ਬੁੱਧੀਮਾਨ ਖੇਤੀ ਸਾਥੀ", lang: "Punjabi" }
+    { text: "ਤੁਹਾਡਾ ਬੁੱਧੀਮਾਨ ਖੇਤੀ ਸਾਥੀ", lang: "Punjabi" },
+    { text: "ଆପଣଙ୍କର ବୁଦ୍ଧିମାନ କୃଷି ସାଥୀ", lang: "Odia" },
+    { text: "আপোনাৰ বুদ্ধিমান কৃষি সাথী", lang: "Assamese" },
+    { text: "آپ کا ذہین زراعتی ساتھی", lang: "Urdu" },
+    { text: "भवतः बुद्धिमान् कृषि सहायकः", lang: "Sanskrit" }
   ];
 
   useEffect(() => {
@@ -328,12 +335,13 @@ const Home = () => {
                   </span>
                 </motion.button>
               </Link>
-              
-              <motion.button
-                whileHover={{ 
-                  scale: 1.05, 
-                  y: -2,
-                  boxShadow: "0 20px 40px rgba(197, 174, 139, 0.4)"
+
+              <Link to="/my-farm" className="w-full xs:w-auto max-w-xs sm:max-w-none">
+                <motion.button
+                  whileHover={{ 
+                    scale: 1.05, 
+                    y: -2,
+                    boxShadow: "0 20px 40px rgba(197, 174, 139, 0.4)"
                 }}
                 whileTap={{ scale: 0.95 }}
                 className="group relative w-full xs:w-auto max-w-xs sm:max-w-none px-3 xs:px-4 sm:px-6 md:px-8 py-2.5 xs:py-3 sm:py-3.5 bg-gradient-to-r from-secondary-600 to-secondary-500 text-white rounded-xl xs:rounded-2xl text-xs xs:text-sm sm:text-base font-semibold overflow-hidden transition-all duration-300"
@@ -343,6 +351,7 @@ const Home = () => {
                   <FaSeedling className="text-xs xs:text-sm sm:text-base" /> Crop Simulator
                 </span>
               </motion.button>
+              </Link>
             </motion.div>
 
             {/* Scroll Indicator */}
