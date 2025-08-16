@@ -117,68 +117,113 @@ const MyFarm = () => {
     
     // Crop-specific growth timelines (in days)
     const cropTimelines = {
-      // Cereals
-      'rice': { seedling: 15, vegetative: 45, tillering: 75, flowering: 105, grain_filling: 135 },
-      'wheat': { seedling: 12, vegetative: 35, tillering: 65, flowering: 95, grain_filling: 125 },
-      'maize': { seedling: 10, vegetative: 30, tillering: 50, flowering: 70, grain_filling: 100 },
-      'barley': { seedling: 12, vegetative: 35, tillering: 65, flowering: 90, grain_filling: 120 },
-      'sorghum': { seedling: 8, vegetative: 25, tillering: 45, flowering: 75, grain_filling: 105 },
-      'pearl_millet': { seedling: 7, vegetative: 20, tillering: 35, flowering: 55, grain_filling: 75 },
-      'finger_millet': { seedling: 10, vegetative: 30, tillering: 50, flowering: 70, grain_filling: 100 },
-      
-      // Pulses
-      'chickpea': { seedling: 15, vegetative: 35, tillering: 65, flowering: 85, grain_filling: 110 },
-      'pigeon_pea': { seedling: 12, vegetative: 40, tillering: 80, flowering: 120, grain_filling: 160 },
-      'black_gram': { seedling: 8, vegetative: 20, tillering: 35, flowering: 50, grain_filling: 70 },
-      'green_gram': { seedling: 8, vegetative: 20, tillering: 35, flowering: 50, grain_filling: 70 },
-      'lentil': { seedling: 12, vegetative: 30, tillering: 55, flowering: 75, grain_filling: 100 },
-      'field_pea': { seedling: 10, vegetative: 25, tillering: 45, flowering: 65, grain_filling: 85 },
-      
-      // Oilseeds
-      'groundnut': { seedling: 10, vegetative: 25, tillering: 45, flowering: 65, grain_filling: 95 },
-      'soybean': { seedling: 10, vegetative: 25, tillering: 45, flowering: 65, grain_filling: 95 },
-      'mustard': { seedling: 8, vegetative: 20, tillering: 40, flowering: 60, grain_filling: 85 },
-      'sunflower': { seedling: 10, vegetative: 25, tillering: 45, flowering: 65, grain_filling: 90 },
-      'sesame': { seedling: 8, vegetative: 20, tillering: 35, flowering: 55, grain_filling: 80 },
-      'safflower': { seedling: 12, vegetative: 30, tillering: 55, flowering: 80, grain_filling: 110 },
-      
-      // Cash Crops
-      'cotton': { seedling: 15, vegetative: 45, tillering: 85, flowering: 115, grain_filling: 145 },
-      'sugarcane': { seedling: 20, vegetative: 60, tillering: 120, flowering: 240, grain_filling: 300 },
-      'jute': { seedling: 10, vegetative: 30, tillering: 60, flowering: 90, grain_filling: 120 },
-      'tobacco': { seedling: 15, vegetative: 35, tillering: 55, flowering: 75, grain_filling: 100 },
-      
-      // Vegetables
-      'potato': { seedling: 10, vegetative: 25, tillering: 45, flowering: 65, grain_filling: 85 },
-      'onion': { seedling: 15, vegetative: 40, tillering: 70, flowering: 100, grain_filling: 130 },
-      'tomato': { seedling: 15, vegetative: 35, tillering: 55, flowering: 75, grain_filling: 105 },
-      'cabbage': { seedling: 12, vegetative: 30, tillering: 50, flowering: 70, grain_filling: 90 },
-      'cauliflower': { seedling: 12, vegetative: 30, tillering: 50, flowering: 70, grain_filling: 90 },
-      'eggplant': { seedling: 15, vegetative: 35, tillering: 55, flowering: 80, grain_filling: 110 },
-      'okra': { seedling: 8, vegetative: 20, tillering: 35, flowering: 50, grain_filling: 70 },
-      'carrot': { seedling: 10, vegetative: 25, tillering: 45, flowering: 65, grain_filling: 85 },
-      'chili': { seedling: 15, vegetative: 35, tillering: 55, flowering: 80, grain_filling: 110 },
-      
-      // Spices
-      'turmeric': { seedling: 20, vegetative: 60, tillering: 120, flowering: 180, grain_filling: 240 },
-      'ginger': { seedling: 20, vegetative: 50, tillering: 100, flowering: 150, grain_filling: 200 },
-      'garlic': { seedling: 15, vegetative: 40, tillering: 70, flowering: 100, grain_filling: 130 },
-      'coriander': { seedling: 8, vegetative: 20, tillering: 35, flowering: 50, grain_filling: 70 },
-      'cumin': { seedling: 10, vegetative: 25, tillering: 45, flowering: 65, grain_filling: 90 },
-      'fennel': { seedling: 12, vegetative: 30, tillering: 55, flowering: 80, grain_filling: 110 },
-      
-      // Fodder Crops
-      'alfalfa': { seedling: 10, vegetative: 25, tillering: 40, flowering: 60, grain_filling: 80 },
-      'berseem': { seedling: 8, vegetative: 20, tillering: 35, flowering: 50, grain_filling: 70 },
-      'oat_fodder': { seedling: 8, vegetative: 20, tillering: 35, flowering: 50, grain_filling: 70 },
-      'maize_fodder': { seedling: 8, vegetative: 20, tillering: 35, flowering: 50, grain_filling: 70 },
-      
-      'default': { seedling: 12, vegetative: 35, tillering: 65, flowering: 95, grain_filling: 125 }
+      // ——— Cereals ———
+      rice:           { germination: 5, seedling: 15, vegetative: 45, tillering: 70, flowering: 95,  grain_filling: 115, maturity: 130 },
+      wheat:          { germination: 4, seedling: 12, vegetative: 35, tillering: 65, flowering: 95,  grain_filling: 115, maturity: 130 },
+      maize:          { germination: 3, seedling: 10, vegetative: 30, tillering: 50, flowering: 75,  grain_filling:  90, maturity: 100 },
+      barley:         { germination: 4, seedling: 12, vegetative: 35, tillering: 60, flowering: 90,  grain_filling: 110, maturity: 120 },
+      sorghum:        { germination: 3, seedling: 10, vegetative: 30, tillering: 55, flowering: 80,  grain_filling:  95, maturity: 110 },  
+      pearl_millet:   { germination: 3, seedling:  8, vegetative: 22, tillering: 40, flowering: 60,  grain_filling:  70, maturity:  80 },
+      finger_millet:  { germination: 3, seedling: 10, vegetative: 30, tillering: 55, flowering: 80,  grain_filling:  95, maturity: 110 },
+      foxtail_millet: { germination: 3, seedling:  8, vegetative: 22, tillering: 42, flowering: 62,  grain_filling:  75, maturity:  85 },
+      oats:           { germination: 4, seedling: 12, vegetative: 35, tillering: 60, flowering: 85,  grain_filling:  95, maturity: 100 },
+
+      // ——— Pulses ———
+      chickpea:       { germination: 5, seedling: 15, vegetative: 40, tillering: 70, flowering: 90,  grain_filling: 100, maturity: 110 },
+      pigeon_pea:     { germination: 4, seedling: 12, vegetative: 45, tillering: 85, flowering: 120, grain_filling: 145, maturity: 160 },
+      black_gram:     { germination: 3, seedling:  9, vegetative: 24, tillering: 45, flowering: 62,  grain_filling:  72, maturity:  80 },
+      green_gram:     { germination: 3, seedling:  8, vegetative: 22, tillering: 40, flowering: 58,  grain_filling:  68, maturity:  75 },
+      lentil:         { germination: 4, seedling: 12, vegetative: 35, tillering: 65, flowering: 90,  grain_filling: 110, maturity: 120 },
+      field_pea:      { germination: 3, seedling: 10, vegetative: 30, tillering: 55, flowering: 80,  grain_filling: 100, maturity: 110 },
+      kidney_bean:    { germination: 4, seedling: 12, vegetative: 35, tillering: 60, flowering: 90,  grain_filling: 110, maturity: 120 },
+      cowpea:         { germination: 3, seedling: 10, vegetative: 28, tillering: 50, flowering: 75,  grain_filling:  85, maturity:  95 },
+      black_eyed_pea: { germination: 3, seedling: 10, vegetative: 28, tillering: 50, flowering: 75,  grain_filling:  85, maturity:  95 },
+      horse_gram:     { germination: 4, seedling: 12, vegetative: 32, tillering: 58, flowering: 80,  grain_filling:  95, maturity: 105 },
+
+      // ——— Oilseeds ———
+      groundnut:      { germination: 3, seedling: 10, vegetative: 28, tillering: 50, flowering: 75,  grain_filling:  95, maturity: 110 },
+      soybean:        { germination: 3, seedling: 10, vegetative: 28, tillering: 50, flowering: 75,  grain_filling:  90, maturity: 100 },
+      mustard:        { germination: 5, seedling: 15, vegetative: 45, tillering: 80, flowering: 110, grain_filling: 125, maturity: 135 },
+      sunflower:      { germination: 3, seedling: 10, vegetative: 28, tillering: 50, flowering: 72,  grain_filling:  85, maturity:  95 },
+      sesame:         { germination: 3, seedling:  9, vegetative: 24, tillering: 45, flowering: 65,  grain_filling:  80, maturity:  90 },
+      safflower:      { germination: 4, seedling: 12, vegetative: 35, tillering: 70, flowering: 95,  grain_filling: 115, maturity: 130 },
+      castor:         { germination: 4, seedling: 12, vegetative: 40, tillering: 80, flowering: 115, grain_filling: 135, maturity: 150 },
+      niger:          { germination: 3, seedling: 10, vegetative: 28, tillering: 50, flowering: 75,  grain_filling:  90, maturity: 100 },
+      linseed:        { germination: 4, seedling: 12, vegetative: 40, tillering: 75, flowering: 105, grain_filling: 120, maturity: 135 },
+
+      // ——— Fibre / cash ———
+      cotton:         { germination: 5, seedling: 15, vegetative: 55, tillering: 95, flowering: 130, grain_filling: 150, maturity: 165 },
+      jute:           { germination: 3, seedling: 10, vegetative: 30, tillering: 60, flowering: 90,  grain_filling: 105, maturity: 120 },
+      tobacco:        { germination: 5, seedling: 15, vegetative: 35, tillering: 60, flowering: 85,  grain_filling: 105, maturity: 120 },
+
+      // ——— Vegetables ———
+      potato:         { germination: 3, seedling: 10, vegetative: 30, tillering: 50, flowering: 70,  grain_filling:  80, maturity:  90 },
+      onion:          { germination: 5, seedling: 15, vegetative: 45, tillering: 75, flowering: 100, grain_filling: 120, maturity: 130 },
+      tomato:         { germination: 5, seedling: 15, vegetative: 40, tillering: 60, flowering: 85,  grain_filling:  95, maturity: 105 },
+      cabbage:        { germination: 4, seedling: 12, vegetative: 35, tillering: 55, flowering: 75,  grain_filling:  85, maturity:  90 },
+      cauliflower:    { germination: 4, seedling: 12, vegetative: 35, tillering: 55, flowering: 75,  grain_filling:  85, maturity:  90 },
+      eggplant:       { germination: 4, seedling: 12, vegetative: 35, tillering: 60, flowering: 85,  grain_filling:  95, maturity: 110 },
+      okra:           { germination: 3, seedling:  8, vegetative: 22, tillering: 38, flowering: 52,  grain_filling:  60, maturity:  65 },
+      carrot:         { germination: 3, seedling: 10, vegetative: 28, tillering: 50, flowering: 72,  grain_filling:  85, maturity:  95 },
+      radish:         { germination: 2, seedling:  6, vegetative: 14, tillering: 24, flowering: 35,  grain_filling:  40, maturity:  45 },
+      turnip:         { germination: 3, seedling:  8, vegetative: 18, tillering: 32, flowering: 46,  grain_filling:  55, maturity:  60 },
+      beetroot:       { germination: 3, seedling: 10, vegetative: 28, tillering: 50, flowering: 70,  grain_filling:  80, maturity:  90 },
+      spinach:        { germination: 3, seedling:  8, vegetative: 20, tillering: 30, flowering: 35,  grain_filling:  38, maturity:  40 },
+      fenugreek:      { germination: 3, seedling:  8, vegetative: 20, tillering: 30, flowering: 35,  grain_filling:  38, maturity:  40 },
+      fenugreek_seed: { germination: 5, seedling: 15, vegetative: 45, tillering: 80, flowering: 115, grain_filling: 135, maturity: 145 },
+      coriander:      { germination: 3, seedling:  8, vegetative: 20, tillering: 30, flowering: 35,  grain_filling:  38, maturity:  40 },
+      coriander_seed: { germination: 3, seedling: 10, vegetative: 30, tillering: 55, flowering: 80,  grain_filling:  90, maturity: 100 },
+      chili:          { germination: 5, seedling: 15, vegetative: 45, tillering: 70, flowering: 95,  grain_filling: 110, maturity: 120 },
+
+      // Cucurbits
+      cucumber:       { germination: 3, seedling:  8, vegetative: 18, tillering: 32, flowering: 48,  grain_filling:  58, maturity:  65 },
+      bottle_gourd:   { germination: 3, seedling: 10, vegetative: 25, tillering: 45, flowering: 65,  grain_filling:  80, maturity:  90 },
+      bitter_gourd:   { germination: 3, seedling: 10, vegetative: 25, tillering: 48, flowering: 70,  grain_filling:  85, maturity:  95 },
+      ridge_gourd:    { germination: 3, seedling:  9, vegetative: 24, tillering: 45, flowering: 65,  grain_filling:  78, maturity:  85 },
+      sponge_gourd:   { germination: 3, seedling:  9, vegetative: 24, tillering: 45, flowering: 64,  grain_filling:  72, maturity:  80 },
+      pumpkin:        { germination: 4, seedling: 12, vegetative: 30, tillering: 55, flowering: 85,  grain_filling: 105, maturity: 120 },
+      watermelon:     { germination: 3, seedling: 10, vegetative: 22, tillering: 40, flowering: 60,  grain_filling:  75, maturity:  90 },
+      muskmelon:      { germination: 3, seedling: 10, vegetative: 22, tillering: 40, flowering: 60,  grain_filling:  75, maturity:  85 },
+
+      // ——— Spices / condiments ———
+      turmeric:       { germination: 7, seedling: 20, vegetative: 80, tillering: 140, flowering: 205, grain_filling: 250, maturity: 270 },
+      ginger:         { germination: 7, seedling: 20, vegetative: 70, tillering: 120, flowering: 180, grain_filling: 220, maturity: 240 },
+      garlic:         { germination: 5, seedling: 15, vegetative: 45, tillering: 80, flowering: 115, grain_filling: 135, maturity: 150 },
+      cumin:          { germination: 4, seedling: 12, vegetative: 35, tillering: 65, flowering: 90,  grain_filling: 100, maturity: 110 },
+      fennel:         { germination: 7, seedling: 20, vegetative: 70, tillering: 120, flowering: 170, grain_filling: 190, maturity: 210 },
+      ajwain:         { germination: 4, seedling: 12, vegetative: 40, tillering: 80, flowering: 110, grain_filling: 125, maturity: 140 },
+      cardamom:       { germination: 30, seedling: 120, vegetative: 540, tillering: 900, flowering: 1020, grain_filling: 1080, maturity: 1095 },
+      black_pepper:   { germination: 30, seedling: 120, vegetative: 540, tillering: 900, flowering: 1020, grain_filling: 1080, maturity: 1095 },
+      clove:          { germination: 90, seedling: 365, vegetative: 1095, tillering: 1825, flowering: 2000, grain_filling: 2100, maturity: 2190 },
+      cinnamon:       { germination: 60, seedling: 180, vegetative: 730, tillering: 1095, flowering: 1315, grain_filling: 1400, maturity: 1460 },
+
+      // ——— Fruits (first harvest from new planting) ———
+      mango:          { germination: 60, seedling: 180, vegetative: 730, tillering: 1095, flowering: 1315, grain_filling: 1410, maturity: 1460 },
+      banana:         { germination: 10, seedling: 30,  vegetative: 120, tillering: 200, flowering: 260,  grain_filling: 290,  maturity: 300 },
+      orange:         { germination: 60, seedling: 180, vegetative: 730, tillering: 1095, flowering: 1315, grain_filling: 1410, maturity: 1460 },
+      apple:          { germination: 60, seedling: 180, vegetative: 730, tillering: 1095, flowering: 1315, grain_filling: 1410, maturity: 1460 },
+      grapes:         { germination: 30, seedling: 90,  vegetative: 365, tillering: 540, flowering: 620,  grain_filling: 700,  maturity: 730 },
+      pomegranate:    { germination: 30, seedling: 90,  vegetative: 365, tillering: 540, flowering: 620,  grain_filling: 700,  maturity: 730 },
+      papaya:         { germination: 10, seedling: 30,  vegetative: 120, tillering: 200, flowering: 260,  grain_filling: 290,  maturity: 300 },
+      guava:          { germination: 30, seedling: 120, vegetative: 540, tillering: 640, flowering: 680,  grain_filling: 710,  maturity: 730 },
+      lemon:          { germination: 60, seedling: 180, vegetative: 730, tillering: 1095, flowering: 1315, grain_filling: 1410, maturity: 1460 },
+      lime:           { germination: 60, seedling: 180, vegetative: 730, tillering: 1095, flowering: 1315, grain_filling: 1410, maturity: 1460 },
+
+      // ——— Fodder (first cut reference) ———
+      alfalfa:        { germination: 3, seedling: 10, vegetative: 25, tillering: 40, flowering: 55,  grain_filling:  58, maturity:  60 },
+      berseem:        { germination: 3, seedling:  8, vegetative: 20, tillering: 32, flowering: 45,  grain_filling:  52, maturity:  55 },
+      oat_fodder:     { germination: 3, seedling:  8, vegetative: 22, tillering: 38, flowering: 55,  grain_filling:  65, maturity:  70 },
+      maize_fodder:   { germination: 3, seedling:  8, vegetative: 22, tillering: 35, flowering: 50,  grain_filling:  55, maturity:  60 },
+      sorghum_fodder: { germination: 3, seedling:  8, vegetative: 22, tillering: 35, flowering: 48,  grain_filling:  55, maturity:  60 },
+      cowpea_fodder:  { germination: 3, seedling:  8, vegetative: 22, tillering: 35, flowering: 50,  grain_filling:  55, maturity:  60 },
+
+      // Fallback
+      default:        { germination: 4, seedling: 12, vegetative: 35, tillering: 65, flowering: 95,  grain_filling: 115, maturity: 125 }
     };
     
     const timeline = cropTimelines[cropType.toLowerCase()] || cropTimelines.default;
     
-    if (daysDifference <= 7) return 'germination';
+    if (daysDifference <= timeline.germination) return 'germination';
     if (daysDifference <= timeline.seedling) return 'seedling';
     if (daysDifference <= timeline.vegetative) return 'vegetative';
     if (daysDifference <= timeline.tillering) return 'tillering';
@@ -263,6 +308,12 @@ const MyFarm = () => {
 
   const handleAddCrop = () => {
     setIsAddModalOpen(true);
+  };
+
+  // Navigate to crop simulation page
+  const handleCropClick = (crop) => {
+    const growthPercent = crop.growth_percent || 0;
+    navigate(`/crop-simulation/${crop._id}?growth=${growthPercent}`);
   };
 
   const handleSubmit = async (e) => {
@@ -718,13 +769,17 @@ const MyFarm = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-gradient-to-br from-white/90 to-primary-50/40 backdrop-blur-sm rounded-2xl shadow-sm border border-primary-200/30 overflow-hidden hover:shadow-lg hover:from-white/95 hover:to-primary-50/60 transition-all duration-300"
+                className="bg-gradient-to-br from-white/90 to-primary-50/40 backdrop-blur-sm rounded-2xl shadow-sm border border-primary-200/30 overflow-hidden hover:shadow-lg hover:from-white/95 hover:to-primary-50/60 hover:scale-105 transition-all duration-300 cursor-pointer group"
+                onClick={() => handleCropClick(crop)}
               >
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-800 mb-1 capitalize">{crop.crop_name}</h3>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-gray-800 mb-1 capitalize group-hover:text-primary-700 transition-colors">{crop.crop_name}</h3>
                       <p className="text-sm text-gray-500">{crop.variety}</p>
+                      <p className="text-xs text-primary-600 opacity-0 group-hover:opacity-100 transition-opacity mt-1">
+                        Click to view simulation →
+                      </p>
                     </div>
                     <div className="flex flex-col items-end space-y-2">
                       <span className={`text-xs font-medium px-3 py-1 rounded-full ${getStageColor(crop.derived?.stage || 'sowing')}`}>
@@ -770,14 +825,20 @@ const MyFarm = () => {
                     </div>
                     <div className="flex space-x-2">
                       <button 
-                        onClick={() => handleEditCrop(crop)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditCrop(crop);
+                        }}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         title="Edit crop"
                       >
                         <FaEdit className="text-sm" />
                       </button>
                       <button 
-                        onClick={() => setDeleteConfirmId(crop._id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteConfirmId(crop._id);
+                        }}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Delete crop"
                       >
@@ -849,12 +910,13 @@ const MyFarm = () => {
                     <optgroup label="Pulses">
                       <option value="chickpea">Chickpea</option>
                       <option value="pigeon_pea">Pigeon Pea</option>
-                      <option value="black_gram">Black Gram</option>
-                      <option value="green_gram">Green Gram</option>
+                      <option value="black_gram">Black Gram (Urad)</option>
+                      <option value="green_gram">Green Gram (Moong)</option>
                       <option value="lentil">Lentil</option>
                       <option value="field_pea">Field Pea</option>
+                      <option value="kidney_bean">Kidney Bean (Rajma)</option>
+                      <option value="cowpea">Cowpea</option>
                       <option value="black_eyed_pea">Black Eyed Pea</option>
-                      <option value="kidney_bean">Kidney Bean</option>
                       <option value="horse_gram">Horse Gram</option>
                     </optgroup>
 
@@ -871,16 +933,11 @@ const MyFarm = () => {
                       <option value="linseed">Linseed</option>
                     </optgroup>
 
-                    {/* Cash Crops */}
+                    {/* Fibre/Cash Crops */}
                     <optgroup label="Cash Crops">
                       <option value="cotton">Cotton</option>
-                      <option value="sugarcane">Sugarcane</option>
                       <option value="jute">Jute</option>
                       <option value="tobacco">Tobacco</option>
-                      <option value="rubber">Rubber</option>
-                      <option value="tea">Tea</option>
-                      <option value="coffee">Coffee</option>
-                      <option value="coconut">Coconut</option>
                     </optgroup>
 
                     {/* Vegetables */}
@@ -897,12 +954,33 @@ const MyFarm = () => {
                       <option value="turnip">Turnip</option>
                       <option value="beetroot">Beetroot</option>
                       <option value="spinach">Spinach</option>
-                      <option value="fenugreek">Fenugreek</option>
-                      <option value="coriander">Coriander</option>
+                      <option value="fenugreek">Fenugreek (Leaves)</option>
+                      <option value="fenugreek_seed">Fenugreek (Seeds)</option>
+                      <option value="coriander">Coriander (Leaves)</option>
+                      <option value="coriander_seed">Coriander (Seeds)</option>
                       <option value="chili">Chili</option>
-                      <option value="garlic">Garlic</option>
-                      <option value="ginger">Ginger</option>
+                      <option value="cucumber">Cucumber</option>
+                      <option value="bottle_gourd">Bottle Gourd</option>
+                      <option value="bitter_gourd">Bitter Gourd</option>
+                      <option value="ridge_gourd">Ridge Gourd</option>
+                      <option value="sponge_gourd">Sponge Gourd</option>
+                      <option value="pumpkin">Pumpkin</option>
+                      <option value="watermelon">Watermelon</option>
+                      <option value="muskmelon">Muskmelon</option>
+                    </optgroup>
+
+                    {/* Spices */}
+                    <optgroup label="Spices">
                       <option value="turmeric">Turmeric</option>
+                      <option value="ginger">Ginger</option>
+                      <option value="garlic">Garlic</option>
+                      <option value="cumin">Cumin</option>
+                      <option value="fennel">Fennel</option>
+                      <option value="ajwain">Ajwain</option>
+                      <option value="cardamom">Cardamom</option>
+                      <option value="black_pepper">Black Pepper</option>
+                      <option value="clove">Clove</option>
+                      <option value="cinnamon">Cinnamon</option>
                     </optgroup>
 
                     {/* Fruits */}
@@ -915,22 +993,8 @@ const MyFarm = () => {
                       <option value="pomegranate">Pomegranate</option>
                       <option value="papaya">Papaya</option>
                       <option value="guava">Guava</option>
-                      <option value="watermelon">Watermelon</option>
-                      <option value="muskmelon">Muskmelon</option>
                       <option value="lemon">Lemon</option>
                       <option value="lime">Lime</option>
-                    </optgroup>
-
-                    {/* Spices */}
-                    <optgroup label="Spices">
-                      <option value="cardamom">Cardamom</option>
-                      <option value="black_pepper">Black Pepper</option>
-                      <option value="cumin">Cumin</option>
-                      <option value="fennel">Fennel</option>
-                      <option value="ajwain">Ajwain</option>
-                      <option value="clove">Clove</option>
-                      <option value="cinnamon">Cinnamon</option>
-                      <option value="nutmeg">Nutmeg</option>
                     </optgroup>
 
                     {/* Fodder Crops */}

@@ -290,6 +290,11 @@ export const cropAPI = {
     return apiRequest(`/crops/${cropId}`, {
       method: 'DELETE',
     });
+  },
+
+  // Get harvest estimation
+  getHarvestEstimate: async (cropId) => {
+    return apiRequest(`/crops/${cropId}/harvest-estimate`);
   }
 };
 

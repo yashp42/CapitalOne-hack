@@ -294,6 +294,93 @@ const getCropStats = asyncErrorHandler(async (req, res) => {
     );
 });
 
+// Estimate harvest date based on crop timeline
+const estimateHarvestDate = asyncErrorHandler(async (req, res) => {
+    const { cropId } = req.params;
+
+    const crop = await Crop.findOne({
+        _id: cropId,
+        owner_id: req.user._id
+    });
+
+    if (!crop) {
+        throw new ApiError(404, "Crop not found");
+    }
+
+    // Crop-specific maturity periods (in days from sowing)
+    const cropMaturityPeriods = {
+        // Cereals
+        rice: 130, wheat: 130, maize: 100, barley: 120, sorghum: 110,
+        pearl_millet: 80, finger_millet: 110, foxtail_millet: 85, oats: 100,
+        
+        // Pulses  
+        chickpea: 110, pigeon_pea: 160, black_gram: 80, green_gram: 75,
+        lentil: 120, field_pea: 110, kidney_bean: 120, cowpea: 95,
+        black_eyed_pea: 95, horse_gram: 105,
+        
+        // Oilseeds
+        groundnut: 110, soybean: 100, mustard: 135, sunflower: 95,
+        sesame: 90, safflower: 130, castor: 150, niger: 100, linseed: 135,
+        
+        // Fiber/Cash crops
+        cotton: 165, jute: 120, tobacco: 120,
+        
+        // Vegetables
+        potato: 90, onion: 130, tomato: 105, cabbage: 90, cauliflower: 90,
+        eggplant: 110, okra: 65, carrot: 95, radish: 45, turnip: 60,
+        beetroot: 90, spinach: 40, fenugreek: 40, fenugreek_seed: 145,
+        coriander: 40, coriander_seed: 100, chili: 120,
+        
+        // Cucurbits
+        cucumber: 65, bottle_gourd: 90, bitter_gourd: 95, ridge_gourd: 85,
+        sponge_gourd: 80, pumpkin: 120, watermelon: 90, muskmelon: 85,
+        
+        // Spices
+        turmeric: 270, ginger: 240, garlic: 150, cumin: 110, fennel: 210,
+        ajwain: 140, cardamom: 1095, black_pepper: 1095, clove: 2190, cinnamon: 1460,
+        
+        // Fruits (first harvest)
+        mango: 1460, banana: 300, orange: 1460, apple: 1460, grapes: 730,
+        pomegranate: 730, papaya: 300, guava: 730, lemon: 1460, lime: 1460,
+        
+        // Fodder
+        alfalfa: 60, berseem: 55, oat_fodder: 70, maize_fodder: 60,
+        sorghum_fodder: 60, cowpea_fodder: 60,
+        
+        // Default
+        default: 125
+    };
+
+    const maturityDays = cropMaturityPeriods[crop.crop_name.toLowerCase()] || cropMaturityPeriods.default;
+    
+    // Calculate harvest date from sowing date
+    const sowingDate = new Date(crop.sowing_date);
+    const harvestDate = new Date(sowingDate);
+    harvestDate.setDate(harvestDate.getDate() + maturityDays);
+    
+    // Calculate current growth percentage
+    const currentDate = new Date();
+    const daysSinceSowing = Math.floor((currentDate - sowingDate) / (1000 * 60 * 60 * 24));
+    const growthPercentage = Math.min(100, Math.max(0, (daysSinceSowing / maturityDays) * 100));
+    
+    // Calculate days remaining
+    const daysRemaining = Math.max(0, maturityDays - daysSinceSowing);
+    
+    res.status(200).json(
+        new ApiResponse(200, {
+            crop_id: crop._id,
+            crop_name: crop.crop_name,
+            sowing_date: crop.sowing_date,
+            estimated_harvest_date: harvestDate.toISOString().split('T')[0],
+            maturity_days: maturityDays,
+            days_since_sowing: daysSinceSowing,
+            growth_percentage: Math.round(growthPercentage * 100) / 100,
+            days_remaining: daysRemaining,
+            status: daysRemaining === 0 ? 'ready_for_harvest' : 'growing'
+        }, "Harvest date estimated successfully")
+    );
+});
+
 export {
     createCrop,
     getUserCrops,
@@ -304,5 +391,6 @@ export {
     completeCrop,
     abandonCrop,
     deleteCrop,
-    getCropStats
+    getCropStats,
+    estimateHarvestDate
 };

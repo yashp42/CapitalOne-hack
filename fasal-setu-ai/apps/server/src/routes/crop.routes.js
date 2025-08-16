@@ -9,7 +9,8 @@ import {
     completeCrop,
     abandonCrop,
     deleteCrop,
-    getCropStats
+    getCropStats,
+    estimateHarvestDate
 } from "../controllers/crop.controller.js";
 import { verifyJWT } from "../middleware/auth.middleware.js";
 
@@ -31,5 +32,8 @@ router.patch("/:cropId/growth", updateCropGrowth);      // PATCH /api/crops/:cro
 router.patch("/:cropId/irrigate", markCropIrrigated);   // PATCH /api/crops/:cropId/irrigate
 router.patch("/:cropId/complete", completeCrop);        // PATCH /api/crops/:cropId/complete
 router.patch("/:cropId/abandon", abandonCrop);          // PATCH /api/crops/:cropId/abandon
+
+// Harvest estimation
+router.get("/:cropId/harvest-estimate", estimateHarvestDate); // GET /api/crops/:cropId/harvest-estimate
 
 export default router;

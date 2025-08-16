@@ -20,7 +20,7 @@ function AppContent() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/chatbot" element={<Chatbot />} />
-        <Route path="/crop-simulation" element={<CropSimulation />} />
+        <Route path="/crop-simulation/:cropId" element={<CropSimulation />} />
         <Route path="/my-farm" element={<MyFarm />} />
       </Routes>
     </div>
