@@ -4,10 +4,10 @@ from pydantic import BaseModel, Field
 
 # Standardized tool names for LangChain (contract tools only)
 TOOL_NAMES = [
-                "weather_outlook",
+                "geocode_tool",
+                "weather_outlook", 
                 "prices_fetch",
                 "calendar_lookup",
-                "variety_lookup",
                 "policy_match",
                 "pesticide_lookup",
                 "storage_find",
@@ -19,6 +19,7 @@ TOOL_NAMES = [
 
 class ToolCall(BaseModel):
         tool: Literal[
+                "geocode_tool",
                 "weather_outlook",
                 "prices_fetch",
                 "calendar_lookup",
@@ -37,6 +38,7 @@ class PlannerState(BaseModel):
         query: str
         profile: Optional[Dict[str, Any]] = None
         intent: Optional[str] = None
+        mode: str="public_advisor"
         decision_template: Optional[str] = None
         pending_tool_calls: List[ToolCall] = Field(default_factory=list)
         tool_calls: List[ToolCall] = Field(default_factory=list)

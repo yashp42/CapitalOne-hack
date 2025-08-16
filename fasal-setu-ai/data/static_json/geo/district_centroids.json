@@ -1,0 +1,7 @@
+{
+  "records": [
+    { "state": "Karnataka", "district": "Bengaluru Rural", "lat": 13.21, "lon": 77.64 },
+    { "state": "Karnataka", "district": "Bengaluru Urban", "lat": 12.97, "lon": 77.59 },
+    { "state": "Bihar", "district": "Patna", "lat": 25.61, "lon": 85.14 }
+  ]
+}

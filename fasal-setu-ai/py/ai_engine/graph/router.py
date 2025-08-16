@@ -40,6 +40,7 @@ def _build_planner_prompt(state: PlannerState) -> str:
         templates=list(intent_templates.values()),
         tools=list(TOOL_NAMES),
         query=state.query,
+        mode=state.mode,
         profile=json.dumps(state.profile or {}, ensure_ascii=False),
     )
     return f"{system_prompt}\n\n{instruction}"
@@ -66,14 +67,29 @@ def router_node(state: PlannerState) -> PlannerState:
             resp_text = str(response).strip()
         if resp_text:
             print("[LLM-1 Planner] Gemini LLM response (raw):", resp_text)
+            # Clean up common LLM response formats
+            resp_text = resp_text.strip()
             if resp_text.startswith('```'):
                 resp_text = resp_text.lstrip('`')
-                if resp_text.startswith('json'):
+                if resp_text.startswith(('json', 'JSON')):
                     resp_text = resp_text[4:]
                 resp_text = resp_text.strip()
                 if resp_text.endswith('```'):
                     resp_text = resp_text[:-3].strip()
-            plan = json.loads(resp_text)
+            
+            # Sometimes LLM includes explanation text before/after JSON
+            try:
+                # Find JSON block using { } matching
+                json_start = resp_text.find('{')
+                json_end = resp_text.rfind('}') + 1
+                if json_start >= 0 and json_end > json_start:
+                    json_text = resp_text[json_start:json_end]
+                    plan = json.loads(json_text)
+                else:
+                    plan = None
+            except Exception as json_err:
+                print("[LLM-1 Planner] JSON parse error:", json_err)
+                plan = None
         if plan is None:
             raise ValueError("LLM did not return a valid plan.")
         # Ensure intent and decision_template are always valid strings

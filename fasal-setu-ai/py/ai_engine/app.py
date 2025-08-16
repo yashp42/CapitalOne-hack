@@ -13,7 +13,9 @@ app = FastAPI(title="AI Engine (LLM-1 + Tools)")
 def ping():
     return {"status": "ok"}
 
-@app.post("/act", response_model=ActResponse)
+from fastapi.encoders import jsonable_encoder
+
+@app.post("/act", response_model=ActResponse, response_model_exclude_none=True)
 def act_endpoint(request: ActRequest):
     # Build initial planner state, respecting mode
     profile = request.profile if request.mode != "public_advisor" else None
@@ -22,11 +24,13 @@ def act_endpoint(request: ActRequest):
     state = tools_node(state)
     # Build response
     response = ActResponse(
-        intent=state.intent,
-        decision_template=state.decision_template,
+        intent=state.intent or "unknown_intent",
+        decision_template=state.decision_template or "unknown_template",
         missing=state.missing,
         tool_calls=state.tool_calls,
         facts=state.facts,
         general_answer=state.general_answer,
     )
-    return response
+    # Remove null fields from the response dict
+    resp_dict = {k: v for k, v in response.model_dump(exclude_none=True).items() if v is not None}
+    return resp_dict
