@@ -12,7 +12,9 @@ const createCrop = asyncErrorHandler(async (req, res) => {
         sowing_date,
         area_acres,
         irrigation_source,
-        location_override
+        location_override,
+        is_late_registered,
+        growth_stage
     } = req.body;
 
     // Validate required fields
@@ -20,8 +22,8 @@ const createCrop = asyncErrorHandler(async (req, res) => {
         throw new ApiError(400, "Missing required fields: crop_name, season, variety, sowing_date, area_acres");
     }
 
-    // Create crop with owner_id from authenticated user
-    const crop = new Crop({
+    // Create crop data with owner_id from authenticated user
+    const cropData = {
         owner_id: req.user._id,
         crop_name,
         season,
@@ -30,7 +32,22 @@ const createCrop = asyncErrorHandler(async (req, res) => {
         area_acres,
         irrigation_source,
         location_override
-    });
+    };
+    
+    // Handle late-registered crops with manually selected growth stage
+    if (is_late_registered && growth_stage) {
+        // Validate the growth stage value
+        const validStages = ["germination", "seedling", "vegetative", "tillering", "flowering", "grain_filling", "maturity"];
+        if (!validStages.includes(growth_stage)) {
+            throw new ApiError(400, `Invalid growth stage. Must be one of: ${validStages.join(', ')}`);
+        }
+        
+        // Set the manually selected growth stage
+        cropData.derived = { stage: growth_stage };
+    }
+    
+    // Create the crop instance
+    const crop = new Crop(cropData);
 
     await crop.save();
 

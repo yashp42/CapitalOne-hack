@@ -221,5 +221,77 @@ export const authAPI = {
   }
 };
 
+// Crop API calls
+export const cropAPI = {
+  // Create a new crop
+  createCrop: async (cropData) => {
+    return apiRequest('/crops', {
+      method: 'POST',
+      body: JSON.stringify(cropData),
+    });
+  },
+
+  // Get user's crops
+  getCrops: async (filters = {}) => {
+    const queryParams = new URLSearchParams(filters).toString();
+    const endpoint = queryParams ? `/crops?${queryParams}` : '/crops';
+    return apiRequest(endpoint);
+  },
+
+  // Get crop statistics
+  getCropStats: async () => {
+    return apiRequest('/crops/stats');
+  },
+
+  // Get specific crop
+  getCrop: async (cropId) => {
+    return apiRequest(`/crops/${cropId}`);
+  },
+
+  // Update crop
+  updateCrop: async (cropId, cropData) => {
+    return apiRequest(`/crops/${cropId}`, {
+      method: 'PUT',
+      body: JSON.stringify(cropData),
+    });
+  },
+
+  // Update crop growth
+  updateCropGrowth: async (cropId, growthPercent) => {
+    return apiRequest(`/crops/${cropId}/growth`, {
+      method: 'PATCH',
+      body: JSON.stringify({ growth_percent: growthPercent }),
+    });
+  },
+
+  // Mark crop as irrigated
+  irrigateCrop: async (cropId) => {
+    return apiRequest(`/crops/${cropId}/irrigate`, {
+      method: 'PATCH',
+    });
+  },
+
+  // Complete crop (harvest)
+  completeCrop: async (cropId) => {
+    return apiRequest(`/crops/${cropId}/complete`, {
+      method: 'PATCH',
+    });
+  },
+
+  // Abandon crop
+  abandonCrop: async (cropId) => {
+    return apiRequest(`/crops/${cropId}/abandon`, {
+      method: 'PATCH',
+    });
+  },
+
+  // Delete crop
+  deleteCrop: async (cropId) => {
+    return apiRequest(`/crops/${cropId}`, {
+      method: 'DELETE',
+    });
+  }
+};
+
 export { tokenManager };
 export default apiRequest;

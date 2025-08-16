@@ -107,9 +107,37 @@ cropSchema.pre('save', function(next) {
     if (this.sowing_date) {
         this.derived.days_after_sowing = this.calculated_days_after_sowing;
     }
-
-    // Auto-update growth stage based on growth percent
-    if (this.growth_percent !== undefined) {
+    
+    // For manually selected growth stage (late registered crops), set appropriate growth percentage
+    if (this.isNew && this.derived.stage !== "germination" && this.growth_percent === 0) {
+        // The farmer has manually selected a growth stage during registration
+        // Set a reasonable growth percentage based on the selected stage
+        switch (this.derived.stage) {
+            case "seedling":
+                this.growth_percent = 15; // Middle of 10-25% range
+                break;
+            case "vegetative":
+                this.growth_percent = 35; // Middle of 25-45% range
+                break;
+            case "tillering":
+                this.growth_percent = 55; // Middle of 45-65% range
+                break;
+            case "flowering":
+                this.growth_percent = 75; // Middle of 65-85% range
+                break;
+            case "grain_filling":
+                this.growth_percent = 90; // Middle of 85-100% range
+                break;
+            case "maturity":
+                this.growth_percent = 100; // Full maturity
+                break;
+            default:
+                // For germination or if stage is not specified, keep at 0%
+                this.growth_percent = 0;
+        }
+    }
+    // If growth percentage is set but stage isn't specified, auto-determine the stage
+    else if (this.growth_percent !== undefined) {
         if (this.growth_percent < 10) {
             this.derived.stage = "germination";
         } else if (this.growth_percent < 25) {

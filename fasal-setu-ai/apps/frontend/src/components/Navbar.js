@@ -68,7 +68,7 @@ const Navbar = () => {
   
   // Additional nav items for authenticated users
   const privateNavItems = [
-    { to: '/my-crops', label: 'My Crops', icon: FaSeedling },
+    { to: '/my-farm', label: 'My Farm', icon: FaSeedling },
   ];
   
   // Combine nav items based on authentication status
