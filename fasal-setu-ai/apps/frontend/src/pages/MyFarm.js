@@ -1,32 +1,9 @@
-import React, { useState, useEffect, Suspense, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { cropAPI } from '../services/api';
 import { motion } from 'framer-motion';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { useGLTF, Center } from '@react-three/drei';
 import { FaPlus, FaSeedling, FaWater, FaSun, FaTrash, FaEdit, FaLeaf, FaTractor, FaCloudRain, FaChartLine } from 'react-icons/fa';
-
-// 3D Model Component with rotation
-function CropModel({ ...props }) {
-  const { scene } = useGLTF('./assets/low_poly_farm_v2.glb');
-  const groupRef = useRef();
-  
-  // Add rotation animation
-  useFrame((state, delta) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y += delta * 0.15; // Slower rotation speed
-    }
-  });
-  
-  return (
-    <group ref={groupRef} {...props}>
-      <Center>
-        <primitive object={scene} />
-      </Center>
-    </group>
-  );
-}
 
 const MyFarm = () => {
   const { isAuthenticated, user } = useAuth();
@@ -530,27 +507,13 @@ const MyFarm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-secondary-200 via-white to-secondary-200 overflow-hidden">
-      {/* 3D Model Header Section */}
-      <div className="relative pt-20 pb-8 overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-secondary-200 via-white to-secondary-200 overflow-hidden pt-14">
+      {/* Header Section */}
+      <div className="relative pt-20 pb-8">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-100/50 via-secondary-50/30 to-primary-50/20" />
         
-        {/* 3D Model */}
-        <div className="relative z-10 h-[500px] mb-12">
-          <Canvas
-            camera={{ position: [0, 2, 10], fov: 60 }}
-            style={{ height: '100%', background: 'transparent' }}
-          >
-            <ambientLight intensity={0.9} />
-            <directionalLight position={[10, 30, 0]} intensity={0.9} />
-            <Suspense fallback={null}>
-              <CropModel scale={[0.2, 0.2, 0.2]} position={[0, 0.5, 0]} />
-            </Suspense>
-          </Canvas>
-        </div>
-
         {/* Hero Content */}
-        <div className="relative z-0 max-w-6xl mx-auto px-4 sm:px-6 md:px-8 text-center">
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 md:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

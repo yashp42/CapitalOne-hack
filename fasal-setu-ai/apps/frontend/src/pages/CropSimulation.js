@@ -1181,27 +1181,27 @@ const CropSimulation = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-yellow-50 pt-24 pb-8">
-      <div className="container mx-auto px-4 h-full">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-yellow-50 pt-20 sm:pt-24 pb-4 sm:pb-8">
+      <div className="container mx-auto px-2 sm:px-4 h-full max-w-full overflow-hidden">
         <motion.div
           initial="hidden"
           animate="visible"
           variants={containerVariants}
-          className="space-y-6 lg:grid lg:grid-cols-4 lg:gap-6 lg:space-y-0 h-full"
+          className="space-y-4 sm:space-y-6 lg:grid lg:grid-cols-4 lg:gap-4 xl:gap-6 lg:space-y-0 h-full"
         >
           {/* Main Content Area - Reordered for mobile */}
-          <div className="lg:col-span-3 space-y-6 lg:order-1">
+          <div className="lg:col-span-3 space-y-4 sm:space-y-6 lg:order-1">
             {/* Header */}
-            <motion.div variants={itemVariants} className="text-center">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
+            <motion.div variants={itemVariants} className="text-center px-2 sm:px-0">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">
                 Virtual Crop Simulation
               </h1>
               {cropId && (
-                <div className="bg-white/80 backdrop-blur-sm rounded-lg px-4 py-2 mx-auto max-w-md border border-green-200">
-                  <p className="text-sm text-gray-600">
+                <div className="bg-white/80 backdrop-blur-sm rounded-lg px-3 sm:px-4 py-2 mx-auto max-w-sm sm:max-w-md border border-green-200">
+                  <p className="text-xs sm:text-sm text-gray-600">
                     <span className="font-medium">Crop ID:</span> {cropId}
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs sm:text-sm text-gray-600">
                     <span className="font-medium">Starting Growth:</span> {initialGrowthPercent}%
                   </p>
                   {isLoadingHarvest ? (
@@ -1209,13 +1209,13 @@ const CropSimulation = () => {
                       <LoadingSkeleton className="w-32 h-3 mx-auto" />
                     </div>
                   ) : harvestData && (
-                    <p className="text-sm text-gray-600">
+                    <p className="text-xs sm:text-sm text-gray-600">
                       <span className="font-medium">Crop:</span> {harvestData.crop_name || 'Loading...'}
                     </p>
                   )}
                 </div>
               )}
-              <p className="text-gray-600">
+              <p className="text-sm sm:text-base text-gray-600 px-2 sm:px-0">
                 Watch your crops grow in real-time with AI-powered farming insights
               </p>
             </motion.div>
@@ -1223,30 +1223,36 @@ const CropSimulation = () => {
             {/* Real Crop Growth Visualization */}
             <motion.div
               variants={itemVariants}
-              className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/50 p-6 h-96"
+              className="bg-white/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border border-gray-200/50 p-3 sm:p-4 lg:p-6"
             >
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Your Virtual Wheat Field</h2>
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center space-x-2 px-3 py-2 bg-blue-100 rounded-xl">
-                    <FaCalendarAlt className="text-blue-600" />
-                    <span className="text-sm font-medium text-blue-800">Day {daysSincePlanting}</span>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 space-y-2 sm:space-y-0">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-800">Your Virtual Wheat Field</h2>
+                <div className="flex flex-wrap items-center gap-2 sm:space-x-3 w-full sm:w-auto">
+                  <div className="flex items-center space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-blue-100 rounded-lg sm:rounded-xl text-xs sm:text-sm">
+                    <FaCalendarAlt className="text-blue-600 text-xs sm:text-sm" />
+                    <span className="font-medium text-blue-800">Day {daysSincePlanting}</span>
                   </div>
-                  <div className="flex items-center space-x-2 px-3 py-2 bg-green-100 rounded-xl">
-                    <FaSeedling className="text-green-600" />
-                    <span className="text-sm font-medium text-green-800">{farmData.cropStage}</span>
+                  <div className="flex items-center space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-green-100 rounded-lg sm:rounded-xl text-xs sm:text-sm">
+                    <FaSeedling className="text-green-600 text-xs sm:text-sm" />
+                    <span className="font-medium text-green-800 truncate max-w-24 sm:max-w-none">{farmData.cropStage}</span>
                   </div>
                 </div>
               </div>
               
-              <div className="w-full h-64 rounded-xl overflow-hidden bg-gradient-to-b from-sky-200 to-green-100">
+              <div className="w-full h-48 sm:h-56 md:h-64 lg:h-72 rounded-lg sm:rounded-xl overflow-hidden bg-gradient-to-b from-sky-200 to-green-100 relative">
                 <Canvas
                   camera={{ position: [0, 3, 7], fov: 60 }}
                   shadows
                   className="w-full h-full"
+                  style={{ maxWidth: '100%', maxHeight: '100%' }}
+                  gl={{ 
+                    antialias: true,
+                    alpha: true,
+                    preserveDrawingBuffer: false
+                  }}
                 >
                   <Suspense fallback={
-                    <Text position={[0, 0, 0]} fontSize={0.5} color="green">
+                    <Text position={[0, 0, 0]} fontSize={0.3} color="green">
                       Growing Your Farm...
                     </Text>
                   }>
@@ -1255,22 +1261,22 @@ const CropSimulation = () => {
                 </Canvas>
               </div>
               
-              <div className="mt-4 bg-gray-100 rounded-xl p-3">
+              <div className="mt-3 sm:mt-4 bg-gray-100 rounded-lg sm:rounded-xl p-2 sm:p-3">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-gray-600">Growth Progress</span>
-                  <span className="text-sm font-bold text-green-600">{Math.round(cropStage)}%</span>
+                  <span className="text-xs sm:text-sm font-medium text-gray-600">Growth Progress</span>
+                  <span className="text-xs sm:text-sm font-bold text-green-600">{Math.round(cropStage)}%</span>
                 </div>
-                <div className="w-full bg-gray-300 rounded-full h-2">
+                <div className="w-full bg-gray-300 rounded-full h-1.5 sm:h-2">
                   <div
-                    className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full transition-all duration-300"
+                    className="bg-gradient-to-r from-green-400 to-green-600 h-1.5 sm:h-2 rounded-full transition-all duration-300"
                     style={{ width: `${cropStage}%` }}
                   />
                 </div>
                 <div className="mt-2 text-xs text-gray-500 text-center">
                   {cropStage < 10 && "🌱 Seeds are germinating..."}
                   {cropStage >= 10 && cropStage < 25 && "🌿 Young seedlings emerging"}
-                  {cropStage >= 25 && cropStage < 45 && "� Vegetative growth phase"}
-                  {cropStage >= 45 && cropStage < 65 && "� Tillering and branching"}
+                  {cropStage >= 25 && cropStage < 45 && "🌱 Vegetative growth phase"}
+                  {cropStage >= 45 && cropStage < 65 && "🌿 Tillering and branching"}
                   {cropStage >= 65 && cropStage < 85 && "🌸 Flowering beautifully"}
                   {cropStage >= 85 && cropStage < 100 && "🌾 Grains are filling"}
                   {cropStage >= 100 && "🎉 Ready for harvest!"}
@@ -1284,23 +1290,23 @@ const CropSimulation = () => {
             </motion.div>
           </div>
 
-          {/* Chatbot Sidebar - Appears earlier on mobile */}
+          {/* Chatbot Sidebar - Mobile-optimized */}
           <motion.div
             variants={itemVariants}
-            className="lg:col-span-1 lg:order-2 bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/50 p-4 h-fit lg:sticky lg:top-24"
+            className="lg:col-span-1 lg:order-2 bg-white/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border border-gray-200/50 p-3 sm:p-4 h-fit lg:sticky lg:top-24"
           >
-            <div className="flex items-center space-x-3 mb-4 pb-4 border-b border-gray-200">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                <FaRobot className="text-white" />
+            <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-gray-200">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <FaRobot className="text-white text-sm sm:text-base" />
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-800">Farm AI Assistant</h3>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-gray-800 text-sm sm:text-base truncate">Farm AI Assistant</h3>
                 <p className="text-xs text-green-600">Online</p>
               </div>
             </div>
 
-            {/* Chat Messages */}
-            <div className="h-64 overflow-y-auto mb-4 space-y-3">
+            {/* Chat Messages - Mobile-optimized height */}
+            <div className="h-48 sm:h-56 md:h-64 overflow-y-auto mb-3 sm:mb-4 space-y-2 sm:space-y-3 pr-1">
               <AnimatePresence>
                 {chatMessages.map((message) => (
                   <motion.div
@@ -1311,7 +1317,7 @@ const CropSimulation = () => {
                     className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
                   >
                     <div
-                      className={`max-w-[80%] p-3 rounded-xl text-sm ${
+                      className={`max-w-[85%] sm:max-w-[80%] p-2 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm break-words ${
                         message.isBot
                           ? 'bg-gray-100 text-gray-800'
                           : 'bg-green-500 text-white'
@@ -1329,18 +1335,18 @@ const CropSimulation = () => {
                   animate={{ opacity: 1 }}
                   className="flex justify-start"
                 >
-                  <div className="bg-gray-100 p-3 rounded-xl">
+                  <div className="bg-gray-100 p-2 sm:p-3 rounded-lg sm:rounded-xl">
                     <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce" />
+                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                     </div>
                   </div>
                 </motion.div>
               )}
             </div>
 
-            {/* Chat Input */}
+            {/* Chat Input - Mobile-optimized */}
             <div className="flex items-center space-x-2">
               <input
                 type="text"
@@ -1348,100 +1354,102 @@ const CropSimulation = () => {
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="Ask about your crops..."
-                className="flex-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                className="flex-1 min-w-0 px-2 sm:px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-xs sm:text-sm"
               />
               <button
                 onClick={handleSendMessage}
-                className="p-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors duration-300"
+                className="p-2 bg-green-500 text-white rounded-lg sm:rounded-xl hover:bg-green-600 transition-colors duration-300 flex-shrink-0"
               >
-                <FaPaperPlane />
+                <FaPaperPlane className="text-xs sm:text-sm" />
               </button>
             </div>
 
-            {/* Quick Actions */}
-            <div className="mt-4 space-y-2">
+            {/* Quick Actions - Mobile-optimized */}
+            <div className="mt-3 sm:mt-4 space-y-1 sm:space-y-2">
               <p className="text-xs text-gray-500 mb-2">Farm Actions:</p>
-              {[
-                "Water my crops",
-                "Apply fertilizer", 
-                "Check for pests",
-                "How are my crops doing?",
-                "When will harvest be ready?",
-                "Check weather forecast",
-                "Give daily care"
-              ].map((question, index) => (
-                <button
-                  key={index}
-                  onClick={() => setNewMessage(question)}
-                  className="w-full text-left px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg text-xs text-gray-600 transition-colors duration-300"
-                >
-                  {question}
-                </button>
-              ))}
+              <div className="max-h-32 sm:max-h-40 overflow-y-auto space-y-1 sm:space-y-2">
+                {[
+                  "Water my crops",
+                  "Apply fertilizer", 
+                  "Check for pests",
+                  "How are my crops doing?",
+                  "When will harvest be ready?",
+                  "Check weather forecast",
+                  "Give daily care"
+                ].map((question, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setNewMessage(question)}
+                    className="w-full text-left px-2 sm:px-3 py-1.5 sm:py-2 bg-gray-50 hover:bg-gray-100 rounded-md sm:rounded-lg text-xs text-gray-600 transition-colors duration-300 truncate"
+                  >
+                    {question}
+                  </button>
+                ))}
+              </div>
             </div>
           </motion.div>
 
-          {/* Detailed Dashboard - Appears after chatbot on mobile */}
+          {/* Detailed Dashboard - Mobile-optimized */}
           <div className="lg:col-span-3 lg:order-3">
             {/* Dashboard */}
             <motion.div
               variants={itemVariants}
-              className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/50 p-6"
+              className="bg-white/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border border-gray-200/50 p-3 sm:p-4 lg:p-6"
             >
-              <h2 className="text-xl font-bold text-gray-800 mb-6">Farm Insights</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6">Farm Insights</h2>
               
-              {/* Key Metrics */}
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
-                <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl p-4 text-center">
-                  <FaTemperatureHigh className="text-2xl text-blue-600 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">Temperature</p>
+              {/* Key Metrics - Mobile-first grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6">
+                <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-4 text-center">
+                  <FaTemperatureHigh className="text-lg sm:text-xl lg:text-2xl text-blue-600 mx-auto mb-1 sm:mb-2" />
+                  <p className="text-xs text-gray-600">Temperature</p>
                   {farmData.currentTemp !== null ? (
-                    <p className="text-xl font-bold text-blue-800">{Math.round(farmData.currentTemp)}°C</p>
+                    <p className="text-sm sm:text-lg lg:text-xl font-bold text-blue-800">{Math.round(farmData.currentTemp)}°C</p>
                   ) : (
-                    <div className="h-7 bg-blue-200 rounded animate-pulse"></div>
+                    <div className="h-5 sm:h-6 lg:h-7 bg-blue-200 rounded animate-pulse"></div>
                   )}
                 </div>
                 
-                <div className="bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl p-4 text-center">
-                  <FaTint className="text-2xl text-amber-600 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">Soil Moisture</p>
+                <div className="bg-gradient-to-br from-amber-100 to-amber-200 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-4 text-center">
+                  <FaTint className="text-lg sm:text-xl lg:text-2xl text-amber-600 mx-auto mb-1 sm:mb-2" />
+                  <p className="text-xs text-gray-600">Soil Moisture</p>
                   {farmData.soilMoisture !== null ? (
-                    <p className="text-xl font-bold text-amber-800">{farmData.soilMoisture}%</p>
+                    <p className="text-sm sm:text-lg lg:text-xl font-bold text-amber-800">{farmData.soilMoisture}%</p>
                   ) : (
-                    <div className="h-7 bg-amber-200 rounded animate-pulse"></div>
+                    <div className="h-5 sm:h-6 lg:h-7 bg-amber-200 rounded animate-pulse"></div>
                   )}
                 </div>
                 
-                <div className="bg-gradient-to-br from-orange-100 to-orange-200 rounded-xl p-4 text-center">
-                  <FaTemperatureHigh className="text-2xl text-orange-600 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">Soil Temp</p>
+                <div className="bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-4 text-center">
+                  <FaTemperatureHigh className="text-lg sm:text-xl lg:text-2xl text-orange-600 mx-auto mb-1 sm:mb-2" />
+                  <p className="text-xs text-gray-600">Soil Temp</p>
                   {farmData.soilTemp !== null ? (
-                    <p className="text-xl font-bold text-orange-800">{farmData.soilTemp}°C</p>
+                    <p className="text-sm sm:text-lg lg:text-xl font-bold text-orange-800">{farmData.soilTemp}°C</p>
                   ) : (
-                    <div className="h-7 bg-orange-200 rounded animate-pulse"></div>
+                    <div className="h-5 sm:h-6 lg:h-7 bg-orange-200 rounded animate-pulse"></div>
                   )}
                 </div>
                 
-                <div className="bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl p-4 text-center">
-                  <FaSeedling className="text-2xl text-yellow-600 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">Days Old</p>
-                  <p className="text-xl font-bold text-yellow-800">
+                <div className="bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-4 text-center">
+                  <FaSeedling className="text-lg sm:text-xl lg:text-2xl text-yellow-600 mx-auto mb-1 sm:mb-2" />
+                  <p className="text-xs text-gray-600">Days Old</p>
+                  <p className="text-sm sm:text-lg lg:text-xl font-bold text-yellow-800">
                     {isLoadingHarvest ? (
-                      <LoadingSkeleton className="w-8 h-6 mx-auto" />
+                      <LoadingSkeleton className="w-6 sm:w-8 h-4 sm:h-6 mx-auto" />
                     ) : (
                       daysSincePlanting
                     )}
                   </p>
                 </div>
                 
-                <div className="bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl p-4 text-center">
-                  <FaCalendarAlt className="text-2xl text-purple-600 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">Harvest In</p>
+                <div className="bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-4 text-center">
+                  <FaCalendarAlt className="text-lg sm:text-xl lg:text-2xl text-purple-600 mx-auto mb-1 sm:mb-2" />
+                  <p className="text-xs text-gray-600">Harvest In</p>
                   {isLoadingHarvest ? (
-                    <LoadingSkeleton className="w-16 h-4 mx-auto" />
+                    <LoadingSkeleton className="w-12 sm:w-16 h-3 sm:h-4 mx-auto" />
                   ) : (
                     <>
-                      <p className="text-sm font-bold text-purple-800">
+                      <p className="text-xs sm:text-sm font-bold text-purple-800">
                         {farmData.expectedHarvest}
                       </p>
                       {harvestData && (
@@ -1453,48 +1461,48 @@ const CropSimulation = () => {
                   )}
                 </div>
 
-                <div className="bg-gradient-to-br from-green-100 to-green-200 rounded-xl p-4 text-center">
-                  <FaChartLine className="text-2xl text-green-600 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">Growth</p>
-                  <p className="text-xl font-bold text-green-800">{Math.round(cropStage)}%</p>
+                <div className="bg-gradient-to-br from-green-100 to-green-200 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-4 text-center">
+                  <FaChartLine className="text-lg sm:text-xl lg:text-2xl text-green-600 mx-auto mb-1 sm:mb-2" />
+                  <p className="text-xs text-gray-600">Growth</p>
+                  <p className="text-sm sm:text-lg lg:text-xl font-bold text-green-800">{Math.round(cropStage)}%</p>
                 </div>
               </div>
 
-              {/* Detailed Info */}
-              <div className={`grid grid-cols-1 ${harvestData ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-6`}>
+              {/* Detailed Info - Mobile-responsive grid */}
+              <div className={`grid grid-cols-1 sm:grid-cols-2 ${harvestData ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4 sm:gap-6`}>
                 {/* Harvest Information - NEW SECTION */}
                 {isLoadingHarvest ? (
                   <HarvestInfoSkeleton />
                 ) : harvestData ? (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800">Harvest Information</h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl p-3">
-                        <div className="flex items-center space-x-3">
-                          <FaCalendarAlt className="text-green-500" />
-                          <span className="text-sm">Estimated Harvest Date</span>
+                  <div className="space-y-3 sm:space-y-4">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-800">Harvest Information</h3>
+                    <div className="space-y-2 sm:space-y-3">
+                      <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg sm:rounded-xl p-2 sm:p-3">
+                        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                          <FaCalendarAlt className="text-green-500 text-xs sm:text-sm flex-shrink-0" />
+                          <span className="text-xs sm:text-sm truncate">Estimated Harvest Date</span>
                         </div>
-                        <span className="text-sm font-medium text-green-700">
+                        <span className="text-xs sm:text-sm font-medium text-green-700 ml-2">
                           {new Date(harvestData.estimated_harvest_date).toLocaleDateString()}
                         </span>
                       </div>
                       
-                      <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl p-3">
-                        <div className="flex items-center space-x-3">
-                          <FaChartLine className="text-blue-500" />
-                          <span className="text-sm">Days Remaining</span>
+                      <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg sm:rounded-xl p-2 sm:p-3">
+                        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                          <FaChartLine className="text-blue-500 text-xs sm:text-sm flex-shrink-0" />
+                          <span className="text-xs sm:text-sm">Days Remaining</span>
                         </div>
-                        <span className="text-sm font-medium text-blue-700">
+                        <span className="text-xs sm:text-sm font-medium text-blue-700">
                           {harvestData.days_remaining} days
                         </span>
                       </div>
 
-                      <div className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-xl p-3">
-                        <div className="flex items-center space-x-3">
-                          <FaSeedling className="text-purple-500" />
-                          <span className="text-sm">Growth Progress</span>
+                      <div className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-lg sm:rounded-xl p-2 sm:p-3">
+                        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                          <FaSeedling className="text-purple-500 text-xs sm:text-sm flex-shrink-0" />
+                          <span className="text-xs sm:text-sm">Growth Progress</span>
                         </div>
-                        <span className="text-sm font-medium text-purple-700">
+                        <span className="text-xs sm:text-sm font-medium text-purple-700">
                           {Math.round(harvestData.growth_percentage)}%
                         </span>
                       </div>
@@ -1503,14 +1511,14 @@ const CropSimulation = () => {
                         harvestData.status === 'ready_for_harvest' 
                           ? 'bg-yellow-50 border-yellow-200' 
                           : 'bg-gray-50 border-gray-200'
-                      } border rounded-xl p-3`}>
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-3 h-3 ${
+                      } border rounded-lg sm:rounded-xl p-2 sm:p-3`}>
+                        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                          <div className={`w-2 h-2 sm:w-3 sm:h-3 ${
                             harvestData.status === 'ready_for_harvest' ? 'bg-yellow-500' : 'bg-gray-500'
-                          } rounded-full`}></div>
-                          <span className="text-sm">Status</span>
+                          } rounded-full flex-shrink-0`}></div>
+                          <span className="text-xs sm:text-sm">Status</span>
                         </div>
-                        <span className={`text-sm font-medium ${
+                        <span className={`text-xs sm:text-sm font-medium ${
                           harvestData.status === 'ready_for_harvest' 
                             ? 'text-yellow-700' 
                             : 'text-gray-700'
@@ -1523,110 +1531,110 @@ const CropSimulation = () => {
                 ) : null}
 
                 {/* Farm Activities */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-800">Recent Activities</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between bg-gray-50 rounded-xl p-3">
-                      <div className="flex items-center space-x-3">
-                        <FaTint className="text-blue-500" />
-                        <span className="text-sm">Last Irrigated</span>
+                <div className="space-y-3 sm:space-y-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">Recent Activities</h3>
+                  <div className="space-y-2 sm:space-y-3">
+                    <div className="flex items-center justify-between bg-gray-50 rounded-lg sm:rounded-xl p-2 sm:p-3">
+                      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                        <FaTint className="text-blue-500 text-xs sm:text-sm flex-shrink-0" />
+                        <span className="text-xs sm:text-sm truncate">Last Irrigated</span>
                       </div>
-                      <span className="text-sm font-medium text-gray-600">{farmData.lastIrrigated}</span>
+                      <span className="text-xs sm:text-sm font-medium text-gray-600 ml-2">{farmData.lastIrrigated}</span>
                     </div>
                     
-                    <div className="flex items-center justify-between bg-gray-50 rounded-xl p-3">
-                      <div className="flex items-center space-x-3">
-                        <FaSeedling className="text-green-500" />
-                        <span className="text-sm">Last Fertilized</span>
+                    <div className="flex items-center justify-between bg-gray-50 rounded-lg sm:rounded-xl p-2 sm:p-3">
+                      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                        <FaSeedling className="text-green-500 text-xs sm:text-sm flex-shrink-0" />
+                        <span className="text-xs sm:text-sm truncate">Last Fertilized</span>
                       </div>
-                      <span className="text-sm font-medium text-gray-600">{farmData.lastFertilized}</span>
+                      <span className="text-xs sm:text-sm font-medium text-gray-600 ml-2">{farmData.lastFertilized}</span>
                     </div>
 
-                    <div className="flex items-center justify-between bg-gray-50 rounded-xl p-3">
-                      <div className="flex items-center space-x-3">
-                        <FaChartLine className="text-purple-500" />
-                        <span className="text-sm">Growth Rate</span>
+                    <div className="flex items-center justify-between bg-gray-50 rounded-lg sm:rounded-xl p-2 sm:p-3">
+                      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                        <FaChartLine className="text-purple-500 text-xs sm:text-sm flex-shrink-0" />
+                        <span className="text-xs sm:text-sm truncate">Growth Rate</span>
                       </div>
-                      <span className="text-sm font-medium text-green-600">{farmData.growthRate}</span>
+                      <span className="text-xs sm:text-sm font-medium text-green-600 ml-2">{farmData.growthRate}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Weather Forecast */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-800">5-Day Forecast</h3>
+                <div className="space-y-3 sm:space-y-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">5-Day Forecast</h3>
                   <div className="space-y-2">
                     {isLoadingWeather ? (
                       // Pulsating loading animation
                       [...Array(5)].map((_, index) => (
-                        <div key={index} className="flex items-center justify-between bg-gray-50 rounded-xl p-3">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-5 h-5 bg-gray-200 rounded-full animate-pulse"></div>
-                            <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
+                        <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg sm:rounded-xl p-2 sm:p-3">
+                          <div className="flex items-center space-x-2 sm:space-x-3">
+                            <div className="w-4 h-4 sm:w-5 sm:h-5 bg-gray-200 rounded-full animate-pulse"></div>
+                            <div className="h-3 sm:h-4 bg-gray-200 rounded w-12 sm:w-16 animate-pulse"></div>
                           </div>
                           <div className="text-right space-y-1">
-                            <div className="h-4 bg-gray-200 rounded w-8 animate-pulse"></div>
-                            <div className="h-3 bg-gray-200 rounded w-12 animate-pulse"></div>
+                            <div className="h-3 sm:h-4 bg-gray-200 rounded w-6 sm:w-8 animate-pulse"></div>
+                            <div className="h-2 sm:h-3 bg-gray-200 rounded w-8 sm:w-12 animate-pulse"></div>
                           </div>
                         </div>
                       ))
                     ) : weatherError ? (
                       // Error state
-                      <div className="flex items-center justify-center bg-red-50 rounded-xl p-3">
-                        <div className="text-sm text-red-600">{weatherError}</div>
+                      <div className="flex items-center justify-center bg-red-50 rounded-lg sm:rounded-xl p-2 sm:p-3">
+                        <div className="text-xs sm:text-sm text-red-600">{weatherError}</div>
                       </div>
                     ) : farmData.forecast.length > 0 ? (
                       // Weather data
                       farmData.forecast.map((day, index) => (
-                        <div key={index} className="flex items-center justify-between bg-gray-50 rounded-xl p-3">
-                          <div className="flex items-center space-x-3">
-                            <day.icon className="text-yellow-500" />
-                            <span className="text-sm">{day.day}</span>
+                        <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg sm:rounded-xl p-2 sm:p-3">
+                          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                            <day.icon className="text-yellow-500 text-xs sm:text-sm flex-shrink-0" />
+                            <span className="text-xs sm:text-sm truncate">{day.day}</span>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm font-medium">{day.temp}°C</p>
+                          <div className="text-right ml-2">
+                            <p className="text-xs sm:text-sm font-medium">{day.temp}°C</p>
                             <p className="text-xs text-gray-500">{day.condition}</p>
                           </div>
                         </div>
                       ))
                     ) : (
                       // No data fallback
-                      <div className="flex items-center justify-center bg-gray-50 rounded-xl p-6">
-                        <div className="text-sm text-gray-600">Weather data unavailable</div>
+                      <div className="flex items-center justify-center bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-6">
+                        <div className="text-xs sm:text-sm text-gray-600">Weather data unavailable</div>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Irrigation & Alerts */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-800">System Status</h3>
-                  <div className="space-y-3">
-                    <div className="bg-green-50 border border-green-200 rounded-xl p-3">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                        <span className="text-sm font-medium text-green-800">Irrigation System</span>
+                <div className="space-y-3 sm:space-y-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">System Status</h3>
+                  <div className="space-y-2 sm:space-y-3">
+                    <div className="bg-green-50 border border-green-200 rounded-lg sm:rounded-xl p-2 sm:p-3">
+                      <div className="flex items-center space-x-2 mb-1 sm:mb-2">
+                        <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full flex-shrink-0"></div>
+                        <span className="text-xs sm:text-sm font-medium text-green-800 truncate">Irrigation System</span>
                       </div>
-                      <p className="text-xs text-green-600">Next: {farmData.irrigation.nextScheduled}</p>
+                      <p className="text-xs text-green-600 truncate">Next: {farmData.irrigation.nextScheduled}</p>
                     </div>
 
-                    <div className={`${farmData.pests.detected ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'} border rounded-xl p-3`}>
-                      <div className="flex items-center space-x-2 mb-2">
-                        <div className={`w-3 h-3 ${farmData.pests.detected ? 'bg-red-500' : 'bg-blue-500'} rounded-full`}></div>
-                        <span className={`text-sm font-medium ${farmData.pests.detected ? 'text-red-800' : 'text-blue-800'}`}>
+                    <div className={`${farmData.pests.detected ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'} border rounded-lg sm:rounded-xl p-2 sm:p-3`}>
+                      <div className="flex items-center space-x-2 mb-1 sm:mb-2">
+                        <div className={`w-2 h-2 sm:w-3 sm:h-3 ${farmData.pests.detected ? 'bg-red-500' : 'bg-blue-500'} rounded-full flex-shrink-0`}></div>
+                        <span className={`text-xs sm:text-sm font-medium ${farmData.pests.detected ? 'text-red-800' : 'text-blue-800'} truncate`}>
                           Pest Detection
                         </span>
                       </div>
-                      <p className={`text-xs ${farmData.pests.detected ? 'text-red-600' : 'text-blue-600'}`}>
+                      <p className={`text-xs ${farmData.pests.detected ? 'text-red-600' : 'text-blue-600'} truncate`}>
                         Risk: {farmData.pests.risk} | Checked: {farmData.pests.lastChecked}
                       </p>
                     </div>
 
-                    <div className="bg-gray-50 rounded-xl p-3">
+                    <div className="bg-gray-50 rounded-lg sm:rounded-xl p-2 sm:p-3">
                       <div className="text-xs text-gray-600 space-y-1">
-                        <p>Total Water Used: {farmData.irrigation.totalWaterUsed}</p>
-                        <p>AI Recommendations: Active</p>
-                        <p>Sensor Status: Online</p>
+                        <p className="truncate">Total Water Used: {farmData.irrigation.totalWaterUsed}</p>
+                        <p className="truncate">AI Recommendations: Active</p>
+                        <p className="truncate">Sensor Status: Online</p>
                       </div>
                     </div>
                   </div>
@@ -1634,18 +1642,18 @@ const CropSimulation = () => {
               </div>
 
               {/* Nutrient Levels */}
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Soil Nutrients</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="mt-4 sm:mt-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">Soil Nutrients</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {Object.entries(farmData.nutrients).map(([nutrient, level]) => (
-                    <div key={nutrient} className="bg-gray-50 rounded-xl p-4">
+                    <div key={nutrient} className="bg-gray-50 rounded-lg sm:rounded-xl p-3 sm:p-4">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium text-gray-600 capitalize">{nutrient}</span>
-                        <span className="text-sm font-bold text-green-600">{level}%</span>
+                        <span className="text-xs sm:text-sm font-medium text-gray-600 capitalize truncate">{nutrient}</span>
+                        <span className="text-xs sm:text-sm font-bold text-green-600 ml-2">{level}%</span>
                       </div>
-                      <div className="w-full bg-gray-300 rounded-full h-2">
+                      <div className="w-full bg-gray-300 rounded-full h-1.5 sm:h-2">
                         <div
-                          className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full"
+                          className="bg-gradient-to-r from-green-400 to-green-600 h-1.5 sm:h-2 rounded-full transition-all duration-300"
                           style={{ width: `${level}%` }}
                         />
                       </div>
