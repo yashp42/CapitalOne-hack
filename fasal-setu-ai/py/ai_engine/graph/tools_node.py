@@ -25,28 +25,6 @@ FACT_SLOT: Dict[str, str] = {
     "web_search": "web"
 }
 
-import logging
-from typing import Any, Dict, List, Optional, Tuple
-
-from .state import PlannerState, ToolCall
-
-# --- Import concrete tools (pure .py versions) ---
-
-# Initialize tool registry and fact slot mapping
-TOOL_MAP: Dict[str, Any] = {}
-FACT_SLOT: Dict[str, str] = {
-    "geocode_tool": "location",
-    "weather_outlook": "weather", 
-    "prices_fetch": "prices",
-    "calendar_lookup": "calendar",
-    "policy_match": "policy",
-    "pesticide_lookup": "pesticide",
-    "storage_find": "storage",
-    "soil_api": "soil",
-    "rag_search": "rag",
-    "web_search": "web"
-}
-
 # Weather tool
 try:
     from ..tools.weather_api import weather_lookup as WEATHER_TOOL
@@ -55,6 +33,24 @@ except Exception:
     def WEATHER_TOOL(args: Dict[str, Any]) -> Dict[str, Any]:
         return {"data": {}, "source_stamp": {"type": "stub", "provider": "weather"}}
     TOOL_MAP["weather_outlook"] = WEATHER_TOOL
+
+# Policy tool
+try:
+    from ..tools.policy_match import policy_match
+    TOOL_MAP["policy_match"] = policy_match
+except Exception:
+    def policy_match(args: Dict[str, Any]) -> Dict[str, Any]:
+        return {"data": {"eligible": []}, "source_stamp": {"type": "stub", "provider": "policy"}}
+    TOOL_MAP["policy_match"] = policy_match
+
+# Pesticide tool  
+try:
+    from ..tools.pesticide_lookup import pesticide_lookup
+    TOOL_MAP["pesticide_lookup"] = pesticide_lookup
+except Exception:
+    def pesticide_lookup(args: Dict[str, Any]) -> Dict[str, Any]:
+        return {"data": {"recommendations": []}, "source_stamp": {"type": "stub", "provider": "pesticide"}}
+    TOOL_MAP["pesticide_lookup"] = pesticide_lookup
 
 # Prices tool
 try:

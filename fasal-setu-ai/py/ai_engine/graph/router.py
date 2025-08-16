@@ -24,17 +24,30 @@ def _build_planner_prompt(state: PlannerState) -> str:
     intent, decision_template, missing (optional), tool_calls (array of {tool, args}).
     """
     intent_templates = {
+        "greeting": "general_response",
         "irrigation_decision": "irrigation_now_or_wait",
-        "variety_selection": "variety_ranked_list",
+        "variety_selection": "variety_ranked_list", 
         "temperature_risk": "frost_or_heat_risk_assessment",
         "market_advice": "sell_or_hold_decision",
         "credit_policy_match": "ranked_credit_options",
-        "pesticide_advice": "pesticide_safe_recommendation",
+        "pesticide_advice": "pesticide_safe_recommendation"
     }
 
     prompts_dir = Path(__file__).resolve().parent.parent / "prompts"
     system_prompt = (prompts_dir / "system.txt").read_text()
     instruction_template = (prompts_dir / "instruction.txt").read_text()
+    
+    # Double all curly braces in the template to escape them
+    instruction_template = instruction_template.replace("{", "{{").replace("}", "}}")
+    # Un-escape our format placeholders
+    instruction_template = instruction_template.replace("{{intents}}", "{intents}")
+    instruction_template = instruction_template.replace("{{templates}}", "{templates}")
+    instruction_template = instruction_template.replace("{{tools}}", "{tools}")
+    instruction_template = instruction_template.replace("{{query}}", "{query}")
+    instruction_template = instruction_template.replace("{{mode}}", "{mode}")
+    instruction_template = instruction_template.replace("{{profile}}", "{profile}")
+    
+    # Now do the formatting
     instruction = instruction_template.format(
         intents=list(intent_templates.keys()),
         templates=list(intent_templates.values()),
