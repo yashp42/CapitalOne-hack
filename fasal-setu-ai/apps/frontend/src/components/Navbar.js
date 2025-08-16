@@ -78,16 +78,18 @@ const Navbar = () => {
 
   return (
     <>
-      {/* Floating Navbar */}
-      <motion.nav 
-        className="fixed top-4 left-4 right-4 z-40 rounded-2xl bg-primary-200 backdrop-blur-xl shadow-lg border border-gray-200/50"
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        style={{
-          backdropFilter: 'blur(20px) saturate(150%)',
-        }}
-      >
+      {/* Navbar Wrapper */}
+      <div className="fixed top-4 left-0 right-0 z-40 w-full flex justify-center px-4">
+        {/* Floating Navbar */}
+        <motion.nav 
+          className="w-full max-w-[2000px] min-h-[60px] rounded-2xl bg-primary-200 backdrop-blur-xl shadow-lg border border-gray-200/50"
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          style={{
+            backdropFilter: 'blur(20px) saturate(150%)',
+          }}
+        >
         <div className="px-4 sm:px-6 py-3">
           <div className="flex justify-between items-center">
             {/* Logo */}
@@ -178,6 +180,7 @@ const Navbar = () => {
           </div>
         </div>
       </motion.nav>
+      </div>
 
       {/* Mobile Sidebar */}
       <AnimatePresence>
