@@ -1,18 +1,21 @@
-import express from "express";
-import cors from "cors";
-import health from "./routes/health.js";
-import query from "./routes/query.js";
-import profile from "./routes/profile.js";
-import voice from "./routes/voice.js";
+import dotenv from "dotenv";
 
-const app = express();
-app.use(cors());
-app.use(express.json({ limit: "10mb" }));
+// Configure environment variables first
+dotenv.config();
 
-app.use("/health", health);
-app.use("/query", query);
-app.use("/profile", profile);
-app.use("/voice", voice);
+import dbConnect from "./db/index.js";
+import { app } from "./app.js";
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`[server] listening on :${port}`));
+const port = process.env.PORT;
+
+// Connect to database
+dbConnect()
+.then(() => {
+    app.listen(port, () => console.log(`Server listening on port: ${port}`));
+})
+.catch(error => {
+    console.error("Database connection error:", error);
+    process.exit(1);
+});
+
+
