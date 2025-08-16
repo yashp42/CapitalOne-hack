@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef, Suspense, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
-import { OrbitControls, Environment, Text, Box, Sphere } from '@react-three/drei';
+import { OrbitControls, Text, Box, Sphere } from '@react-three/drei';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as THREE from 'three';
 import { TextureLoader } from 'three';
-import { cropAPI } from '../services/api'; // Import API service
+import { cropAPI, authAPI } from '../services/api'; // Import API service
 import { useAuth } from '../contexts/AuthContext'; // Import auth context
 import { 
   FaTemperatureHigh, 
@@ -16,14 +16,9 @@ import {
   FaChartLine,
   FaCloud,
   FaSun,
-  FaSnowflake,
-  FaWind,
+  FaBolt,
   FaRobot,
   FaPaperPlane,
-  FaMicrophone,
-  FaPlay,
-  FaPause,
-  FaFastForward
 } from 'react-icons/fa';
 
 // Loading Skeleton Component
@@ -91,8 +86,8 @@ function CropPlant({ stage, farmData }) {
   useFrame((state) => {
     // Wind sway every 10 seconds - more pronounced and realistic
     const windCycle = Math.sin(state.clock.elapsedTime * 0.1) * 0.8; // 10-second cycle (2π/0.628 ≈ 10s)
-    const windStrength = farmData.forecast[0].condition === 'Windy' ? 0.6 : 0.3;
-    const windSpeed = farmData.forecast[0].condition === 'Windy' ? 1.5 : 1.0;
+    const windStrength = (farmData.forecast[0]?.condition === 'Windy') ? 0.6 : 0.3;
+    const windSpeed = (farmData.forecast[0]?.condition === 'Windy') ? 1.5 : 1.0;
     
     // Individual grass blade movement with 10-second wind gusts
     grassBlades.current.forEach((blade, i) => {
@@ -228,7 +223,7 @@ function CropPlant({ stage, farmData }) {
         })}
 
         {/* Soil moisture indicators */}
-        {farmData.soilMoisture > 70 && Array.from({ length: 15 }, (_, i) => (
+        {farmData.soilMoisture !== null && farmData.soilMoisture > 70 && Array.from({ length: 15 }, (_, i) => (
           <Sphere 
             key={`moisture-${i}`}
             args={[0.015]} 
@@ -277,10 +272,11 @@ function CropPlant({ stage, farmData }) {
             const currentThickness = (stage / 100) * grass.baseThickness;
             
             // Different grass colors for realism
+            const moistureValue = farmData.soilMoisture || 50; // Use default value of 50 if null
             const grassColors = [
-              `hsl(${85 + Math.sin(grass.id) * 10}, ${50 + farmData.nutrients.nitrogen / 3}%, ${25 + farmData.soilMoisture / 8}%)`,
-              `hsl(${95 + Math.sin(grass.id * 0.7) * 15}, ${55 + farmData.nutrients.nitrogen / 4}%, ${30 + farmData.soilMoisture / 6}%)`,
-              `hsl(${78 + Math.sin(grass.id * 1.2) * 12}, ${45 + farmData.nutrients.nitrogen / 5}%, ${22 + farmData.soilMoisture / 10}%)`
+              `hsl(${85 + Math.sin(grass.id) * 10}, ${50 + farmData.nutrients.nitrogen / 3}%, ${25 + moistureValue / 8}%)`,
+              `hsl(${95 + Math.sin(grass.id * 0.7) * 15}, ${55 + farmData.nutrients.nitrogen / 4}%, ${30 + moistureValue / 6}%)`,
+              `hsl(${78 + Math.sin(grass.id * 1.2) * 12}, ${45 + farmData.nutrients.nitrogen / 5}%, ${22 + moistureValue / 10}%)`
             ];
             
             const grassColor = grassColors[grass.id % 3];
@@ -577,13 +573,42 @@ function CropScene({ stage, farmData }) {
         target={[0, 0, 0]} // Keep focus on center of field
       />
       
-      {/* Dynamic environment based on weather */}
-      <Environment 
-        preset={
-          farmData.weatherToday === 'Sunny' ? 'sunset' :
-          farmData.weatherToday === 'Cloudy' ? 'dawn' :
-          farmData.weatherToday === 'Rainy' ? 'storm' : 'park'
+      {/* Dynamic lighting based on weather */}
+      <ambientLight 
+        intensity={
+          farmData.weatherToday === 'Sunny' ? 0.6 :
+          farmData.weatherToday === 'Cloudy' ? 0.4 :
+          farmData.weatherToday === 'Rainy' ? 0.3 : 0.5
         } 
+      />
+      <directionalLight
+        position={[10, 10, 5]}
+        intensity={
+          farmData.weatherToday === 'Sunny' ? 1.2 :
+          farmData.weatherToday === 'Cloudy' ? 0.8 :
+          farmData.weatherToday === 'Rainy' ? 0.5 : 1.0
+        }
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-far={50}
+        shadow-camera-left={-10}
+        shadow-camera-right={10}
+        shadow-camera-top={10}
+        shadow-camera-bottom={-10}
+      />
+      {/* Additional point light for better illumination */}
+      <pointLight position={[-10, 10, -10]} intensity={0.3} />
+      
+      {/* Simple sky gradient background */}
+      <color 
+        attach="background" 
+        args={[
+          farmData.weatherToday === 'Sunny' ? '#87CEEB' :    // Sky blue
+          farmData.weatherToday === 'Cloudy' ? '#B0C4DE' :   // Light steel blue
+          farmData.weatherToday === 'Rainy' ? '#708090' :    // Slate gray
+          '#87CEEB'  // Default sky blue
+        ]} 
       />
     </>
   );
@@ -613,6 +638,9 @@ const CropSimulation = () => {
   const [lastActivity, setLastActivity] = useState(null);
   const [harvestData, setHarvestData] = useState(null); // New state for harvest estimation
   const [isLoadingHarvest, setIsLoadingHarvest] = useState(false); // Loading state
+  const [weatherData, setWeatherData] = useState(null); // Weather data from API
+  const [isLoadingWeather, setIsLoadingWeather] = useState(false); // Weather loading state
+  const [weatherError, setWeatherError] = useState(null); // Weather error state
   const [chatMessages, setChatMessages] = useState([
     {
       id: 1,
@@ -625,24 +653,139 @@ const CropSimulation = () => {
   const [isChatTyping, setIsChatTyping] = useState(false);
   const [dailyActivities, setDailyActivities] = useState([]);
 
+  // WMO Weather code mapping
+  const WMO = {
+    0: { label: "Sunny", icon: "sun" },
+    1: { label: "Sunny", icon: "sun" },
+    2: { label: "Cloudy", icon: "cloud" },
+    3: { label: "Cloudy", icon: "cloud" },
+    45: { label: "Fog", icon: "fog" },
+    48: { label: "Fog", icon: "fog" },
+    51: { label: "Drizzle", icon: "rain" },
+    53: { label: "Drizzle", icon: "rain" },
+    55: { label: "Drizzle", icon: "rain" },
+    61: { label: "Rainy", icon: "rain" },
+    63: { label: "Rainy", icon: "rain" },
+    65: { label: "Heavy Rain", icon: "rain" },
+    80: { label: "Showers", icon: "rain" },
+    81: { label: "Showers", icon: "rain" },
+    82: { label: "Heavy Showers", icon: "rain" },
+    95: { label: "Thunderstorm", icon: "storm" },
+    96: { label: "Thunder + Hail", icon: "storm" },
+    99: { label: "Thunder + Hail", icon: "storm" }
+  };
+
+  // Function to get icon component from icon string
+  const getIconComponent = (iconType) => {
+    switch (iconType) {
+      case 'sun': return FaSun;
+      case 'cloud': return FaCloud;
+      case 'rain': return FaCloudRain;
+      case 'storm': return FaBolt;
+      case 'fog': return FaCloud;
+      default: return FaSun;
+    }
+  };
+
+  // Function to fetch weather data
+  const fetchWeatherData = async (lat, lon) => {
+    setIsLoadingWeather(true);
+    setWeatherError(null);
+    
+    try {
+      // Fetch weather forecast data (daily)
+      const responseWeather = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,wind_speed_10m_max,precipitation_sum&forecast_days=5&timezone=auto&temperature_unit=celsius&windspeed_unit=kmh`
+      );
+      
+      if (!responseWeather.ok) {
+        throw new Error('Weather forecast fetch failed');
+      }
+      
+      const weatherData = await responseWeather.json();
+      
+      // Fetch soil data (hourly)
+      const responseSoil = await fetch(
+        `https://api.open-meteo.com/v1/ecmwf?latitude=${lat}&longitude=${lon}&hourly=soil_moisture_0_to_7cm,soil_temperature_0cm&forecast_days=5&timezone=auto`
+      );
+      
+      if (!responseSoil.ok) {
+        throw new Error('Soil data fetch failed');
+      }
+      
+      const soilData = await responseSoil.json();
+      
+      // Merge weather and soil data
+      const mergedData = {
+        daily: weatherData.daily,
+        hourly: soilData.hourly,
+        timezone: weatherData.timezone
+      };
+      
+      setWeatherData(mergedData);
+    } catch (error) {
+      console.error('Weather/Soil data fetch error:', error);
+      setWeatherError('Failed to load weather and soil data');
+    } finally {
+      setIsLoadingWeather(false);
+    }
+  };
+
+  // Function to process weather data into forecast array
+  const processWeatherData = (data) => {
+    if (!data || !data.daily) return [];
+    
+    const { daily } = data;
+    const forecast = [];
+    
+    for (let i = 0; i < 5; i++) {
+      const date = new Date(daily.time[i]);
+      const wmoCode = daily.weathercode[i];
+      const tempC = Math.round(daily.temperature_2m_max[i]);
+      const windSpeed = daily.wind_speed_10m_max[i];
+      
+      // Get label based on index
+      let label;
+      if (i === 0) label = 'Today';
+      else if (i === 1) label = 'Tomorrow';
+      else label = date.toLocaleDateString('en-US', { weekday: 'short' });
+      
+      // Get weather info from WMO code
+      const weather = WMO[wmoCode] || { label: 'Unknown', icon: 'sun' };
+      let condition = weather.label;
+      
+      // Override with windy if wind speed >= 30 km/h
+      if (windSpeed >= 30) {
+        condition = 'Windy';
+      }
+      
+      forecast.push({
+        day: label,
+        icon: getIconComponent(weather.icon),
+        temp: tempC,
+        condition: condition
+      });
+    }
+    
+    return forecast;
+  };
+
   // Realistic farm data that updates based on user activities
   const [farmData, setFarmData] = useState({
     lastIrrigated: 'Never',
     lastFertilized: 'Never',
     lastSowed: 'Today',
-    currentTemp: 28,
+    currentTemp: null, // Will be populated by weather API
+    soilTemp: null, // Will be populated by weather API  
     humidity: 65,
-    soilMoisture: 45, // Starts lower, needs irrigation
+    soilMoisture: null, // Will be populated by weather API
     cropStage: 'Just Planted',
     expectedHarvest: isLoadingHarvest ? 'Loading...' : (harvestData ? `${harvestData.days_remaining} days` : 'Calculating...'),
-    weatherToday: 'Sunny',
+    weatherToday: 'Loading...',
     forecast: [
-      { day: 'Today', icon: FaSun, temp: 28, condition: 'Sunny' },
-      { day: 'Tomorrow', icon: FaCloud, temp: 26, condition: 'Cloudy' },
-      { day: 'Day 3', icon: FaCloudRain, temp: 24, condition: 'Rainy' },
-      { day: 'Day 4', icon: FaSun, temp: 29, condition: 'Sunny' },
-      { day: 'Day 5', icon: FaWind, temp: 27, condition: 'Windy' }
-    ],
+      { condition: 'Sunny', temp: 25, day: 'Loading...', icon: FaSun },
+      { condition: 'Sunny', temp: 25, day: 'Loading...', icon: FaSun }
+    ], // Start with default data to prevent errors
     nutrients: {
       nitrogen: 60, // Starts moderate, needs fertilizing
       phosphorus: 55,
@@ -731,6 +874,75 @@ const CropSimulation = () => {
     window.scrollTo(0, 0);
   }, []);
 
+  // Fetch weather data based on location
+  useEffect(() => {
+    const fetchUserLocationAndWeather = async () => {
+      try {
+        // First, get user profile to access location data
+        const profileResponse = await authAPI.getProfile();
+        if (profileResponse.success && profileResponse.data.location) {
+          const { lat, lon } = profileResponse.data.location;
+          
+          if (lat && lon) {
+            // Use user's stored location from database
+            fetchWeatherData(lat, lon);
+          } else {
+            // Fallback to Bangalore coordinates if user location is incomplete
+            fetchWeatherData(12.9716, 77.5946);
+          }
+        } else {
+          // Fallback to Bangalore coordinates if profile fetch fails
+          fetchWeatherData(12.9716, 77.5946);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user profile for location:', error);
+        // Fallback to Bangalore coordinates
+        fetchWeatherData(12.9716, 77.5946);
+      }
+    };
+
+    if (user) {
+      fetchUserLocationAndWeather();
+    }
+  }, [user]);
+
+  // Update farmData when weather data changes
+  useEffect(() => {
+    if (weatherData && weatherData.daily) {
+      const newForecast = processWeatherData(weatherData);
+      const todayTemp = Math.round(weatherData.daily.temperature_2m_max[0]);
+      const todayWeather = WMO[weatherData.daily.weathercode[0]]?.label || 'Sunny';
+      
+      // Process soil data from hourly - get current hour's data or average of today
+      let todaySoilMoisture = null;
+      let todaySoilTemp = null;
+      
+      if (weatherData.hourly && weatherData.hourly.soil_moisture_0_to_7cm && weatherData.hourly.soil_temperature_0cm) {
+        // Get current hour index (first 24 hours represent today)
+        const currentHourIndex = new Date().getHours();
+        const safeHourIndex = Math.min(currentHourIndex, weatherData.hourly.soil_moisture_0_to_7cm.length - 1);
+        
+        // Use current hour's data
+        todaySoilMoisture = weatherData.hourly.soil_moisture_0_to_7cm[safeHourIndex] 
+          ? Math.round(weatherData.hourly.soil_moisture_0_to_7cm[safeHourIndex] * 100) 
+          : null;
+        
+        todaySoilTemp = weatherData.hourly.soil_temperature_0cm[safeHourIndex] 
+          ? Math.round(weatherData.hourly.soil_temperature_0cm[safeHourIndex]) 
+          : null;
+      }
+      
+      setFarmData(prev => ({
+        ...prev,
+        currentTemp: todayTemp,
+        soilTemp: todaySoilTemp,
+        soilMoisture: todaySoilMoisture,
+        weatherToday: todayWeather,
+        forecast: newForecast
+      }));
+    }
+  }, [weatherData]);
+
   // Authentication check - redirect if not authenticated
   if (loading) {
     return (
@@ -769,8 +981,9 @@ const CropSimulation = () => {
     
     switch (activity) {
       case 'irrigation':
-        growthBoost = farmData.soilMoisture < 50 ? 3 : 1;
-        updatedFarmData.soilMoisture = Math.min(100, farmData.soilMoisture + 25);
+        const currentMoisture = farmData.soilMoisture || 50; // Use API value or default
+        growthBoost = currentMoisture < 50 ? 3 : 1;
+        updatedFarmData.soilMoisture = Math.min(100, currentMoisture + 25);
         updatedFarmData.lastIrrigated = 'Today';
         updatedFarmData.totalWaterUsed = (parseInt(farmData.irrigation.totalWaterUsed) + 50) + ' L';
         break;
@@ -821,8 +1034,10 @@ const CropSimulation = () => {
       updatedFarmData.expectedHarvest = harvestData?.status === 'ready_for_harvest' ? 'Now!' : 'Now!';
     }
     
-    // Natural degradation over time
-    updatedFarmData.soilMoisture = Math.max(30, updatedFarmData.soilMoisture - 2);
+    // Natural degradation over time - only if soil moisture is available from API
+    if (updatedFarmData.soilMoisture !== null) {
+      updatedFarmData.soilMoisture = Math.max(30, updatedFarmData.soilMoisture - 2);
+    }
     updatedFarmData.nutrients.nitrogen = Math.max(40, updatedFarmData.nutrients.nitrogen - 1);
     
     setFarmData(updatedFarmData);
@@ -856,7 +1071,8 @@ const CropSimulation = () => {
       if (message.includes('water') || message.includes('irrigat')) {
         activity = 'irrigation';
         growthBoost = simulateCropGrowth(activity);
-        botResponse = `Great! I've helped you water your crops. 💧 Your soil moisture increased to ${farmData.soilMoisture + 25}%. This boosted growth by ${growthBoost}%! Your crops are looking healthier now.`;
+        const newMoisture = (farmData.soilMoisture || 50) + 25;
+        botResponse = `Great! I've helped you water your crops. 💧 Your soil moisture increased to ${newMoisture}%. This boosted growth by ${growthBoost}%! Your crops are looking healthier now.`;
         setLastActivity('Watered crops');
       } else if (message.includes('fertiliz') || message.includes('nutrient') || message.includes('feed')) {
         activity = 'fertilization';
@@ -906,13 +1122,14 @@ const CropSimulation = () => {
           botResponse = `📊 Your crops are ${Math.round(cropStage)}% mature. ${harvestData ? `Expected harvest in ${harvestData.days_remaining} days` : 'Harvest timing will be calculated once crop data is loaded'}. Keep watering and fertilizing for optimal results!`;
         }
       } else if (message.includes('weather') || message.includes('forecast')) {
-        botResponse = `Current conditions: ${farmData.weatherToday} at ${Math.round(farmData.currentTemp)}°C. Tomorrow will be ${farmData.forecast[1].condition}. ${farmData.forecast[1].condition === 'Rainy' ? 'You might not need to water tomorrow!' : 'Plan your watering schedule accordingly.'}`;
+        const tomorrowCondition = farmData.forecast[1]?.condition || 'unknown';
+        botResponse = `Current conditions: ${farmData.weatherToday} at ${farmData.currentTemp ? Math.round(farmData.currentTemp) + '°C' : 'loading...'}. Tomorrow will be ${tomorrowCondition}. ${tomorrowCondition === 'Rainy' ? 'You might not need to water tomorrow!' : 'Plan your watering schedule accordingly.'}`;
       } else {
         // Default encouraging response that still provides growth
         growthBoost = simulateCropGrowth('interaction');
         const responses = [
           `Every question helps you become a better farmer! Your engagement boosted growth by ${growthBoost}%. Current stage: ${farmData.cropStage} (${Math.round(cropStage)}%).`,
-          `Your attention to your crops is wonderful! Growth increased by ${growthBoost}%. Soil moisture: ${farmData.soilMoisture}%, Temperature: ${Math.round(farmData.currentTemp)}°C.`,
+          `Your attention to your crops is wonderful! Growth increased by ${growthBoost}%. Soil moisture: ${farmData.soilMoisture !== null ? farmData.soilMoisture + '%' : 'loading...'}, Temperature: ${farmData.currentTemp ? Math.round(farmData.currentTemp) + '°C' : 'loading...'}.`,
           `Keep asking questions - it shows you care about your crops! +${growthBoost}% growth. Your ${farmData.cropStage.toLowerCase()} stage plants appreciate the attention.`,
           `Great farming mindset! Your crops grew ${growthBoost}% from your care and attention. Days since planting: ${daysSincePlanting}.`
         ];
@@ -970,10 +1187,10 @@ const CropSimulation = () => {
           initial="hidden"
           animate="visible"
           variants={containerVariants}
-          className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full"
+          className="space-y-6 lg:grid lg:grid-cols-4 lg:gap-6 lg:space-y-0 h-full"
         >
-          {/* Main Simulation Area */}
-          <div className="lg:col-span-3 space-y-6">
+          {/* Main Content Area - Reordered for mobile */}
+          <div className="lg:col-span-3 space-y-6 lg:order-1">
             {/* Header */}
             <motion.div variants={itemVariants} className="text-center">
               <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
@@ -1065,26 +1282,144 @@ const CropSimulation = () => {
                 )}
               </div>
             </motion.div>
+          </div>
 
+          {/* Chatbot Sidebar - Appears earlier on mobile */}
+          <motion.div
+            variants={itemVariants}
+            className="lg:col-span-1 lg:order-2 bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/50 p-4 h-fit lg:sticky lg:top-24"
+          >
+            <div className="flex items-center space-x-3 mb-4 pb-4 border-b border-gray-200">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                <FaRobot className="text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-800">Farm AI Assistant</h3>
+                <p className="text-xs text-green-600">Online</p>
+              </div>
+            </div>
+
+            {/* Chat Messages */}
+            <div className="h-64 overflow-y-auto mb-4 space-y-3">
+              <AnimatePresence>
+                {chatMessages.map((message) => (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
+                  >
+                    <div
+                      className={`max-w-[80%] p-3 rounded-xl text-sm ${
+                        message.isBot
+                          ? 'bg-gray-100 text-gray-800'
+                          : 'bg-green-500 text-white'
+                      }`}
+                    >
+                      {message.text}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              
+              {isChatTyping && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex justify-start"
+                >
+                  <div className="bg-gray-100 p-3 rounded-xl">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Chat Input */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                placeholder="Ask about your crops..."
+                className="flex-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+              />
+              <button
+                onClick={handleSendMessage}
+                className="p-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors duration-300"
+              >
+                <FaPaperPlane />
+              </button>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="mt-4 space-y-2">
+              <p className="text-xs text-gray-500 mb-2">Farm Actions:</p>
+              {[
+                "Water my crops",
+                "Apply fertilizer", 
+                "Check for pests",
+                "How are my crops doing?",
+                "When will harvest be ready?",
+                "Check weather forecast",
+                "Give daily care"
+              ].map((question, index) => (
+                <button
+                  key={index}
+                  onClick={() => setNewMessage(question)}
+                  className="w-full text-left px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg text-xs text-gray-600 transition-colors duration-300"
+                >
+                  {question}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Detailed Dashboard - Appears after chatbot on mobile */}
+          <div className="lg:col-span-3 lg:order-3">
             {/* Dashboard */}
             <motion.div
               variants={itemVariants}
               className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/50 p-6"
             >
-              <h2 className="text-xl font-bold text-gray-800 mb-6">Farm Dashboard</h2>
+              <h2 className="text-xl font-bold text-gray-800 mb-6">Farm Insights</h2>
               
               {/* Key Metrics */}
               <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
                 <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl p-4 text-center">
                   <FaTemperatureHigh className="text-2xl text-blue-600 mx-auto mb-2" />
                   <p className="text-sm text-gray-600">Temperature</p>
-                  <p className="text-xl font-bold text-blue-800">{Math.round(farmData.currentTemp)}°C</p>
+                  {farmData.currentTemp !== null ? (
+                    <p className="text-xl font-bold text-blue-800">{Math.round(farmData.currentTemp)}°C</p>
+                  ) : (
+                    <div className="h-7 bg-blue-200 rounded animate-pulse"></div>
+                  )}
                 </div>
                 
-                <div className="bg-gradient-to-br from-green-100 to-green-200 rounded-xl p-4 text-center">
-                  <FaTint className="text-2xl text-green-600 mx-auto mb-2" />
+                <div className="bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl p-4 text-center">
+                  <FaTint className="text-2xl text-amber-600 mx-auto mb-2" />
                   <p className="text-sm text-gray-600">Soil Moisture</p>
-                  <p className="text-xl font-bold text-green-800">{farmData.soilMoisture}%</p>
+                  {farmData.soilMoisture !== null ? (
+                    <p className="text-xl font-bold text-amber-800">{farmData.soilMoisture}%</p>
+                  ) : (
+                    <div className="h-7 bg-amber-200 rounded animate-pulse"></div>
+                  )}
+                </div>
+                
+                <div className="bg-gradient-to-br from-orange-100 to-orange-200 rounded-xl p-4 text-center">
+                  <FaTemperatureHigh className="text-2xl text-orange-600 mx-auto mb-2" />
+                  <p className="text-sm text-gray-600">Soil Temp</p>
+                  {farmData.soilTemp !== null ? (
+                    <p className="text-xl font-bold text-orange-800">{farmData.soilTemp}°C</p>
+                  ) : (
+                    <div className="h-7 bg-orange-200 rounded animate-pulse"></div>
+                  )}
                 </div>
                 
                 <div className="bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl p-4 text-center">
@@ -1118,16 +1453,10 @@ const CropSimulation = () => {
                   )}
                 </div>
 
-                <div className="bg-gradient-to-br from-red-100 to-red-200 rounded-xl p-4 text-center">
-                  <FaChartLine className="text-2xl text-red-600 mx-auto mb-2" />
+                <div className="bg-gradient-to-br from-green-100 to-green-200 rounded-xl p-4 text-center">
+                  <FaChartLine className="text-2xl text-green-600 mx-auto mb-2" />
                   <p className="text-sm text-gray-600">Growth</p>
-                  <p className="text-xl font-bold text-red-800">{Math.round(cropStage)}%</p>
-                </div>
-
-                <div className="bg-gradient-to-br from-indigo-100 to-indigo-200 rounded-xl p-4 text-center">
-                  <FaRobot className="text-2xl text-indigo-600 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">Health</p>
-                  <p className="text-xs font-bold text-indigo-800">{farmData.plantHealth}</p>
+                  <p className="text-xl font-bold text-green-800">{Math.round(cropStage)}%</p>
                 </div>
               </div>
 
@@ -1227,18 +1556,45 @@ const CropSimulation = () => {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-gray-800">5-Day Forecast</h3>
                   <div className="space-y-2">
-                    {farmData.forecast.map((day, index) => (
-                      <div key={index} className="flex items-center justify-between bg-gray-50 rounded-xl p-3">
-                        <div className="flex items-center space-x-3">
-                          <day.icon className="text-yellow-500" />
-                          <span className="text-sm">{day.day}</span>
+                    {isLoadingWeather ? (
+                      // Pulsating loading animation
+                      [...Array(5)].map((_, index) => (
+                        <div key={index} className="flex items-center justify-between bg-gray-50 rounded-xl p-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-5 h-5 bg-gray-200 rounded-full animate-pulse"></div>
+                            <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
+                          </div>
+                          <div className="text-right space-y-1">
+                            <div className="h-4 bg-gray-200 rounded w-8 animate-pulse"></div>
+                            <div className="h-3 bg-gray-200 rounded w-12 animate-pulse"></div>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium">{day.temp}°C</p>
-                          <p className="text-xs text-gray-500">{day.condition}</p>
-                        </div>
+                      ))
+                    ) : weatherError ? (
+                      // Error state
+                      <div className="flex items-center justify-center bg-red-50 rounded-xl p-3">
+                        <div className="text-sm text-red-600">{weatherError}</div>
                       </div>
-                    ))}
+                    ) : farmData.forecast.length > 0 ? (
+                      // Weather data
+                      farmData.forecast.map((day, index) => (
+                        <div key={index} className="flex items-center justify-between bg-gray-50 rounded-xl p-3">
+                          <div className="flex items-center space-x-3">
+                            <day.icon className="text-yellow-500" />
+                            <span className="text-sm">{day.day}</span>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium">{day.temp}°C</p>
+                            <p className="text-xs text-gray-500">{day.condition}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      // No data fallback
+                      <div className="flex items-center justify-center bg-gray-50 rounded-xl p-6">
+                        <div className="text-sm text-gray-600">Weather data unavailable</div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1299,103 +1655,6 @@ const CropSimulation = () => {
               </div>
             </motion.div>
           </div>
-
-          {/* Chatbot Sidebar */}
-          <motion.div
-            variants={itemVariants}
-            className="lg:col-span-1 bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/50 p-4 h-fit lg:sticky lg:top-24"
-          >
-            <div className="flex items-center space-x-3 mb-4 pb-4 border-b border-gray-200">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                <FaRobot className="text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800">Farm AI Assistant</h3>
-                <p className="text-xs text-green-600">Online</p>
-              </div>
-            </div>
-
-            {/* Chat Messages */}
-            <div className="h-64 overflow-y-auto mb-4 space-y-3">
-              <AnimatePresence>
-                {chatMessages.map((message) => (
-                  <motion.div
-                    key={message.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
-                  >
-                    <div
-                      className={`max-w-[80%] p-3 rounded-xl text-sm ${
-                        message.isBot
-                          ? 'bg-gray-100 text-gray-800'
-                          : 'bg-green-500 text-white'
-                      }`}
-                    >
-                      {message.text}
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-              
-              {isChatTyping && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex justify-start"
-                >
-                  <div className="bg-gray-100 p-3 rounded-xl">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </div>
-
-            {/* Chat Input */}
-            <div className="flex items-center space-x-2">
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="Ask about your crops..."
-                className="flex-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-              />
-              <button
-                onClick={handleSendMessage}
-                className="p-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors duration-300"
-              >
-                <FaPaperPlane />
-              </button>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="mt-4 space-y-2">
-              <p className="text-xs text-gray-500 mb-2">Farm Actions:</p>
-              {[
-                "Water my crops",
-                "Apply fertilizer", 
-                "Check for pests",
-                "How are my crops doing?",
-                "When will harvest be ready?",
-                "Check weather forecast",
-                "Give daily care"
-              ].map((question, index) => (
-                <button
-                  key={index}
-                  onClick={() => setNewMessage(question)}
-                  className="w-full text-left px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg text-xs text-gray-600 transition-colors duration-300"
-                >
-                  {question}
-                </button>
-              ))}
-            </div>
-          </motion.div>
         </motion.div>
       </div>
     </div>

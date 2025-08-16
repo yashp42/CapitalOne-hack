@@ -71,7 +71,8 @@ const cropSchema = new mongoose.Schema({
             default: 0,
             min: 0
         },
-        last_irrigation_at: { type: Date }
+        last_irrigation_at: { type: Date },
+        last_fertilization_at: { type: Date }
     },
 
     status: {
@@ -181,6 +182,11 @@ cropSchema.methods.updateGrowth = function(growthPercent) {
 
 cropSchema.methods.markIrrigated = function() {
     this.derived.last_irrigation_at = new Date();
+    return this.save();
+};
+
+cropSchema.methods.markFertilized = function() {
+    this.derived.last_fertilization_at = new Date();
     return this.save();
 };
 

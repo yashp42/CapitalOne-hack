@@ -130,10 +130,13 @@ const Navbar = () => {
               <div className="flex items-center space-x-3 ml-4 pl-4 border-l border-gray-300">
                 {isAuthenticated && user ? (
                   <>
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <Link 
+                      to="/profile"
+                      className="flex items-center space-x-2 text-sm text-gray-600 hover:text-primary-600 transition-colors duration-200 px-2 py-1 rounded-lg hover:bg-gray-100/50"
+                    >
                       <FaUser className="text-xs text-primary-500" />
                       <span className="hidden lg:inline">{user.firstName}</span>
-                    </div>
+                    </Link>
                     <motion.button
                       onClick={handleLogout}
                       disabled={isLoggingOut}
@@ -234,13 +237,16 @@ const Navbar = () => {
                 <div className="border-t border-gray-200 pt-6">
                   {isAuthenticated && user ? (
                     <div className="space-y-4">
-                      <div className="flex items-center space-x-3 px-4 py-3 bg-gray-100/80 rounded-xl">
+                      <Link
+                        to="/profile"
+                        className="flex items-center space-x-3 px-4 py-3 bg-gray-100/80 rounded-xl hover:bg-gray-200/80 transition-all duration-200"
+                      >
                         <FaUser className="text-primary-500" />
                         <div>
                           <p className="text-sm font-medium text-gray-800">Welcome back!</p>
                           <p className="text-xs text-gray-600">{user.firstName}</p>
                         </div>
-                      </div>
+                      </Link>
                       <button
                         onClick={handleLogout}
                         disabled={isLoggingOut}

@@ -179,6 +179,11 @@ export const authAPI = {
     return apiRequest('/users/me');
   },
 
+  // Get current user basic info
+  me: async () => {
+    return apiRequest('/users/me');
+  },
+
   // Get user profile
   getProfile: async () => {
     return apiRequest('/users/profile');

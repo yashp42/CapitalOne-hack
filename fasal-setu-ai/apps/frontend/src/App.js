@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Chatbot from './pages/Chatbot';
 import CropSimulation from './pages/CropSimulation';
 import MyFarm from './pages/MyFarm';
+import Profile from './pages/Profile';
 
 function AppContent() {
   const location = useLocation();
@@ -22,6 +23,7 @@ function AppContent() {
         <Route path="/chatbot" element={<Chatbot />} />
         <Route path="/crop-simulation/:cropId" element={<CropSimulation />} />
         <Route path="/my-farm" element={<MyFarm />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </div>
   );
