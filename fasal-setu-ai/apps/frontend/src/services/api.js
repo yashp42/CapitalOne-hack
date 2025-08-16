@@ -1,26 +1,61 @@
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8081/api';
 
-// Simple token management using localStorage
+// Enhanced token management using both localStorage and cookies as fallback
 const tokenManager = {
-  // Get access token
+  // Helper function to get cookie value
+  getCookie: (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+  },
+
+  // Helper function to set cookie
+  setCookie: (name, value, options = {}) => {
+    const defaults = {
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+      secure: window.location.protocol === 'https:',
+      sameSite: 'none'
+    };
+    
+    const opts = { ...defaults, ...options };
+    let cookieString = `${name}=${value}`;
+    
+    Object.keys(opts).forEach(key => {
+      if (opts[key] !== null && opts[key] !== undefined) {
+        if (typeof opts[key] === 'boolean') {
+          if (opts[key]) cookieString += `; ${key}`;
+        } else {
+          cookieString += `; ${key}=${opts[key]}`;
+        }
+      }
+    });
+    
+    document.cookie = cookieString;
+  },
+  
+  // Get access token (try localStorage first, then cookies)
   getAccessToken: () => {
-    return localStorage.getItem('accessToken');
+    return localStorage.getItem('accessToken') || tokenManager.getCookie('accessToken');
   },
   
-  // Get refresh token
+  // Get refresh token (try localStorage first, then cookies)
   getRefreshToken: () => {
-    return localStorage.getItem('refreshToken');
+    return localStorage.getItem('refreshToken') || tokenManager.getCookie('refreshToken');
   },
   
-  // Set tokens
+  // Set tokens (save to both localStorage and cookies for redundancy)
   setTokens: (accessToken, refreshToken) => {
     if (accessToken) {
       localStorage.setItem('accessToken', accessToken);
-      console.log('Access token saved to localStorage');
+      tokenManager.setCookie('accessToken', accessToken);
+      console.log('Access token saved to localStorage and cookies');
     }
     if (refreshToken) {
       localStorage.setItem('refreshToken', refreshToken);
-      console.log('Refresh token saved to localStorage');
+      tokenManager.setCookie('refreshToken', refreshToken);
+      console.log('Refresh token saved to localStorage and cookies');
     }
   },
   
@@ -31,17 +66,34 @@ const tokenManager = {
     return !!token;
   },
   
-  // Check if user is authenticated
+  // Check if user is authenticated (and token is not expired)
   isAuthenticated: () => {
-    return tokenManager.hasAccessToken();
+    const token = tokenManager.getAccessToken();
+    if (!token) return false;
+    
+    try {
+      // Check if token is expired
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const isValid = payload.exp > Date.now() / 1000;
+      console.log('Token expiry check:', isValid ? 'valid' : 'expired');
+      return isValid;
+    } catch (error) {
+      console.log('Token validation failed:', error);
+      return false;
+    }
   },
   
-  // Clear all tokens
+  // Clear all tokens (both localStorage and cookies)
   clearTokens: () => {
     console.log('Clearing tokens...');
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
-    console.log('Tokens cleared from localStorage');
+    
+    // Clear cookies by setting them with past expiry
+    document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; secure; samesite=none';
+    document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; secure; samesite=none';
+    
+    console.log('Tokens cleared from localStorage and cookies');
   }
 };
 
@@ -50,9 +102,12 @@ const apiRequest = async (endpoint, options = {}) => {
   const url = `${API_BASE_URL}${endpoint}`;
   
   const makeRequest = async () => {
+    const token = tokenManager.getAccessToken();
+    
     const config = {
       headers: {
         'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }), // Add Bearer token header
         ...options.headers,
       },
       credentials: 'include', // Include cookies for server-side handling
@@ -64,31 +119,37 @@ const apiRequest = async (endpoint, options = {}) => {
   };
 
   try {
-    // Make request (cookies are automatically included)
+    // Make request (both Authorization header and cookies are sent)
     let response = await makeRequest();
     
     // If unauthorized and we have tokens, try to refresh
-    if (response.status === 401 && tokenManager.hasAccessToken()) {
+    if (response.status === 401 && (tokenManager.hasAccessToken() || tokenManager.getRefreshToken())) {
+      console.log('Received 401, attempting token refresh...');
+      
       try {
+        const refreshToken = tokenManager.getRefreshToken();
         const refreshResponse = await fetch(`${API_BASE_URL}/users/refresh-token`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
+          body: JSON.stringify({ refreshToken }), // Send in body as fallback
           credentials: 'include', // Include refresh token cookie
         });
 
         if (refreshResponse.ok) {
           const refreshData = await refreshResponse.json();
           
-          // Update cookies with new tokens
+          // Update tokens with new ones
           if (refreshData.data && refreshData.data.accessToken) {
             tokenManager.setTokens(refreshData.data.accessToken, refreshData.data.refreshToken);
+            console.log('Token refresh successful, retrying original request...');
+            
+            // Retry original request with new token
+            response = await makeRequest();
           }
-          
-          // Retry original request
-          response = await makeRequest();
         } else {
+          console.log('Token refresh failed, clearing tokens...');
           // Refresh failed, clear tokens and redirect to login
           tokenManager.clearTokens();
           if (window.location.pathname !== '/login') {

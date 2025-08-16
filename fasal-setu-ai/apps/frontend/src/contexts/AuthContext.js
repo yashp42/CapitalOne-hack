@@ -54,25 +54,42 @@ const setupRecaptcha = () => {
     try {
       console.log('Checking auth status...');
       
-      // Check if we have access token in cookies
+      // Check if we have a valid access token
       if (authAPI.isAuthenticated()) {
         console.log('Found access token, fetching user data...');
-        const userData = await authAPI.getCurrentUser();
-        if (userData && userData.data) {
-          console.log('User data retrieved:', userData.data);
-          setUser(userData.data);
-        } else {
-          console.log('No user data found, clearing tokens');
-          tokenManager.clearTokens();
-          setUser(null);
+        try {
+          const userData = await authAPI.getCurrentUser();
+          if (userData && userData.data) {
+            console.log('User data retrieved:', userData.data);
+            setUser(userData.data);
+            return;
+          }
+        } catch (error) {
+          console.log('Token might be expired, trying to refresh...');
+          
+          // Try to refresh token
+          try {
+            const refreshResult = await authAPI.refreshToken();
+            if (refreshResult && refreshResult.success) {
+              console.log('Token refresh successful, retrying user fetch...');
+              // Retry getting user data with new token
+              const userData = await authAPI.getCurrentUser();
+              if (userData && userData.data) {
+                setUser(userData.data);
+                return;
+              }
+            }
+          } catch (refreshError) {
+            console.log('Token refresh failed:', refreshError);
+          }
         }
-      } else {
-        console.log('No access token found');
-        setUser(null);
       }
+      
+      console.log('No valid authentication found');
+      tokenManager.clearTokens();
+      setUser(null);
     } catch (error) {
       console.error('Auth check failed:', error);
-      // Clear any invalid tokens/cookies
       tokenManager.clearTokens();
       setUser(null);
     } finally {

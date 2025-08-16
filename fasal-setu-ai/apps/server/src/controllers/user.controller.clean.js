@@ -183,9 +183,9 @@ export const signup = asyncErrorHandler(async (req, res) => {
   };
 
   const options = {
-    httpOnly: false,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    httpOnly: false, // Allow JavaScript access for cross-domain issues
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Allow cross-site in production
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   };
 
@@ -238,9 +238,9 @@ export const login = asyncErrorHandler(async (req, res) => {
   };
 
   const options = {
-    httpOnly: false,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    httpOnly: false, // Allow JavaScript access for cross-domain issues
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Allow cross-site in production
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   };
 
@@ -281,9 +281,9 @@ export const refreshAccessToken = asyncErrorHandler(async (req, res) => {
     const { accessToken, refreshToken: newRefreshToken } = await user.generateTokens();
 
     const options = {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      httpOnly: false, // Allow JavaScript access for cross-domain issues
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Allow cross-site in production
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     };
 
@@ -317,9 +317,9 @@ export const logout = asyncErrorHandler(async (req, res) => {
   );
 
   const options = {
-    httpOnly: false,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict'
+    httpOnly: false, // Allow JavaScript access for cross-domain issues
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // Allow cross-site in production
   };
 
   res
