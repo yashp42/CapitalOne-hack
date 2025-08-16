@@ -201,6 +201,7 @@ const LANGUAGES = [
 const Login = () => {
   const [isSignup, setIsSignup] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [backgroundImageLoaded, setBackgroundImageLoaded] = useState(false);
   const [step, setStep] = useState('phone'); // 'phone', 'otp', 'details', 'profile'
   const [coordinates, setCoordinates] = useState(null); // Store fetched coordinates
   // State for location detection
@@ -280,6 +281,17 @@ const Login = () => {
       navigate('/', { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
+
+  // Preload background image
+  useEffect(() => {
+    const preloadImage = () => {
+      const image = new Image();
+      image.onload = () => setBackgroundImageLoaded(true);
+      image.src = '/assets/360_F_502186443_Kubg3Wl76uE8BYl1tcAuYYXgGKAaO6r4.jpg';
+    };
+    
+    preloadImage();
+  }, []);
 
   // Cleanup reCAPTCHA when component unmounts
   useEffect(() => {
@@ -635,12 +647,20 @@ const Login = () => {
   return (
     <div className="min-h-screen relative overflow-hidden bg-gray-50">
       {/* Background Image */}
-      <div 
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `url('/assets/360_F_502186443_Kubg3Wl76uE8BYl1tcAuYYXgGKAaO6r4.jpg')`
-        }}
-      />
+      <div className="absolute inset-0 z-0">
+        {/* Gradient Fallback - Shows immediately while image loads */}
+        <div className="w-full h-full bg-gradient-to-br from-green-100 via-blue-50 to-green-200" />
+        
+        {/* Actual Background Image - Fades in when loaded */}
+        <div 
+          className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ${
+            backgroundImageLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{
+            backgroundImage: backgroundImageLoaded ? `url('/assets/360_F_502186443_Kubg3Wl76uE8BYl1tcAuYYXgGKAaO6r4.jpg')` : 'none'
+          }}
+        />
+      </div>
       
       {/* Bright Overlay for better readability */}
       <div className="absolute inset-0 z-0 bg-white/80" />

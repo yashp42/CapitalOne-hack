@@ -15,6 +15,8 @@ import FloatingChatButton from '../components/FloatingChatButton';
 const Home = () => {
   const [mounted, setMounted] = useState(false);
   const [currentLanguageIndex, setCurrentLanguageIndex] = useState(0);
+  const [heroImageLoaded, setHeroImageLoaded] = useState(false);
+  const [aboutImageLoaded, setAboutImageLoaded] = useState(false);
 
   // Language variations for the tagline
   const taglineLanguages = [
@@ -36,6 +38,20 @@ const Home = () => {
 
   useEffect(() => {
     setMounted(true);
+    
+    // Preload background images
+    const preloadImages = () => {
+      const heroImage = new Image();
+      const aboutImage = new Image();
+      
+      heroImage.onload = () => setHeroImageLoaded(true);
+      aboutImage.onload = () => setAboutImageLoaded(true);
+      
+      heroImage.src = '/assets/desktop-wallpaper-rice-agriculture-field-golden-hour-grass.jpg';
+      aboutImage.src = '/assets/palladium,-india,-tribal-farmers,-fpo.jpg';
+    };
+    
+    preloadImages();
     
     // Cycle through languages every 3 seconds
     const interval = setInterval(() => {
@@ -206,13 +222,20 @@ const Home = () => {
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden" style={{ minHeight: 'calc(100vh - 0px)', paddingTop: '6rem', paddingBottom: '2rem' }}>
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
+          {/* Gradient Fallback - Shows immediately while image loads */}
+          <div className="w-full h-full bg-gradient-to-br from-green-200 via-yellow-100 to-green-300" />
+          
+          {/* Actual Background Image - Fades in when loaded */}
           <div 
-            className="w-full h-full bg-cover bg-center bg-fixed"
+            className={`w-full h-full bg-cover bg-center bg-fixed absolute inset-0 transition-opacity duration-1000 ${
+              heroImageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
             style={{
-              backgroundImage: `url('/assets/desktop-wallpaper-rice-agriculture-field-golden-hour-grass.jpg')`,
+              backgroundImage: heroImageLoaded ? `url('/assets/desktop-wallpaper-rice-agriculture-field-golden-hour-grass.jpg')` : 'none',
               filter: 'brightness(0.8) contrast(1.1)'
             }}
           />
+          
           {/* Gradient Overlays */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/70 via-gray-50/80 to-blue-50/60" />
           <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-transparent to-transparent" />
@@ -455,13 +478,20 @@ const Home = () => {
       <section className="relative py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
+          {/* Gradient Fallback - Shows immediately while image loads */}
+          <div className="w-full h-full bg-gradient-to-r from-green-600 via-green-500 to-green-400" />
+          
+          {/* Actual Background Image - Fades in when loaded */}
           <div 
-            className="w-full h-full bg-cover bg-center bg-no-repeat"
+            className={`w-full h-full bg-cover bg-center bg-no-repeat absolute inset-0 transition-opacity duration-1000 ${
+              aboutImageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
             style={{
-              backgroundImage: `url('/assets/palladium,-india,-tribal-farmers,-fpo.jpg')`,
+              backgroundImage: aboutImageLoaded ? `url('/assets/palladium,-india,-tribal-farmers,-fpo.jpg')` : 'none',
               filter: 'brightness(0.7) contrast(1.1)'
             }}
           />
+          
           {/* Gradient Overlays */}
           <div className="absolute inset-0 bg-gradient-to-r from-white/60 to-gray-50/60" />
         </div>

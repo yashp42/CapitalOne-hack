@@ -6,6 +6,7 @@ import FloatingChatButton from '../components/FloatingChatButton';
 
 const Chatbot = () => {
   const navigate = useNavigate();
+  const [backgroundImageLoaded, setBackgroundImageLoaded] = useState(false);
   const [messages, setMessages] = useState([
     {
       type: 'bot',
@@ -25,6 +26,17 @@ const Chatbot = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Preload background image
+  useEffect(() => {
+    const preloadImage = () => {
+      const image = new Image();
+      image.onload = () => setBackgroundImageLoaded(true);
+      image.src = '/assets/desktop-wallpaper-rice-agriculture-field-golden-hour-grass.jpg';
+    };
+    
+    preloadImage();
+  }, []);
 
   const handleSendMessage = async () => {
     if (inputMessage.trim()) {
@@ -84,13 +96,20 @@ const Chatbot = () => {
 
       {/* Background with blur effects */}
       <div className="absolute inset-0 z-0">
+        {/* Gradient Fallback - Shows immediately while image loads */}
+        <div className="w-full h-full bg-gradient-to-br from-green-200 via-yellow-100 to-green-300" style={{filter: 'blur(1px)'}} />
+        
+        {/* Actual Background Image - Fades in when loaded */}
         <div 
-          className="w-full h-full bg-cover bg-center bg-fixed"
+          className={`w-full h-full bg-cover bg-center bg-fixed absolute inset-0 transition-opacity duration-1000 ${
+            backgroundImageLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
           style={{
-            backgroundImage: `url('/assets/desktop-wallpaper-rice-agriculture-field-golden-hour-grass.jpg')`,
+            backgroundImage: backgroundImageLoaded ? `url('/assets/desktop-wallpaper-rice-agriculture-field-golden-hour-grass.jpg')` : 'none',
             filter: 'brightness(0.9) contrast(1.1) blur(1px)'
           }}
         />
+        
         {/* Gradient Overlays */}
         <div className="absolute inset-0 bg-gradient-to-br from-white/60 via-gray-50/80 to-blue-50/70" />
         <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-transparent to-transparent" />
