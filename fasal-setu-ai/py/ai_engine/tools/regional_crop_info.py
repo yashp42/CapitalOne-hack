@@ -256,8 +256,10 @@ def _try_static_data(args: Dict[str, Any]) -> Dict[str, Any]:
                 aggr_unique.append(d)
 
         if aggr_unique:
-            # For exact match (single file), return the complete normalized structure
-            if len(aggr_unique) == 1 and state and (district or not crop):
+            # Always return the complete normalized schema format
+            # For multiple files, merge them into a comprehensive structure
+            if len(aggr_unique) == 1:
+                # Single file - return complete normalized structure
                 doc = aggr_unique[0]
                 normalized_doc = _normalize_region_info(doc)
                 
@@ -268,7 +270,7 @@ def _try_static_data(args: Dict[str, Any]) -> Dict[str, Any]:
                         normalized_doc["crops"] = matching_crops
                 
                 return {
-                    "data": normalized_doc if "region_info" in fields else {"crops": normalized_doc["crops"]},
+                    "data": normalized_doc,
                     "source_stamp": {
                         "type": "static_pack",
                         "path": DATA_DIR,
@@ -284,66 +286,76 @@ def _try_static_data(args: Dict[str, Any]) -> Dict[str, Any]:
                     "available": {"crops": [c["crop_name"] for c in normalized_doc["crops"] if c.get("crop_name")]},
                     "_meta": {"fields": fields, "route": "static_exact"}
                 }
-
-            # Build combined response: list all region_info and crop occurrences
-            regions = [
-                {
-                    "state": d.get("state") or d.get("region_info", {}).get("state"),
-                    "district": d.get("district") or d.get("region_info", {}).get("district"),
-                    "source_file": d.get("_source_file")
+            else:
+                # Multiple files - merge into single comprehensive schema
+                # Use the first doc as base structure
+                base_doc = aggr_unique[0]
+                merged_doc = _normalize_region_info(base_doc)
+                
+                # Collect all crops from all documents
+                all_crops = []
+                crops_seen = set()
+                
+                for d in aggr_unique:
+                    for c in d.get("crops", []) or []:
+                        crop_name = (c.get("crop_name") or "").strip().lower()
+                        if not crop_name:
+                            continue
+                        
+                        # If specific crop requested, only include that crop
+                        if crop and crop_name != crop.lower():
+                            continue
+                            
+                        # Avoid duplicates
+                        crop_key = f"{crop_name}_{d.get('state', '')}_{d.get('district', '')}"
+                        if crop_key not in crops_seen:
+                            crops_seen.add(crop_key)
+                            normalized_crop = _normalize_crop_info(c)
+                            # Add region context to crop
+                            normalized_crop["_region_context"] = {
+                                "state": d.get("state"),
+                                "district": d.get("district"),
+                                "source_file": d.get("_source_file")
+                            }
+                            all_crops.append(normalized_crop)
+                
+                # Update merged document
+                merged_doc["crops"] = all_crops
+                
+                # If multiple states, set state to None and list available states in meta
+                states_found = list({d.get("state") for d in aggr_unique if d.get("state")})
+                districts_found = list({d.get("district") for d in aggr_unique if d.get("district")})
+                
+                if len(states_found) > 1:
+                    merged_doc["state"] = None
+                    merged_doc["district"] = None
+                elif len(districts_found) > 1 and len(states_found) == 1:
+                    merged_doc["district"] = None
+                
+                # Collect all available crop names
+                available_crops = list({c["crop_name"] for c in all_crops if c.get("crop_name")})
+                
+                return {
+                    "data": merged_doc,
+                    "source_stamp": {
+                        "type": "static_pack",
+                        "path": DATA_DIR,
+                        "files": list(seen_files)
+                    },
+                    "matched": {
+                        "state": state,
+                        "district": district,
+                        "crop": crop,
+                        "match_method": "aggregate",
+                        "confidence": 0.8
+                    },
+                    "available": {
+                        "crops": available_crops,
+                        "states": states_found,
+                        "districts": districts_found
+                    },
+                    "_meta": {"fields": fields, "route": "static_aggregate"}
                 }
-                for d in aggr_unique
-            ]
-
-            # Collect all crops with their full details
-            all_crops_detailed = []
-            crops_found = {}
-            for d in aggr_unique:
-                for c in d.get("crops", []) or []:
-                    name = (c.get("crop_name") or "").strip()
-                    if not name:
-                        continue
-                    normalized_crop = _normalize_crop_info(c)
-                    all_crops_detailed.append(normalized_crop)
-                    
-                    key = name.lower()
-                    crops_found.setdefault(key, {"name": name, "regions": []})
-                    crops_found[key]["regions"].append({
-                        "state": d.get("state") or d.get("region_info", {}).get("state"),
-                        "district": d.get("district") or d.get("region_info", {}).get("district"),
-                        "source_file": d.get("_source_file")
-                    })
-
-            # Extract detailed crop info if requested
-            crop_details = None
-            if crop and "crop_info" in fields:
-                for crop_info in all_crops_detailed:
-                    if (crop_info.get("crop_name") or "").lower() == crop.lower():
-                        crop_details = crop_info
-                        break
-
-            return {
-                "data": {
-                    "regions": regions if "region_info" in fields else None,
-                    "crops_index": list(crops_found.values()) if "crop_info" in fields else None,
-                    "crop_details": crop_details if crop and "crop_info" in fields else None,
-                    "all_crops_detailed": all_crops_detailed if "crop_info" in fields and not crop else None
-                },
-                "source_stamp": {
-                    "type": "static_pack",
-                    "path": DATA_DIR,
-                    "files": list(seen_files)
-                },
-                "matched": {
-                    "state": state,
-                    "district": district,
-                    "crop": crop,
-                    "match_method": "aggregate",
-                    "confidence": 0.8
-                },
-                "available": {"crops": [v["name"] for v in crops_found.values()]},
-                "_meta": {"fields": fields, "route": "static_aggregate"}
-            }
 
         # Nothing matched in static files
         return {

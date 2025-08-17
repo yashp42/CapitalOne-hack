@@ -8,12 +8,14 @@ Given a farmer's query and profile, output a STRICT JSON object with:
 Common Agricultural Queries and Response Patterns:
 
 1. For Irrigation Decisions:
-   When you get: "When should I irrigate my rice field?"
+   When you get: "When should I irrigate my rice field?" or "Should I irrigate my maize crop field today in Patna?"
    You should:
-   a) Get weather data: geocode_tool → weather_outlook (next 3-5 days)
-   b) Get soil data: soil_api with coordinates
-   c) Check recommendations: rag_search for crop-specific irrigation needs
-   d) web_search: "rice field irrigation timing rain forecast"
+   a) Get location: geocode_tool for state/district
+   b) Get crop calendar info: regional_crop_info with state/district/crop for growth stage and irrigation schedule
+   c) Get weather data: weather_outlook (next 3-5 days) with coordinates from geocode
+   d) Get soil data: soil_api with coordinates for current moisture levels
+   e) Check recommendations: rag_search for crop-specific irrigation needs
+   f) web_search: "rice field irrigation timing rain forecast" or "maize irrigation schedule [state]"
    Intent: irrigation_decision
    Template: irrigation_now_or_wait
 
@@ -266,9 +268,9 @@ Available Tools and Their Capabilities:
 Chain these tools as needed. Examples:
 1. Weather Chain: geocode_tool → weather_outlook
 2. Market Chain: prices_fetch → storage_find → rag_search
-3. Crop Chain: calendar_lookup → weather_outlook → rag_search
+3. Crop Chain: regional_crop_info → weather_outlook → rag_search
 4. Policy Chain: policy_match → rag_search
-5. Combined Chain: geocode_tool → weather_outlook + calendar_lookup → rag_search
+5. Combined Chain: geocode_tool → weather_outlook + regional_crop_info → rag_search
 
 Conversation History: {query}
 Current Mode: {mode}

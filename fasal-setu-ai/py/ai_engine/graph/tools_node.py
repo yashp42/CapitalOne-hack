@@ -235,13 +235,14 @@ def tools_node(state: PlannerState) -> PlannerState:
     # Create a temporary facts dict to store results as we go
     temp_facts = dict(state.facts) if hasattr(state, 'facts') else {}
     
-    # Special handling for geocode + weather pattern
-    # Check if we have both geocode and weather calls in the same batch
+    # Special handling for geocode + location-based tools pattern
+    # Check if we have geocode and any location-based tools in the same batch
     has_geocode = any(call.tool == "geocode_tool" for call in executed_calls)
-    has_weather = any(call.tool == "weather_outlook" for call in executed_calls)
+    location_tools = ["weather_outlook", "soil_api", "storage_find"]
+    has_location_tools = any(call.tool in location_tools for call in executed_calls)
     
-    # Process all geocode calls first if we have both geocode and weather
-    if has_geocode and has_weather:
+    # Process all geocode calls first if we have both geocode and location-based tools
+    if has_geocode and has_location_tools:
         # Process geocode calls first
         geocode_calls = [call for call in executed_calls if call.tool == "geocode_tool"]
         for call in geocode_calls:
@@ -261,7 +262,7 @@ def tools_node(state: PlannerState) -> PlannerState:
         for call in executed_calls:
             tool_name = call.tool
             # Skip geocode calls if we've already processed them
-            if has_geocode and has_weather and tool_name == "geocode_tool":
+            if has_geocode and has_location_tools and tool_name == "geocode_tool":
                 continue
                 
             tool_fn = TOOL_MAP.get(tool_name)
@@ -274,8 +275,8 @@ def tools_node(state: PlannerState) -> PlannerState:
             try:
                 args = dict(call.args)
                 
-                # Special handling for weather_outlook to use geocode results
-                if tool_name == "weather_outlook" and "location" in temp_facts:
+                # Special handling for location-based tools to use geocode results
+                if tool_name in location_tools and "location" in temp_facts:
                     location_data = temp_facts["location"].get("data", {})
                     if "lat" in location_data and "lon" in location_data:
                         args["lat"] = float(location_data["lat"])
