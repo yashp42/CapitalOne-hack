@@ -229,7 +229,7 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     # Compute forecast rain sum for next 48 hours
-    rain_48 = _sum_forecast_rain_mm(weather, hours=48)
+    rain_48 = _sum_forecast_rain_mm(weather or {}, hours=48)
     reasons: List[str] = []
     tradeoffs: List[str] = []
     meta: Dict[str, Any] = {}
@@ -268,15 +268,22 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
         item = _build_decision_item(recommendation, reasons, tradeoffs, meta, sources)
         # compute confidence: high if forecast is fresh
         confidence = 0.9
+        print(f"[IRRIGATION DEBUG] Initial confidence: {confidence}")
         try:
             if helpers is not None and hasattr(helpers, "extract_provenance_from_facts") and hasattr(helpers, "compute_confidence"):
                 prov_entries = helpers.extract_provenance_from_facts(facts or {})
-                confidence = helpers.compute_confidence(signals={"forecast_rain_48h": rain_48}, prov_entries=prov_entries)
+                helper_conf = helpers.compute_confidence({"handler_confidence": confidence, "items_mean_score": confidence, "facts_mean_confidence": 0.8})
+                print(f"[IRRIGATION DEBUG] Helper confidence: {helper_conf}")
+                confidence = helper_conf
             elif helpers is not None and hasattr(helpers, "compute_confidence"):
                 # fallback: if helper has legacy signature, call with just signals
-                confidence = helpers.compute_confidence({"soil_moisture_signal": float(soil_moisture_pct)})
-        except Exception:
+                helper_conf = helpers.compute_confidence({"handler_confidence": confidence, "items_mean_score": confidence, "facts_mean_confidence": 0.8})
+                print(f"[IRRIGATION DEBUG] Helper confidence (fallback): {helper_conf}")
+                confidence = helper_conf
+        except Exception as e:
+            print(f"[IRRIGATION DEBUG] Exception in helper confidence: {e}")
             pass
+        print(f"[IRRIGATION DEBUG] Final confidence: {confidence}")
         item["score"] = round(confidence, 4)
         return {"action": "irrigation_now_or_wait", "items": [item], "confidence": round(confidence, 4), "notes": notes}
 
@@ -294,13 +301,13 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
     except Exception:
         crop_stage = None
     # calendar may provide 'current_stage' or 'days_after_sowing'
-    if not crop_stage:
+    if not crop_stage and calendar:
         crop_stage = calendar.get("current_stage") or calendar.get("crop_stage") or calendar.get("stage")
     if crop_stage:
         meta["crop_stage"] = crop_stage
 
     # Determine threshold for this stage
-    stage_threshold = _determine_stage_threshold(calendar, crop_stage)
+    stage_threshold = _determine_stage_threshold(calendar or {}, crop_stage)
 
     if soil_moisture_pct is not None:
         # Compare soil moisture to threshold
@@ -319,15 +326,19 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
             except Exception:
                 conf = 0.7
             # use helpers.compute_confidence if available to combine signals
-            conf = helpers.compute_confidence({"soil_moisture_signal": float(soil_moisture_pct)},facts, ["weather_outlook", "calendar_lookup"])
+            try:
+                if helpers is not None and hasattr(helpers, "compute_confidence"):
+                    conf = helpers.compute_confidence({"handler_confidence": conf, "items_mean_score": float(soil_moisture_pct)/100.0, "facts_mean_confidence": 0.8})
+            except Exception:
+                pass
             # compute provenance entries from facts, then compute confidence
             try:
                 if helpers is not None and hasattr(helpers, "extract_provenance_from_facts") and hasattr(helpers, "compute_confidence"):
                     prov_entries = helpers.extract_provenance_from_facts(facts or {})
-                    confidence = helpers.compute_confidence(signals={"soil_moisture_signal": float(soil_moisture_pct)}, prov_entries=prov_entries)
-                elif helpers is not None and hasattr(helpers, "compute_confidence"):
+                    confidence = helpers.compute_confidence({"handler_confidence": conf, "items_mean_score": conf, "facts_mean_confidence": 0.8})
+                elif helpers is not None and hasattr(helpers, "compute_confidence") and rain_48 is not None:
                     # fallback: if helper has legacy signature, call with just signals
-                    confidence = helpers.compute_confidence({"forecast_rain_48h": rain_48})
+                    confidence = helpers.compute_confidence({"handler_confidence": conf, "items_mean_score": conf, "facts_mean_confidence": 0.8})
             except Exception:
                 # keep previously-initialized confidence value on error
                 pass
@@ -351,7 +362,8 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
     # No soil moisture present - fall back to crop stage sensitivity if available
     critical_stages = None
     try:
-        critical_stages = calendar.get("critical_stages") or calendar.get("sensitive_stages")
+        if calendar:
+            critical_stages = calendar.get("critical_stages") or calendar.get("sensitive_stages")
     except Exception:
         critical_stages = None
 

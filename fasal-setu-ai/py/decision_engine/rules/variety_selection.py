@@ -95,12 +95,20 @@ def _avg_forecast_temp_and_rain(weather: Dict[str, Any]) -> Optional[Dict[str, f
             continue
     if not temps_max and not temps_min and not rains:
         return None
-    return {
-        "mean_max_temp": statistics.mean(temps_max) if temps_max else None,
-        "mean_min_temp": statistics.mean(temps_min) if temps_min else None,
-        "total_rain": sum(rains) if rains else 0.0,
-        "days": len(fc),
-    }
+    
+    # Ensure all values are floats, not None
+    result = {}
+    if temps_max:
+        result["mean_max_temp"] = float(statistics.mean(temps_max))
+    if temps_min:
+        result["mean_min_temp"] = float(statistics.mean(temps_min))
+    if rains:
+        result["total_rain"] = float(sum(rains))
+    else:
+        result["total_rain"] = 0.0
+    result["days"] = float(len(fc))
+    
+    return result
 
 
 def _compute_climate_signal(weather: Dict[str, Any]) -> Optional[Dict[str, float]]:
@@ -255,9 +263,10 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
     # typical maturity
     typical_maturity = None
     try:
-        typical_maturity = calendar_out.get("typical_maturity_days") or calendar_out.get("maturity_days")
-        if typical_maturity is not None:
-            typical_maturity = float(typical_maturity)
+        if calendar_out:
+            typical_maturity = calendar_out.get("typical_maturity_days") or calendar_out.get("maturity_days")
+            if typical_maturity is not None:
+                typical_maturity = float(typical_maturity)
     except Exception:
         typical_maturity = None
 
@@ -397,7 +406,10 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
     # default top_n
     top_n = 3
     try:
-        top_n = int(intent.get("top_n") if isinstance(intent, dict) and intent.get("top_n") else 3)
+        if isinstance(intent, dict):
+            top_n_val = intent.get("top_n")
+            if top_n_val is not None:
+                top_n = int(top_n_val)
     except Exception:
         top_n = 3
 

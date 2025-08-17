@@ -269,7 +269,9 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
         window = TREND_WINDOW_DAYS
 
     # compute stats
-    stats = _compute_trend_and_volatility(series, window=window)
+    # Cast the series to match expected type signature
+    series_typed: List[Tuple[Optional[datetime], float]] = [(dt, price) for dt, price in series]
+    stats = _compute_trend_and_volatility(series_typed, window=window)
     if not stats:
         return {"action": "require_more_info", "items": [], "confidence": 0.0, "notes": "Unable to compute trend/volatility from price history", "missing": []}
 
@@ -343,12 +345,11 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
         if helpers is not None and hasattr(helpers, "compute_confidence"):
             try:
                 signals = {
-                    "expected_pct": expected_pct,
-                    "cov": cov,
-                    "n_points": n_pts,
-                    "heuristic_conf": heuristic_conf,
+                    "handler_confidence": heuristic_conf,
+                    "items_mean_score": expected_pct if expected_pct else 0.5,
+                    "facts_mean_confidence": 1.0 - cov if cov < 1.0 else 0.5,
                 }
-                helper_conf = helpers.compute_confidence(signals=signals, prov_entries=prov_entries)
+                helper_conf = helpers.compute_confidence(signals)
                 # combine: prefer helper_conf when there is provenance, otherwise favor heuristic
                 if prov_entries:
                     confidence = float(0.6 * float(helper_conf) + 0.4 * heuristic_conf)

@@ -1,4 +1,3 @@
-# app.py
 """
 FastAPI app that exposes POST /decision and forwards requests to orchestrator.process_act_intent.
 
@@ -15,38 +14,64 @@ Behavior (per user instructions):
 """
 
 from __future__ import annotations
-
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
-import logging
-from fastapi.encoders import jsonable_encoder
-from datetime import timezone
 
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
+from fastapi.encoders import jsonable_encoder
 
-# imports for models + orchestrator (use package absolute imports)
-# imports for models + orchestrator (use package absolute imports)
+# Add current directory to path for imports
+import sys
+import os
+sys.path.insert(0, os.path.dirname(__file__))
+
+# imports for models + orchestrator with simple fallback
 try:
-    from decision_engine.models import ActIntentModel, DecisionResponseModel
-except Exception as e:
-    import sys
-    print("Failed to import decision_engine.models; ensure package has __init__.py and run with -m from parent dir", file=sys.stderr)
-    raise
-
-try:
-    # orchestrator entrypoint: import and alias to `process_act_intent` used below
-    from decision_engine.orchestrator import process_act_intent
-except Exception as e:
-    import sys
-    print("Failed to import decision_engine.orchestrator.orchestrate_act_intent", file=sys.stderr)
-    raise
-
+    from models import ActIntentModel, DecisionResponseModel
+    from orchestrator import process_act_intent
+except ImportError as e:
+    print(f"Import error: {e}")
+    print("Creating minimal fallback implementations...")
+    
+    # Minimal fallback implementations
+    from pydantic import BaseModel
+    from typing import Dict, Any, List, Optional
+    
+    class ActIntentModel(BaseModel):
+        intent: str
+        decision_template: str
+        tool_calls: List[Dict[str, Any]] = []
+        facts: Dict[str, Any] = {}
+        request_id: Optional[str] = None
+    
+    class DecisionResponseModel(BaseModel):
+        request_id: str
+        intent: str
+        decision_template: str
+        status: str
+        notes: Optional[str] = None
+        result: Dict[str, Any] = {}
+        confidence: Optional[float] = None
+        timestamp: str
+    
+    def process_act_intent(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Minimal fallback orchestrator"""
+        return {
+            "request_id": payload.get("request_id", "fallback"),
+            "intent": payload.get("intent", "unknown"),
+            "decision_template": payload.get("decision_template", "unknown"),
+            "status": "fallback_mode",
+            "notes": "Running in fallback mode - imports failed",
+            "result": {},
+            "confidence": 0.0,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
 
 # configure logging
 logging.basicConfig(level=logging.INFO)
@@ -58,7 +83,7 @@ app = FastAPI(title="Decision Engine API", version="1.0")
 # CORS: allow all origins as requested
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # allowed origins
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -69,6 +94,7 @@ app.add_middleware(
 # Helper: structured error response generator
 # ----------------------
 def _iso_now() -> str:
+    """Return current timestamp in ISO format."""
     return datetime.now(timezone.utc).isoformat()
 
 
@@ -85,53 +111,43 @@ def _make_structured_response(
     confidence: Optional[float] = None,
     missing: Optional[list] = None,
 ) -> dict:
-    """
-    Build a dictionary shaped like DecisionResponseModel for error/normal replies.
-    If DecisionResponseModel is available, we'll try to instantiate it later for validation.
-    """
-    payload = {
-        "request_id": request_id,
-        "intent": intent or "",
-        "decision_template": decision_template or "",
-        "decision_timestamp": _iso_now(),
+    """Generate a structured response matching DecisionResponseModel schema."""
+    return {
+        "request_id": request_id or str(uuid.uuid4()),
+        "intent": intent or "unknown",
+        "decision_template": decision_template or "unknown",
         "status": status,
-        "result": result or None,
-        "evidence": evidence or [],
+        "notes": notes,
+        "result": result or {},
         "provenance": provenance or [],
+        "evidence": evidence or [],
         "audit_trace": audit_trace or [],
         "confidence": confidence,
         "missing": missing or [],
-        "source_id": None,
-        "source_type": None,
+        "timestamp": _iso_now(),
     }
-    if notes:
-        # attach notes inside result if present, to match model shape more directly
-        if payload["result"] is None:
-            payload["result"] = {"action": status, "items": [], "confidence": confidence or 0.0, "notes": notes}
-        else:
-            if isinstance(payload["result"], dict):
-                payload["result"].setdefault("notes", notes)
-            else:
-                payload["result"] = {"action": status, "items": [], "confidence": confidence or 0.0, "notes": notes}
-    return payload
 
 
 def _validate_and_return_response(response_dict: dict):
-    """
-    If DecisionResponseModel is available, validate by instantiating; otherwise return raw dict.
-    On validation failure, return the raw dict (but log debug).
-    """
-    if DecisionResponseModel is None:
-        return JSONResponse(content=jsonable_encoder(response_dict), status_code=200)
+    """Validate response against DecisionResponseModel and return JSONResponse."""
     try:
-        # DecisionResponseModel will coerce types where possible
-        model = DecisionResponseModel(**response_dict)
-        return JSONResponse(content=jsonable_encoder(response_dict), status_code=200)
-    except Exception as e:
-        logger.debug("DecisionResponseModel validation failed: %s", e, exc_info=True)
-        # Return raw dict to avoid raising server error
-        safe_payload = jsonable_encoder(model)
-        return JSONResponse(content=safe_payload, status_code=200)
+        # Validate with Pydantic model
+        validated_response = DecisionResponseModel(**response_dict)
+        return JSONResponse(
+            content=jsonable_encoder(validated_response.model_dump()),
+            status_code=200
+        )
+    except ValidationError as e:
+        logger.error(f"Response validation error: {e}")
+        # Return a basic valid response if validation fails
+        fallback_response = _make_structured_response(
+            request_id=response_dict.get("request_id"),
+            intent=response_dict.get("intent"),
+            decision_template=response_dict.get("decision_template"),
+            status="validation_error",
+            notes=f"Response validation failed: {str(e)}"
+        )
+        return JSONResponse(content=fallback_response, status_code=200)
 
 
 # ----------------------
@@ -139,151 +155,132 @@ def _validate_and_return_response(response_dict: dict):
 # ----------------------
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    """
-    This catches FastAPI / pydantic validation errors for request body / query params.
-    We return a structured DecisionResponseModel-like payload with status 'invalid_input'.
-    """
-    # attempt to extract request_id and minimal intent info from the request body if present
-    request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
-    intent = None
-    decision_template = None
-    try:
-        body = await request.json()
-        if isinstance(body, dict):
-            intent = body.get("intent")
-            decision_template = body.get("decision_template")
-    except Exception:
-        pass
-
-    payload = _make_structured_response(
-        request_id=request_id,
-        intent=intent,
-        decision_template=decision_template,
-        status="invalid_input",
-        notes=f"Request validation error: {exc}",
-    )
-    return _validate_and_return_response(payload)
-
-
-@app.exception_handler(ValidationError)
-async def pydantic_validation_handler(request: Request, exc: ValidationError):
-    # generic pydantic validation errors (safety)
-    request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
-    payload = _make_structured_response(
+    """Handle request validation errors."""
+    request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+    
+    response = _make_structured_response(
         request_id=request_id,
         intent=None,
         decision_template=None,
         status="invalid_input",
-        notes=f"Pydantic validation error: {exc}",
+        notes=f"Request validation failed: {str(exc)}"
     )
-    return _validate_and_return_response(payload)
+    
+    return JSONResponse(content=response, status_code=400)
 
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
-    """
-    Catch-all handler for unexpected exceptions — return structured payload with status 'invalid_input'.
-    """
-    logger.exception("Unhandled exception during request processing")
-    request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
-    intent = None
-    decision_template = None
-    try:
-        body = await request.json()
-        if isinstance(body, dict):
-            intent = body.get("intent")
-            decision_template = body.get("decision_template")
-    except Exception:
-        pass
-
-    payload = _make_structured_response(
+    """Handle unexpected errors."""
+    request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+    logger.error(f"Unexpected error: {exc}", exc_info=True)
+    
+    response = _make_structured_response(
         request_id=request_id,
-        intent=intent,
-        decision_template=decision_template,
-        status="invalid_input",
-        notes=f"Internal server error: {str(exc)}",
+        intent=None,
+        decision_template=None,
+        status="internal_error",
+        notes=f"Internal server error: {str(exc)}"
     )
-    return _validate_and_return_response(payload)
+    
+    return JSONResponse(content=response, status_code=500)
 
 
 # ----------------------
-# POST /decision endpoint
+# Main endpoint
 # ----------------------
-@app.post("/decision")
+@app.post("/decision", response_model=DecisionResponseModel)
 async def decision_endpoint(
-    act_intent: ActIntentModel,
-    x_request_id: Optional[str] = Header(None, alias="X-Request-ID"),
+    body: ActIntentModel,
+    x_request_id: Optional[str] = Header(None, alias="X-Request-ID")
 ):
     """
-    Receives ActIntentModel (validated by FastAPI/pydantic), forwards dict payload to orchestrator.process_act_intent,
-    and returns a DecisionResponseModel-structured JSON response.
-
-    Request ID:
-      - If header X-Request-ID present, it is propagated.
-      - Otherwise, a UUID4 is generated and injected into the payload as `request_id`.
+    Main decision endpoint that processes ActIntent and returns DecisionResponse.
+    
+    This endpoint accepts a JSON request body with:
+    - intent: The type of decision to make (e.g., "temperature_risk", "irrigation_decision")
+    - decision_template: The specific template for the decision (e.g., "frost_or_heat_risk_assessment")
+    - tool_calls: Array of tool outputs from external APIs/databases
+    - facts: Optional pre-processed facts dictionary
+    - request_id: Optional request identifier (will be generated if not provided)
     """
-    # ensure we have a request id
-    request_id = x_request_id or str(uuid.uuid4())
-
-    # convert incoming pydantic model to dict
-    # If act_intent is a pydantic model, use model_dump() for Pydantic v2
+    # Generate request ID if not provided
+    request_id = x_request_id or body.request_id or str(uuid.uuid4())
+    
     try:
-        payload = act_intent.model_dump()  # pydantic v2
-    except Exception:
-        # fallback for pydantic v1 or non-model
-        try:
-            payload = act_intent.dict()
-        except Exception:
-            payload = dict(act_intent) if isinstance(act_intent, dict) else {}
-    # Ensure JSON-safe
-    payload = jsonable_encoder(payload)
-
-
-    # attach request id (overwrites if an incoming field exists)
-    payload["request_id"] = request_id
-
-    # Forward to orchestrator
-    try:
+        # Convert validated Pydantic model to dict
+        payload = body.model_dump()
+        logger.info(f"Received request {request_id}: {payload}")
+        
+        # Add request_id to payload
+        payload["request_id"] = request_id
+        
+        # Forward to orchestrator
+        logger.info(f"Processing request {request_id} with orchestrator")
         result = process_act_intent(payload)
-    except Exception as e:
-        # If orchestrator raised unexpectedly, return structured error response
-        logger.exception("orchestrator.process_act_intent raised an exception")
-        resp_payload = _make_structured_response(
-            request_id=request_id,
-            intent=payload.get("intent"),
-            decision_template=payload.get("decision_template"),
-            status="invalid_input",
-            notes=f"orchestrator failure: {str(e)}",
-        )
-        return _validate_and_return_response(resp_payload)
-
-    # If orchestrator returned a dict-like response, try to validate with DecisionResponseModel
-    if isinstance(result, dict):
-        # Ensure some expected top-level fields are present; if not, enrich them
-        result.setdefault("request_id", request_id)
-        result.setdefault("intent", payload.get("intent"))
-        result.setdefault("decision_template", payload.get("decision_template"))
-        result.setdefault("decision_timestamp", _iso_now())
-        # Validate/create DecisionResponseModel if available
+        
+        # Ensure result has required fields
+        if not isinstance(result, dict):
+            logger.error(f"Orchestrator returned non-dict result: {type(result)}")
+            response = _make_structured_response(
+                request_id=request_id,
+                intent=payload.get("intent"),
+                decision_template=payload.get("decision_template"),
+                status="internal_error",
+                notes="Orchestrator returned invalid result type"
+            )
+            return JSONResponse(content=response, status_code=500)
+        
+        # Add request_id to result if not present
+        result["request_id"] = request_id
+        
+        # Validate and return response
         return _validate_and_return_response(result)
+        
+    except Exception as e:
+        logger.error(f"Error processing request {request_id}: {e}", exc_info=True)
+        # Safely get intent and decision_template from body
+        intent = getattr(body, 'intent', None) if body else None
+        decision_template = getattr(body, 'decision_template', None) if body else None
+        
+        response = _make_structured_response(
+            request_id=request_id,
+            intent=intent,
+            decision_template=decision_template,
+            status="internal_error",
+            notes=f"Processing failed: {str(e)}"
+        )
+        return JSONResponse(content=response, status_code=500)
 
-    # If orchestrator returned non-dict (unexpected), wrap it
-    resp_payload = _make_structured_response(
-        request_id=request_id,
-        intent=payload.get("intent"),
-        decision_template=payload.get("decision_template"),
-        status="invalid_input",
-        notes=f"orchestrator returned unexpected type: {type(result).__name__}",
-        result={"action": "invalid_output", "items": [], "confidence": 0.0},
-    )
-    return _validate_and_return_response(resp_payload)
 
 # ----------------------
-# Run block for local testing
+# Root and Health check endpoints
+# ----------------------
+@app.get("/")
+async def root():
+    """Root endpoint with API info."""
+    return {
+        "name": "Decision Engine API",
+        "version": "1.0",
+        "status": "running", 
+        "timestamp": _iso_now(),
+        "endpoints": {
+            "decision": "POST /decision",
+            "health": "GET /ping",
+            "docs": "GET /docs"
+        }
+    }
+
+@app.get("/ping")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "ok", "timestamp": _iso_now()}
+
+
+# ----------------------
+# Development server
 # ----------------------
 if __name__ == "__main__":
     import uvicorn
-
-    # run the FastAPI app directly (use app object to avoid import path issues)
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
-
+    logger.info("Starting Decision Engine API server...")
+    uvicorn.run(app, host="127.0.0.1", port=8000, reload=False)

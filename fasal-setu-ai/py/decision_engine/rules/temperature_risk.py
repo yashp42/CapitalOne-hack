@@ -249,12 +249,29 @@ def _severity_from_difference(diff: float, reference: float) -> float:
     Convert an absolute difference to a 0..1 severity.
     For frost: diff = threshold - observed_temp (positive if below threshold)
     For heat: diff = observed_temp - threshold (positive if above)
-    We scale by reference magnitude (e.g., use abs(reference) or 1.0 min) and clip.
+    
+    Improved scaling:
+    - Minor breach (0-1°C): 0.1-0.3 severity
+    - Moderate breach (1-3°C): 0.3-0.7 severity  
+    - Severe breach (3°C+): 0.7-1.0 severity
     """
     try:
-        denom = max(1.0, abs(reference))
-        sev = max(0.0, min(1.0, diff / (denom * 2.0)))  # scaling factor: 2*ref to keep values modest
-        return float(sev)
+        if diff <= 0:
+            return 0.0
+        
+        # Progressive severity scaling based on absolute difference
+        if diff <= 1.0:
+            # Minor breach: 0-1°C = 10-30% severity
+            sev = 0.1 + (diff * 0.2)  # 0.1 + (0 to 1) * 0.2 = 0.1 to 0.3
+        elif diff <= 3.0:
+            # Moderate breach: 1-3°C = 30-70% severity
+            sev = 0.3 + ((diff - 1.0) / 2.0) * 0.4  # 0.3 + (0 to 1) * 0.4 = 0.3 to 0.7
+        else:
+            # Severe breach: 3°C+ = 70-100% severity
+            excess = min(diff - 3.0, 7.0)  # Cap at 10°C total (7°C excess)
+            sev = 0.7 + (excess / 7.0) * 0.3  # 0.7 + (0 to 1) * 0.3 = 0.7 to 1.0
+        
+        return float(max(0.0, min(1.0, sev)))
     except Exception:
         return 0.0
 
@@ -280,9 +297,9 @@ def _select_worst_day_for_risk(days: List[Dict[str, Any]], risk_type: str, thres
             if (best_val is None) or (tmin < best_val):
                 best_val = tmin
                 candidate = d
-        if candidate is None:
+        if candidate is None or best_val is None:
             return None, None, None, 0.0
-        diff = threshold - best_val  # positive if breach
+        diff = threshold - float(best_val)  # positive if breach
         severity = _severity_from_difference(diff, threshold) if diff > 0 else 0.0
         return candidate, best_val, diff, float(severity)
     else:  # heat
@@ -295,9 +312,9 @@ def _select_worst_day_for_risk(days: List[Dict[str, Any]], risk_type: str, thres
             if (best_val is None) or (tmax > best_val):
                 best_val = tmax
                 candidate = d
-        if candidate is None:
+        if candidate is None or best_val is None:
             return None, None, None, 0.0
-        diff = best_val - threshold  # positive if breach
+        diff = float(best_val) - threshold  # positive if breach
         severity = _severity_from_difference(diff, threshold) if diff > 0 else 0.0
         return candidate, best_val, diff, float(severity)
 
@@ -350,7 +367,7 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
         lookahead_days = DEFAULT_LOOKAHEAD_DAYS
 
     # normalize forecast days
-    days = _normalize_forecast_days(weather)
+    days = _normalize_forecast_days(weather or {})
     if not days:
         return {"action": "require_more_info", "items": [], "confidence": 0.0, "notes": "No usable forecast entries in weather_outlook.forecast", "missing": ["weather_outlook.forecast"]}
 
@@ -367,7 +384,7 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
     if not crop_stage:
         crop_stage = _safe_get(calendar, "current_stage", "crop_stage", "stage")
 
-    thresholds = _get_stage_thresholds(calendar, crop_stage)
+    thresholds = _get_stage_thresholds(calendar or {}, crop_stage)
 
     frost_threshold = thresholds.get("frost_threshold", DEFAULT_FROST_THRESHOLD_C)
     heat_threshold = thresholds.get("heat_threshold", DEFAULT_HEAT_THRESHOLD_C)
@@ -386,9 +403,10 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
     except Exception:
         # fallback to simple weather provider entry
         try:
-            wp = weather.get("provider") or weather.get("source")
-            if wp:
-                sources.append({"source_id": wp, "source_type": "weather", "tool": "weather_outlook"})
+            if isinstance(weather, dict):
+                wp = weather.get("provider") or weather.get("source")
+                if wp:
+                    sources.append({"source_id": wp, "source_type": "weather", "tool": "weather_outlook"})
         except Exception:
             pass
 
@@ -400,7 +418,7 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
     if worst_day and severity_frost and severity_frost > 0.0:
         date_str = worst_day.get("date")
         reasons = [f"predicted_min_temp={observed_tmin}C on {date_str}", f"threshold_frost={frost_threshold}C", f"breach_by={diff_frost:.2f}C"]
-        meta = {"worst_date": date_str, "observed_tmin": observed_tmin, "threshold_frost": frost_threshold, "diff": round(diff_frost, 3)}
+        meta = {"worst_date": date_str, "observed_tmin": observed_tmin, "threshold_frost": frost_threshold, "diff": round(float(diff_frost or 0), 3)}
         items.append(_build_item("frost_risk", severity_frost, reasons, meta, sources))
         reasons_all.extend(reasons)
 
@@ -409,7 +427,7 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
     if worst_day_h and severity_heat and severity_heat > 0.0:
         date_str = worst_day_h.get("date")
         reasons = [f"predicted_max_temp={observed_tmax}C on {date_str}", f"threshold_heat={heat_threshold}C", f"exceed_by={diff_heat:.2f}C"]
-        meta = {"worst_date": date_str, "observed_tmax": observed_tmax, "threshold_heat": heat_threshold, "diff": round(diff_heat, 3)}
+        meta = {"worst_date": date_str, "observed_tmax": observed_tmax, "threshold_heat": heat_threshold, "diff": round(float(diff_heat or 0), 3)}
         items.append(_build_item("heat_risk", severity_heat, reasons, meta, sources))
         reasons_all.extend(reasons)
 
@@ -486,17 +504,33 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
     # attempt helper confidence and combine with base_conf
     try:
         if helpers is not None and hasattr(helpers, "compute_confidence"):
-            signal_dict = {"severities_mean": base_conf, "num_forecast_days": len(days)}
-            helper_conf = helpers.compute_confidence(signals=signal_dict, prov_entries=prov_entries)
+            # Prepare signals for helper function with correct parameter names
+            signal_dict = {
+                "handler_confidence": base_conf,  # Use correct key name
+                "items_mean_score": base_conf,    # Average score of risk items
+                "n_items": len(items),            # Number of risk items found
+                "num_forecast_days": len(days)    # Additional context
+            }
+            # Call with correct parameters: signals, facts, required_tools
+            required_tools = ["weather_outlook", "calendar_lookup"]
+            helper_conf = helpers.compute_confidence(
+                signals=signal_dict, 
+                facts=facts,  # Pass facts instead of prov_entries
+                required_tools=required_tools
+            )
             helper_conf = float(helper_conf)
+            print(f"DEBUG: base_conf={base_conf}, helper_conf={helper_conf}, prov_entries={len(prov_entries)}")
             if prov_entries:
                 # favor helper when provenance present
                 final_conf = 0.6 * helper_conf + 0.4 * base_conf
+                print(f"DEBUG: Using helper-weighted confidence: {final_conf}")
             else:
                 # favor heuristic base when no provenance
                 final_conf = 0.8 * base_conf + 0.2 * helper_conf
-    except Exception:
+                print(f"DEBUG: Using base-weighted confidence: {final_conf}")
+    except Exception as e:
         # keep base_conf if helper fails
+        print(f"DEBUG: Helper confidence failed: {e}")
         final_conf = float(base_conf)
 
     final_conf = max(0.0, min(1.0, float(final_conf)))

@@ -17,7 +17,14 @@ from collections import OrderedDict
 from pydantic import ValidationError
 
 # Import the strict models to parse / validate tool outputs
-from ..models import ToolCall
+try:
+    from ..models import ToolCall
+except ImportError:
+    # Fallback for direct execution
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+    from models import ToolCall
 
 logger = logging.getLogger("decision_engine.utils.helpers")
 logger.addHandler(logging.NullHandler())
@@ -85,7 +92,16 @@ def build_facts_from_toolcalls(tool_calls: Iterable) -> Dict[str, Dict[str, Any]
         out = parsed.output
         # convert pydantic model -> plain dict safely
         try:
-            out_dict = out.model_dump() if hasattr(out, "model_dump") else (out.dict() if hasattr(out, "dict") else (out if isinstance(out, dict) else {"value": out}))
+            if out is None:
+                out_dict = {}
+            elif hasattr(out, "model_dump"):
+                out_dict = out.model_dump()
+            elif hasattr(out, "dict"):
+                out_dict = out.dict()
+            elif isinstance(out, dict):
+                out_dict = out
+            else:
+                out_dict = {"value": out}
         except Exception:
             out_dict = out if isinstance(out, dict) else {"value": out}
 
@@ -244,7 +260,8 @@ def compute_confidence(signals: Optional[Dict[str, float]] = None,
     items_mean = signals.get("items_mean_score")
     facts_mean = signals.get("facts_mean_confidence")
     items_max = signals.get("items_max_score")
-    n_items = signals.get("n_items", len(signals.get("items", []) or []))
+    items_list = signals.get("items", [])
+    n_items = signals.get("n_items", len(items_list) if isinstance(items_list, list) else 0)
     n_facts = float(len(facts or {}))
 
     # Normalize numeric values where present

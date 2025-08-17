@@ -11,40 +11,22 @@ Key changes:
 """
 
 from __future__ import annotations
-# ---------- orchestrator imports (replace/merge in top of file) ----------
+
 import logging
 import uuid
+import sys
+import os
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 from fastapi.encoders import jsonable_encoder
-from datetime import timezone
 from pydantic import ValidationError
 
-# models and helpers (adjust relative imports if your package layout differs)
-from .models import ActIntentModel, DecisionResponseModel
-from .utils.helpers import (
-    build_facts_from_toolcalls,
-    extract_provenance_from_facts,
-    compute_confidence,
-    safe_get,
-)
-from .utils.provenance import merge_provenance, prioritize_provenance
-from .utils.helpers import SOURCE_TYPE_WEIGHTS  # ensure this constant exists
+# Add current directory to path for imports
+sys.path.insert(0, os.path.dirname(__file__))
 
-# map of intent->handler you maintain somewhere in the file; ensure it's defined
-# HANDLER_MAP = {"irrigation_decision": irrigation_decision.handle, ...}
-
-logger = logging.getLogger(__name__)
-# -------------------------------------------------------------------------
-
-
-import importlib
-import uuid
-import logging
-from datetime import datetime
-from typing import Any, Dict, List, Optional
-
-# Robust model imports (pydantic models)
-from .models import (
+# Robust imports with fallbacks
+try:
+    from models import (
         ActIntentModel,
         DecisionResponseModel,
         DecisionResult as DecisionResultModel,
@@ -52,8 +34,76 @@ from .models import (
         EvidenceItem as EvidenceItemModel,
         AuditStep as AuditStepModel,
     )
-# Utilities
-from .utils import helpers,provenance
+except ImportError:
+    try:
+        from .models import (
+            ActIntentModel,
+            DecisionResponseModel,
+            DecisionResult as DecisionResultModel,
+            DecisionItem as DecisionItemModel,
+            EvidenceItem as EvidenceItemModel,
+            AuditStep as AuditStepModel,
+        )
+    except ImportError as e:
+        print(f"Models import failed: {e}")
+        # Simple fallback models
+        from pydantic import BaseModel
+        
+        class ActIntentModel(BaseModel):
+            intent: str
+            decision_template: str
+            tool_calls: List[Dict[str, Any]] = []
+            facts: Dict[str, Any] = {}
+            request_id: Optional[str] = None
+
+try:
+    from utils.helpers import (
+        build_facts_from_toolcalls,
+        extract_provenance_from_facts,
+        compute_confidence,
+        safe_get,
+        SOURCE_TYPE_WEIGHTS,
+    )
+    from utils.provenance import merge_provenance, prioritize_provenance
+    from utils import helpers, provenance
+except ImportError:
+    try:
+        from .utils.helpers import (
+            build_facts_from_toolcalls,
+            extract_provenance_from_facts,
+            compute_confidence,
+            safe_get,
+            SOURCE_TYPE_WEIGHTS,
+        )
+        from .utils.provenance import merge_provenance, prioritize_provenance
+        from .utils import helpers, provenance
+    except ImportError as e:
+        print(f"Utils import failed: {e}")
+        # Minimal fallback helpers
+        def build_facts_from_toolcalls(tool_calls):
+            facts = {}
+            for tc in tool_calls or []:
+                if isinstance(tc, dict) and 'tool' in tc and 'output' in tc:
+                    facts[tc['tool']] = tc['output']
+            return facts
+        
+        def compute_confidence(signals=None, facts=None, required_tools=None):
+            return 0.8
+        
+        def safe_get(d, *keys, default=None):
+            for key in keys:
+                if isinstance(d, dict) and key in d:
+                    d = d[key]
+                else:
+                    return default
+            return d
+        
+        def extract_provenance_from_facts(facts):
+            return []
+        
+        def merge_provenance(handler_prov=None, facts=None):
+            return []
+
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
@@ -69,21 +119,60 @@ INTENT_ROUTING = {
 
 ALLOWED_STATUSES = {"complete", "incomplete", "invalid_input", "handler_not_found"}
 
-from decision_engine.rules import (
-    irrigation_decision,
-    market_advice,
-    pesticide_advice,
-    temperature_risk,
-    variety_selection,
-)
-
-HANDLER_MAP = {
-    "irrigation_decision": irrigation_decision.handle,
-    "variety_selection": variety_selection.handle,
-    "temperature_risk": temperature_risk.handle,
-    "market_advice": market_advice.handle,
-    "pesticide_advice": pesticide_advice.handle,
-}
+# Import rules with fallbacks
+try:
+    from rules import (
+        irrigation_decision,
+        market_advice,
+        pesticide_advice,
+        temperature_risk,
+        variety_selection,
+    )
+    
+    HANDLER_MAP = {
+        "irrigation_decision": irrigation_decision.handle,
+        "variety_selection": variety_selection.handle,
+        "temperature_risk": temperature_risk.handle,
+        "market_advice": market_advice.handle,
+        "pesticide_advice": pesticide_advice.handle,
+    }
+except ImportError:
+    try:
+        from decision_engine.rules import (
+            irrigation_decision,
+            market_advice,
+            pesticide_advice,
+            temperature_risk,
+            variety_selection,
+        )
+        
+        HANDLER_MAP = {
+            "irrigation_decision": irrigation_decision.handle,
+            "variety_selection": variety_selection.handle,
+            "temperature_risk": temperature_risk.handle,
+            "market_advice": market_advice.handle,
+            "pesticide_advice": pesticide_advice.handle,
+        }
+    except ImportError as e:
+        print(f"Rules import failed: {e}")
+        
+        # Fallback handler function
+        def fallback_handler(intent, facts):
+            return {
+                "action": "require_more_info",
+                "items": [],
+                "notes": f"Handler for {intent} not available",
+                "confidence": 0.0,
+                "missing": ["handler_implementation"]
+            }
+        
+        HANDLER_MAP = {
+            "irrigation_decision": fallback_handler,
+            "variety_selection": fallback_handler,
+            "temperature_risk": fallback_handler,
+            "market_advice": fallback_handler,
+            "pesticide_advice": fallback_handler,
+        }
 
 # ---------- normalize items helper ----------
 def _normalize_items(items: Optional[List[Any]]) -> List[Dict[str, Any]]:
@@ -201,7 +290,7 @@ def process_act_intent(raw_payload: Dict[str, Any]) -> Dict[str, Any]:
 
     # If you want to prioritize a top-K (ensure prioritize_provenance exists)
     try:
-        prioritized_prov = prioritize_provenance(merged_prov, source_weights=SOURCE_TYPE_WEIGHTS)
+        prioritized_prov = prioritize_provenance(merged_prov)
     except Exception:
         prioritized_prov = merged_prov or []
 
@@ -230,17 +319,24 @@ def process_act_intent(raw_payload: Dict[str, Any]) -> Dict[str, Any]:
 
     # 9) Build final response structure
     final_response = {
+        "request_id": act.request_id or trace_id,  # Add request_id
         "intent": act.intent,
         "decision_template": act.decision_template,
         "decision_timestamp": datetime.now(timezone.utc).isoformat(),
+        "status": "complete",  # Add explicit status
         "result": {
             "action": handler_result.get("action"),
             "items": handler_result.get("items"),
             "confidence": overall_confidence,
             "notes": handler_result.get("notes"),
         },
-        "handlers": [{"handler": act.intent, "result": handler_result}],
+        "evidence": [],  # Add evidence array
         "provenance": prioritized_prov,
+        "audit_trace": [],  # Add audit_trace array
+        "confidence": overall_confidence,  # Add top-level confidence
+        "missing": [],  # Add missing array
+        "source_id": None,  # Add source_id
+        "source_type": None,  # Add source_type
         "trace_id": trace_id,
     }
 

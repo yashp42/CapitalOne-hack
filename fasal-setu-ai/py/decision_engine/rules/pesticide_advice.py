@@ -216,7 +216,7 @@ def _product_confidence(product: Dict[str, Any], signals: Dict[str, float]) -> f
     try:
         if helpers is not None and hasattr(helpers, "compute_confidence"):
             # pass normalized signals and provenance entries
-            helper_conf = helpers.compute_confidence(signals=norm_signals, prov_entries=prov_entries)
+            helper_conf = helpers.compute_confidence({"handler_confidence": heuristic_conf, "items_mean_score": heuristic_conf, "facts_mean_confidence": 0.8})
             helper_conf = float(helper_conf)
     except Exception:
         helper_conf = None
@@ -461,8 +461,9 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
     top_n = 5
     try:
         if isinstance(intent, dict):
-            if intent.get("top_n"):
-                top_n = int(intent.get("top_n"))
+            top_n_val = intent.get("top_n")
+            if top_n_val is not None:
+                top_n = int(top_n_val)
     except Exception:
         top_n = 5
 

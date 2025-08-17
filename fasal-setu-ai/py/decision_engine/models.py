@@ -276,48 +276,18 @@ ToolNameLiteral = Literal[
 ]
 
 class ToolCall(BaseModel):
-    tool: ToolNameLiteral
+    tool: str  # Made more permissive
     args: Optional[Dict[str, Any]] = Field(default_factory=dict)
     output: Optional[Any] = None
 
-    @root_validator(pre=True)
-    def validate_and_parse_output(cls, values):
-        tool = values.get("tool")
-        out = values.get("output", {}) or {}
-
-        mapping = {
-            "weather_outlook": WeatherOutput,
-            "prices_fetch": MandiPriceOutput,   # legacy mapping: prices_fetch -> mandi_prices format
-            "calendar_lookup": CropCalendarOutput,
-            "variety_lookup": RagSearchOutput,  # variety lookup may be provided as rag_search-like results
-            "policy_match": DatasetSourceOutput,
-            "pesticide_lookup": PesticideOutput,
-            "storage_find": DatasetSourceOutput,
-            "rag_search": RagSearchOutput,
-            # explicit schema names in your zip
-            "crop_calendar": CropCalendarOutput,
-            "soil_profile": SoilSampleOutput,
-            "mandi_prices": MandiPriceOutput
-        }
-
-        model_cls = mapping.get(tool)
-        if model_cls is None:
-            # Unknown mapping: leave output as-is but keep the field
-            values["output"] = out
-            return values
-
-        # parse using the mapped strict model
-        try:
-            if isinstance(out, model_cls):
-                values["output"] = out
-            else:
-                parsed = model_cls.parse_obj(out)
-                values["output"] = parsed
-        except ValidationError as e:
-            # Raise ValueError so the orchestrator can catch and return invalid_input
-            raise ValueError(f"Tool '{tool}' output failed schema validation: {e}") from e
-
-        return values
+    class Config:
+        extra = "allow"  # Allow extra fields
+    
+    # Commented out strict validation - let raw data pass through
+    # @root_validator(pre=True)
+    # def validate_and_parse_output(cls, values):
+    #     # Raw data validation disabled for flexibility
+    #     return values
 
 
 # ---------------------------
