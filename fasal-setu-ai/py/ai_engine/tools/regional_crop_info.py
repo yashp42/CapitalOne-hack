@@ -159,10 +159,16 @@ def _try_static_data(args: Dict[str, Any]) -> Dict[str, Any]:
 
         # If only state provided (no district), collect all files for that state
         if state and not district:
-            state_prefix = _canon(state) + "_"
-            for f in matched_files:
-                if f.startswith(state_prefix):
-                    aggregated_matches.append(_load_doc(f))
+            # First check for a direct state file without district
+            state_file = f"{_canon(state)}.json"
+            if state_file in matched_files:
+                aggregated_matches.append(_load_doc(state_file))
+            else:
+                # Otherwise collect all district files for this state
+                state_prefix = _canon(state) + "_"
+                for f in matched_files:
+                    if f.startswith(state_prefix):
+                        aggregated_matches.append(_load_doc(f))
 
         # Deduplicate aggregated_matches by source file
         seen_files = set()
@@ -198,10 +204,20 @@ def _try_static_data(args: Dict[str, Any]) -> Dict[str, Any]:
                         "source_file": d.get("_source_file")
                     })
 
+            # Extract detailed crop info if requested
+            crop_details = None
+            if crop and "crop_info" in fields:
+                for d in aggr_unique:
+                    crop_info = _find_crop_info(d, crop)
+                    if crop_info:
+                        crop_details = crop_info
+                        break
+
             return {
                 "data": {
                     "regions": regions if "region_info" in fields else None,
-                    "crops_index": list(crops_found.values()) if "crop_info" in fields else None
+                    "crops_index": list(crops_found.values()) if "crop_info" in fields else None,
+                    "crop_details": crop_details if crop and "crop_info" in fields else None
                 },
                 "source_stamp": {
                     "type": "static_pack",
@@ -318,6 +334,10 @@ def get_regional_crop_info(args: Dict[str, Any]) -> Dict[str, Any]:
             "error": "unsupported_kind",
             "source_stamp": {"type": "static_pack", "path": DATA_DIR}
         }
+        
+    # Set default fields if not provided
+    if "fields" not in args or not args["fields"]:
+        args["fields"] = ["region_info", "crop_info"]
 
     # Query mode - try RAG first
     query = (args.get("query") or "").strip()

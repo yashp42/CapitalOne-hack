@@ -154,10 +154,12 @@ def _maybe_enrich_latlon(args: Dict[str, Any], profile: Optional[Dict[str, Any]]
     return args, None
 
 
-def _normalize_args(tool: str, args: Dict[str, Any], profile: Optional[Dict[str, Any]]) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
+def _normalize_args(tool: str, args: Dict[str, Any], profile: Optional[Dict[str, Any]], 
+                temp_facts: Optional[Dict[str, Any]] = None) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
     """Per-tool normalization (defaults, lat/lon inference, etc.)"""
     args = dict(args)
     meta: Optional[Dict[str, Any]] = None
+    facts = temp_facts or {}
 
     if tool == "regional_crop_info":
         args.setdefault("kind", "crop_calendar")
@@ -167,15 +169,43 @@ def _normalize_args(tool: str, args: Dict[str, Any], profile: Optional[Dict[str,
 
     elif tool == "weather_outlook":
         args.setdefault("days", 3)
+        
+        # Check if geocode_tool was called previously in this batch
+        if "location" in facts and isinstance(facts["location"], dict):
+            location_data = facts["location"].get("data", {})
+            if "lat" in location_data and "lon" in location_data:
+                args["lat"] = float(location_data["lat"])
+                args["lon"] = float(location_data["lon"])
+                return args, {"geocode": facts["location"]}
+                
+        # Fallback to the regular lookup
         args, meta = _maybe_enrich_latlon(args, profile)
 
     elif tool == "soil_api":
+        # Similar check for geocode results
+        if "location" in facts and isinstance(facts["location"], dict):
+            location_data = facts["location"].get("data", {})
+            if "lat" in location_data and "lon" in location_data:
+                args["lat"] = float(location_data["lat"])
+                args["lon"] = float(location_data["lon"])
+                return args, {"geocode": facts["location"]}
+                
         args, meta = _maybe_enrich_latlon(args, profile)
 
     elif tool == "storage_find":
         args.setdefault("state", (profile or {}).get("state"))
         args.setdefault("district", (profile or {}).get("district"))
-        args, meta = _maybe_enrich_latlon(args, profile)
+        
+        # Check for geocode results
+        if "location" in facts and isinstance(facts["location"], dict):
+            location_data = facts["location"].get("data", {})
+            if "lat" in location_data and "lon" in location_data:
+                args["lat"] = float(location_data["lat"])
+                args["lon"] = float(location_data["lon"])
+                meta = {"geocode": facts["location"]}
+        else:
+            args, meta = _maybe_enrich_latlon(args, profile)
+            
         args.setdefault("max_radius_km", 50)
 
     elif tool == "prices_fetch":
@@ -201,20 +231,62 @@ def _call_tool(fn: Any, args: Dict[str, Any]) -> Dict[str, Any]:
 def tools_node(state: PlannerState) -> PlannerState:
     """Execute pending tool calls and merge results into facts."""
     executed_calls: List[ToolCall] = list(state.pending_tool_calls)
+    
+    # Create a temporary facts dict to store results as we go
+    temp_facts = dict(state.facts) if hasattr(state, 'facts') else {}
+    
+    # Special handling for geocode + weather pattern
+    # Check if we have both geocode and weather calls in the same batch
+    has_geocode = any(call.tool == "geocode_tool" for call in executed_calls)
+    has_weather = any(call.tool == "weather_outlook" for call in executed_calls)
+    
+    # Process all geocode calls first if we have both geocode and weather
+    if has_geocode and has_weather:
+        # Process geocode calls first
+        geocode_calls = [call for call in executed_calls if call.tool == "geocode_tool"]
+        for call in geocode_calls:
+            tool_fn = TOOL_MAP.get("geocode_tool")
+            if not tool_fn:
+                temp_facts["location"] = {"error": "Tool not found: geocode_tool"}
+                continue
+                
+            try:
+                result = _call_tool(tool_fn, call.args)
+                temp_facts["location"] = result
+            except Exception as exc:
+                logger.exception("Tool %s failed", "geocode_tool")
+                temp_facts["location"] = {"error": str(exc)}
 
     try:
         for call in executed_calls:
             tool_name = call.tool
+            # Skip geocode calls if we've already processed them
+            if has_geocode and has_weather and tool_name == "geocode_tool":
+                continue
+                
             tool_fn = TOOL_MAP.get(tool_name)
             slot = FACT_SLOT.get(tool_name, tool_name)
 
             if not tool_fn:
-                state.facts[slot] = {"error": f"Tool not found: {tool_name}"}
+                temp_facts[slot] = {"error": f"Tool not found: {tool_name}"}
                 continue
 
             try:
-                norm_args, meta = _normalize_args(tool_name, call.args, state.profile)
-                result = _call_tool(tool_fn, norm_args)
+                args = dict(call.args)
+                
+                # Special handling for weather_outlook to use geocode results
+                if tool_name == "weather_outlook" and "location" in temp_facts:
+                    location_data = temp_facts["location"].get("data", {})
+                    if "lat" in location_data and "lon" in location_data:
+                        args["lat"] = float(location_data["lat"])
+                        args["lon"] = float(location_data["lon"])
+                        meta = {"geocode": temp_facts["location"]}
+                    else:
+                        args, meta = _normalize_args(tool_name, args, state.profile)
+                else:
+                    args, meta = _normalize_args(tool_name, args, state.profile)
+                    
+                result = _call_tool(tool_fn, args)
 
                 # Attach meta (e.g., geocode_used) non-destructively
                 if meta and isinstance(result, dict):
@@ -224,11 +296,14 @@ def tools_node(state: PlannerState) -> PlannerState:
                         result["_meta"]["geocode_used"] = True
                         result["_meta"]["geocode"] = meta["geocode"]
 
-                state.facts[slot] = result
+                temp_facts[slot] = result
 
             except Exception as exc:
                 logger.exception("Tool %s failed", tool_name)
-                state.facts[slot] = {"error": str(exc)}
+                temp_facts[slot] = {"error": str(exc)}
+        
+        # Update state.facts with all results
+        state.facts = temp_facts
 
         # Mark executed; clear pending
         state.tool_calls.extend(executed_calls)
@@ -237,7 +312,7 @@ def tools_node(state: PlannerState) -> PlannerState:
     except Exception as e:
         logger.error(f"tools_node error: {e}")
         # Always return a valid state
-        state.facts = state.facts if hasattr(state, 'facts') else {}
+        state.facts = temp_facts
         state.tool_calls = state.tool_calls if hasattr(state, 'tool_calls') else []
 
     return state

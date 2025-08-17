@@ -22,7 +22,7 @@ def _get_llm():
     gemini_key = os.environ.get("GEMINI_API_KEY")
     if not gemini_key:
         raise RuntimeError("GEMINI_API_KEY environment variable not set.")
-    return ChatGoogleGenerativeAI(model="gemini-2.5-pro", google_api_key=gemini_key)
+    return ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=gemini_key)
 
 model = _get_llm()
 
