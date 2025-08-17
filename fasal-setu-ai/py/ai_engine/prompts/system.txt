@@ -17,7 +17,7 @@ Rules:
   - geocode_tool: {state, district} → {lat, lon} for any Indian district
   - weather_outlook: {lat, lon, days?} → daily/hourly weather forecast
   - prices_fetch: {state, district, commodity?} → mandi prices
-  - regional_crop_info: {state, district, crop?} → regional crop data (varieties, calendars, practices)
+  - regional_crop_info: {state, district, crop?} → comprehensive crop data (varieties, calendars, practices, contingencies, soil/weather requirements)
   - policy_match: {state, profile} → matching policies
   - pesticide_lookup: {crop, pest, stage?} → safe pesticides
   - storage_find: {state, district, lat?, lon?} → storage facilities

@@ -227,9 +227,9 @@ Available Tools and Their Capabilities:
    Output: Nearby facilities with capacity
 
 3. Crop & Advisory:
-   calendar_lookup: Get crop calendars
+   regional_crop_info: Get comprehensive crop calendars and regional information
    Input: {{"state": "<state>", "district": "<district>", "crop": "<crop>", "fields": ["region_info","crop_info"]}}
-   Output: Planting dates, practices
+   Output: Complete crop details including planting windows, stages, temperature/soil/irrigation requirements, contingencies, and market mapping for all crops in the region
 
    pesticide_lookup: Get safe pesticide advice
    Input: {{"crop": "<crop>", "pest": "<pest>", "stage": "<stage>"}}
