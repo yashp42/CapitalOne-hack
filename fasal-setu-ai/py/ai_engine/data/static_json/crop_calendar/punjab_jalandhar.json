@@ -1,0 +1,61 @@
+{
+  "state": "Punjab",
+  "district": "Jalandhar",
+  "agro_climatic_zone": "Central Plain Zone (PB-3), Trans-Gangetic Plain Region (VI)",
+  "source_type": "CRIDA_contingency",
+  "source_url": "PUNJAB 9-Jalandhar 30.04.2011.pdf",
+  "doc_date": "2011-04-30",
+  "last_checked": "2025-08-13",
+  "normal_annual_rain_mm": 703.0,
+  "rainfall_pattern_notes": "Majority of rainfall received during June to September",
+  "dominant_soils": ["sandy loam", "loam", "clay loam"],
+  "crops": [
+    {
+      "crop_name": "wheat",
+      "season": "Rabi",
+      "planting_window": {"start": "11-01", "end": "12-15"},
+      "stages": ["sowing", "crown root initiation", "flowering", "milking", "harvesting"],
+      "stage_lengths_days": null,
+      "ideal_temp_c": {"range_day": [20, 25], "notes": "Cool and dry climate preferred"},
+      "soil_ideal": {"text": "Well-drained loam and clay loam", "ph_range": [6.5, 8.0]},
+      "irrigation_ideal": {
+        "critical_stages": ["CRI", "flowering", "milking"],
+        "seasonal_requirement_mm": 450,
+        "notes": "Irrigate at CRI stage followed by flowering and milking stages"
+      },
+      "weather_ideal": {"notes": ["No rains during ripening", "Low humidity during maturity"]},
+      "contingencies": [],
+      "market_mapping": {"commodity_names": ["wheat"]},
+      "data_gaps": [],
+      "sources": ["pdf_source"]
+    },
+    {
+      "crop_name": "paddy",
+      "season": "Kharif",
+      "planting_window": {"start": "06-10", "end": "07-10"},
+      "stages": ["nursery", "transplanting", "tillering", "panicle initiation", "grain filling", "harvesting"],
+      "stage_lengths_days": null,
+      "ideal_temp_c": {"range_day": [25, 35], "notes": "Warm and humid climate preferred"},
+      "soil_ideal": {"text": "Clay loam to loam soils with good water retention", "ph_range": [5.5, 7.0]},
+      "irrigation_ideal": {
+        "critical_stages": ["panicle initiation", "flowering", "grain filling"],
+        "seasonal_requirement_mm": 1200,
+        "notes": "Continuous standing water preferred during most of crop period"
+      },
+      "weather_ideal": {"notes": ["High humidity during vegetative growth", "No lodging rains at maturity"]},
+      "contingencies": [],
+      "market_mapping": {"commodity_names": ["rice"]},
+      "data_gaps": [],
+      "sources": ["pdf_source"]
+    }
+  ],
+  "dataset_sources": [
+    {
+      "key": "pdf_source",
+      "title": "District Agriculture Contingency Plan - Jalandhar, Punjab",
+      "url": "PUNJAB 9-Jalandhar 30.04.2011.pdf",
+      "tier": "primary",
+      "last_checked": "2025-08-13"
+    }
+  ]
+}
