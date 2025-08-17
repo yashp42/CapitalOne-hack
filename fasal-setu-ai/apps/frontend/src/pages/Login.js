@@ -650,7 +650,7 @@ const Login = () => {
         <div className="w-full max-w-xs sm:max-w-sm lg:max-w-md animate-fade-in">
 
           {/* Main Form Card */}
-          <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 p-4 sm:p-6 mb-4 backdrop-saturate-150 transition-all duration-500 hover:shadow-3xl animating"
+          <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 p-4 sm:p-6 mb-4 backdrop-saturate-150 transition-all duration-500 hover:shadow-3xl"
             style={{
               backdropFilter: 'blur(20px) saturate(150%)',
               borderColor: 'rgba(156, 163, 175, 0.3)',
