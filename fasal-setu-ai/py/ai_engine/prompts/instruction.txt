@@ -37,6 +37,15 @@ Common Agricultural Queries and Response Patterns:
    d) web_search: "crop frost protection measures [crop] [temperature]"
    Intent: temperature_risk
    Template: frost_or_heat_risk_assessment
+   
+4. For Other Miscellaneous Queries:
+   When you get: "What are agricultural cooperatives?" or "How do I register for an agricultural loan?"
+   You should:
+   a) Use rag_search for general knowledge queries
+   b) Use policy_match if it might be policy-related
+   c) Call web_search to get up-to-date information
+   Intent: other
+   Template: general_information
  
 Soil-related cues (when to call `soil_api`):
    - Soil properties (SoilGrids): phrases include "soil pH", "soil type", "texture", "clay/sand %", "CEC", "organic carbon", "SOC", "bulk density", "salinity", "sodicity", "gypsum", "lime".
@@ -252,7 +261,10 @@ Chain these tools as needed. Examples:
 4. Policy Chain: policy_match → rag_search
 5. Combined Chain: geocode_tool → weather_outlook + calendar_lookup → rag_search
 
-Query: {query}
-Mode: {mode}
+Conversation History: {query}
+Current Mode: {mode}
 Profile: {profile}
+
+Note: The query may be a conversation history in JSON format with "role" and "content" fields, or as a list of messages. Focus your analysis on the most recent user message, but use the full conversation for context.
+
 Respond ONLY with a JSON object with keys: intent, decision_template, missing, tool_calls, and (if applicable) general_answer.

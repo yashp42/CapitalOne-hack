@@ -2,6 +2,17 @@ from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
+class Message(BaseModel):
+    role: Literal["system", "user", "assistant"]
+    content: str
+    
+    def model_dump(self, **kwargs):
+        return {"role": self.role, "content": self.content}
+    
+    def __iter__(self):
+        yield "role", self.role
+        yield "content", self.content
+
 # Standardized tool names for LangChain (contract tools only)
 TOOL_NAMES = [
                 "geocode_tool",
@@ -34,7 +45,7 @@ class ToolCall(BaseModel):
 
 
 class PlannerState(BaseModel):
-        query: str
+        query: str | List[str] | List[Message]  # Can be a string, list of strings, or list of Message objects
         profile: Optional[Dict[str, Any]] = None
         intent: Optional[str] = None
         mode: str="public_advisor"

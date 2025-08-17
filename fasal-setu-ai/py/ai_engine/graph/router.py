@@ -2,10 +2,18 @@ from .state import PlannerState, ToolCall, TOOL_NAMES
 
 import os
 import json
+import typing
 from pathlib import Path
 
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
+
+# Custom JSON encoder for Message objects
+class MessageEncoder(json.JSONEncoder):
+    def default(self, o):
+        if hasattr(o, 'model_dump'):
+            return o.model_dump()
+        return super().default(o)
 
 load_dotenv()
 
@@ -14,7 +22,7 @@ def _get_llm():
     gemini_key = os.environ.get("GEMINI_API_KEY")
     if not gemini_key:
         raise RuntimeError("GEMINI_API_KEY environment variable not set.")
-    return ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=gemini_key)
+    return ChatGoogleGenerativeAI(model="gemini-2.5-pro", google_api_key=gemini_key)
 
 model = _get_llm()
 
@@ -30,7 +38,8 @@ def _build_planner_prompt(state: PlannerState) -> str:
         "temperature_risk": "frost_or_heat_risk_assessment",
         "market_advice": "sell_or_hold_decision",
         "credit_policy_match": "ranked_credit_options",
-        "pesticide_advice": "pesticide_safe_recommendation"
+        "pesticide_advice": "pesticide_safe_recommendation",
+        "other": "general_information"
     }
 
     prompts_dir = Path(__file__).resolve().parent.parent / "prompts"
@@ -48,11 +57,21 @@ def _build_planner_prompt(state: PlannerState) -> str:
     instruction_template = instruction_template.replace("{{profile}}", "{profile}")
     
     # Now do the formatting
+    # Handle query that can be a string or a list 
+    query_value = state.query
+    
+    if isinstance(query_value, list):
+        # Use our custom encoder to handle Message objects
+        formatted_query = json.dumps(query_value, ensure_ascii=False, cls=MessageEncoder)
+    else:
+        # Handle the case where query is a single string (backwards compatibility)
+        formatted_query = query_value if query_value else ""
+    
     instruction = instruction_template.format(
         intents=list(intent_templates.keys()),
         templates=list(intent_templates.values()),
         tools=list(TOOL_NAMES),
-        query=state.query,
+        query=formatted_query,
         mode=state.mode,
         profile=json.dumps(state.profile or {}, ensure_ascii=False),
     )
