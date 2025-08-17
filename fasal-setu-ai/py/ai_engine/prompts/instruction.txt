@@ -40,7 +40,27 @@ Common Agricultural Queries and Response Patterns:
    Intent: temperature_risk
    Template: frost_or_heat_risk_assessment
    
-4. For Other Miscellaneous Queries:
+4. For Crop Selection with Market Considerations:
+   When you get: "What crop should I grow in Maharashtra considering market prices?" or "Best crops for tariff changes?"
+   You should make MULTIPLE specific tool calls:
+   a) Get regional crop options: regional_crop_info with state (and district if available)
+   b) Get market prices for EACH major crop: prices_fetch with state/district/commodity for each crop
+      Example: If crops found are ["paddy", "cotton", "sugarcane"], make separate calls:
+      - {"tool": "prices_fetch", "args": {"state": "Maharashtra", "commodity": "paddy"}}
+      - {"tool": "prices_fetch", "args": {"state": "Maharashtra", "commodity": "cotton"}}
+      - {"tool": "prices_fetch", "args": {"state": "Maharashtra", "commodity": "sugarcane"}}
+   c) Search for market trends: rag_search for crop profitability and market analysis
+   d) Get current market conditions: web_search for recent price trends and policies
+   Intent: variety_selection (or market_advice if focus is on selling)
+   Template: variety_ranked_list (or sell_or_hold_decision)
+   
+   IMPORTANT: Always specify the commodity in prices_fetch. Common crops to consider:
+   - Maharashtra: paddy, cotton, sugarcane, soybean, wheat, maize
+   - Bihar: rice, wheat, maize, sugarcane
+   - Punjab: wheat, rice, cotton, sugarcane
+   If you know the region, use the most common crops for that region.
+
+5. For Other Miscellaneous Queries:
    When you get: "What are agricultural cooperatives?" or "How do I register for an agricultural loan?"
    You should:
    a) Use rag_search for general knowledge queries
@@ -269,8 +289,9 @@ Chain these tools as needed. Examples:
 1. Weather Chain: geocode_tool → weather_outlook
 2. Market Chain: prices_fetch → storage_find → rag_search
 3. Crop Chain: regional_crop_info → weather_outlook → rag_search
-4. Policy Chain: policy_match → rag_search
-5. Combined Chain: geocode_tool → weather_outlook + regional_crop_info → rag_search
+4. Crop-Market Chain: regional_crop_info → prices_fetch → rag_search (auto commodity chaining)
+5. Policy Chain: policy_match → rag_search
+6. Combined Chain: geocode_tool → weather_outlook + regional_crop_info → rag_search
 
 Conversation History: {query}
 Current Mode: {mode}

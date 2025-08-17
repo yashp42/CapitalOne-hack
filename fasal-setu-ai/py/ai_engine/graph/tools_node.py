@@ -241,6 +241,10 @@ def tools_node(state: PlannerState) -> PlannerState:
     location_tools = ["weather_outlook", "soil_api", "storage_find"]
     has_location_tools = any(call.tool in location_tools for call in executed_calls)
     
+    # Special handling for regional_crop_info + prices_fetch pattern
+    has_crop_info = any(call.tool == "regional_crop_info" for call in executed_calls)
+    has_prices = any(call.tool == "prices_fetch" for call in executed_calls)
+    
     # Process all geocode calls first if we have both geocode and location-based tools
     if has_geocode and has_location_tools:
         # Process geocode calls first
@@ -257,12 +261,33 @@ def tools_node(state: PlannerState) -> PlannerState:
             except Exception as exc:
                 logger.exception("Tool %s failed", "geocode_tool")
                 temp_facts["location"] = {"error": str(exc)}
+                
+    # Process regional_crop_info calls first if we have both crop_info and prices_fetch
+    if has_crop_info and has_prices:
+        crop_info_calls = [call for call in executed_calls if call.tool == "regional_crop_info"]
+        for call in crop_info_calls:
+            tool_fn = TOOL_MAP.get("regional_crop_info")
+            if not tool_fn:
+                temp_facts["calendar"] = {"error": "Tool not found: regional_crop_info"}
+                continue
+                
+            try:
+                # Normalize arguments with any existing temp_facts
+                norm_args, meta = _normalize_args(call.tool, call.args, state.profile, temp_facts)
+                result = _call_tool(tool_fn, norm_args)
+                temp_facts["calendar"] = result
+            except Exception as exc:
+                logger.exception("Tool %s failed", "regional_crop_info")
+                temp_facts["calendar"] = {"error": str(exc)}
 
     try:
         for call in executed_calls:
             tool_name = call.tool
             # Skip geocode calls if we've already processed them
             if has_geocode and has_location_tools and tool_name == "geocode_tool":
+                continue
+            # Skip regional_crop_info calls if we've already processed them
+            if has_crop_info and has_prices and tool_name == "regional_crop_info":
                 continue
                 
             tool_fn = TOOL_MAP.get(tool_name)
@@ -274,6 +299,7 @@ def tools_node(state: PlannerState) -> PlannerState:
 
             try:
                 args = dict(call.args)
+                meta = None  # Initialize meta variable
                 
                 # Special handling for location-based tools to use geocode results
                 if tool_name in location_tools and "location" in temp_facts:
@@ -283,6 +309,20 @@ def tools_node(state: PlannerState) -> PlannerState:
                         args["lon"] = float(location_data["lon"])
                         meta = {"geocode": temp_facts["location"]}
                     else:
+                        args, meta = _normalize_args(tool_name, args, state.profile)
+                # Special handling for prices_fetch to use crop results
+                elif tool_name == "prices_fetch" and "calendar" in temp_facts:
+                    calendar_data = temp_facts["calendar"].get("data", {})
+                    if calendar_data and calendar_data.get("crops"):
+                        crops = calendar_data["crops"]
+                        if crops and not args.get("commodity"):
+                            # Use the first crop if no commodity specified
+                            first_crop = crops[0].get("crop_name") if isinstance(crops[0], dict) else None
+                            if first_crop:
+                                args["commodity"] = first_crop
+                                meta = {"auto_commodity_from_calendar": first_crop}
+                    # Still apply normal normalization if no meta was set
+                    if not meta:
                         args, meta = _normalize_args(tool_name, args, state.profile)
                 else:
                     args, meta = _normalize_args(tool_name, args, state.profile)

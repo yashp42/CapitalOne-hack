@@ -178,6 +178,20 @@ def _find_crop_info(doc: Dict[str, Any], crop: Optional[str]) -> Optional[Dict[s
             return c
     return None
 
+def _normalize_state_spelling(state: str) -> str:
+    """Handle common misspellings in state names to match file names."""
+    if not state:
+        return state
+    
+    # Common misspellings in the data files
+    spelling_map = {
+        "maharashtra": "maharastra",  # Files use maharastra (missing h)
+        # Add other common misspellings here as needed
+    }
+    
+    canonical = _canon(state)
+    return spelling_map.get(canonical, canonical)
+
 def _try_static_data(args: Dict[str, Any]) -> Dict[str, Any]:
     """Try to get data from static JSON files first."""
     state = args.get("state")
@@ -186,13 +200,17 @@ def _try_static_data(args: Dict[str, Any]) -> Dict[str, Any]:
     fields = args.get("fields") or ["region_info", "crop_info"]
     strict_region = bool(args.get("strict_region", False))
 
+    # Normalize state spelling to match actual file names
+    if state:
+        state = _normalize_state_spelling(state)
+
     try:
         # List all JSON files in the crop calendar directory
         matched_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".json")]
 
         # If strict_region requested and both state+district present, require exact file
         if strict_region and state and district:
-            file_stem = _canon(f"{state}_{district}")
+            file_stem = f"{state}_{_canon(district)}"
             target_file = next((f for f in matched_files if f.startswith(file_stem)), None)
             if not target_file:
                 return {
@@ -218,7 +236,7 @@ def _try_static_data(args: Dict[str, Any]) -> Dict[str, Any]:
 
         # If both state+district provided, prefer exact matches (but still allow other files for crop search)
         if state and district:
-            stem = _canon(f"{state}_{district}")
+            stem = f"{state}_{_canon(district)}"
             for f in matched_files:
                 if f.startswith(stem):
                     aggregated_matches.append(_load_doc(f))
@@ -236,12 +254,12 @@ def _try_static_data(args: Dict[str, Any]) -> Dict[str, Any]:
         # If only state provided (no district), collect all files for that state
         if state and not district:
             # First check for a direct state file without district
-            state_file = f"{_canon(state)}.json"
+            state_file = f"{state}.json"
             if state_file in matched_files:
                 aggregated_matches.append(_load_doc(state_file))
             else:
                 # Otherwise collect all district files for this state
-                state_prefix = _canon(state) + "_"
+                state_prefix = state + "_"
                 for f in matched_files:
                     if f.startswith(state_prefix):
                         aggregated_matches.append(_load_doc(f))
