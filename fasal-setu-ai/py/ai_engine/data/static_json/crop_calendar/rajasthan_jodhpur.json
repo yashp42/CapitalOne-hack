@@ -1,0 +1,102 @@
+{
+  "state": "Rajasthan",
+  "district": "Jodhpur",
+  "agro_climatic_zone": "Arid Western Plain Zone (RJ-9)",
+  "source_type": "CRIDA_contingency",
+  "source_url": null,
+  "doc_date": "2012-06-30",
+  "last_checked": "2025-08-13",
+  "normal_annual_rain_mm": 313,
+  "rainfall_pattern_notes": "Majority from SW monsoon (July-September), erratic distribution",
+  "dominant_soils": ["sandy", "loamy sand"],
+  "crops": [
+    {
+      "crop_name": "pearl millet",
+      "season": "Kharif",
+      "planting_window": { "start": "06-25", "end": "07-15" },
+      "stages": ["sowing", "vegetative", "flowering", "grain filling", "maturity"],
+      "stage_lengths_days": [10, 30, 20, 25, 15],
+      "ideal_temp_c": { "range_day": [25, 35], "notes": "Optimum for growth" },
+      "soil_ideal": { "text": "well-drained sandy loam", "ph_range": [6.5, 8.0] },
+      "irrigation_ideal": { "critical_stages": ["flowering", "grain filling"], "seasonal_requirement_mm": 350, "notes": "Mostly rainfed; supplemental irrigation if drought" },
+      "weather_ideal": { "notes": ["Avoid waterlogging", "Withstand short dry spells"] },
+      "contingencies": [
+        {
+          "hazard": "delayed_onset",
+          "stage_window": "before sowing",
+          "measures": ["use short-duration varieties", "opt for intercropping with moth bean or clusterbean"],
+          "alt_crops": ["moth bean", "clusterbean"],
+          "inputs_support_notes": "Seed from RAU, SKRAU stations",
+          "market_mapping": { "commodity_names": ["pearl millet", "bajra"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "mid_season_drought",
+          "stage_window": "vegetative to flowering",
+          "measures": ["weeding and hoeing to conserve moisture", "mulching", "life-saving irrigation if possible"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["pearl millet", "bajra"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "mung bean",
+      "season": "Kharif",
+      "planting_window": { "start": "06-25", "end": "07-15" },
+      "stages": ["sowing", "vegetative", "flowering", "pod development", "maturity"],
+      "stage_lengths_days": [7, 25, 15, 20, 10],
+      "ideal_temp_c": { "range_day": [25, 35], "notes": "Avoid continuous rain during flowering" },
+      "soil_ideal": { "text": "sandy loam to loam", "ph_range": [6.0, 7.5] },
+      "irrigation_ideal": { "critical_stages": ["flowering", "pod filling"], "seasonal_requirement_mm": 300, "notes": "Usually rainfed" },
+      "weather_ideal": { "notes": ["Dry weather for maturity and harvest", "Avoid prolonged cloudy periods during flowering"] },
+      "contingencies": [
+        {
+          "hazard": "early_season_drought",
+          "stage_window": "sowing to vegetative",
+          "measures": ["gap filling", "thinning to reduce competition"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["mung bean", "green gram"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "wheat",
+      "season": "Rabi",
+      "planting_window": { "start": "11-05", "end": "11-25" },
+      "stages": ["germination", "tillering", "flowering", "grain filling", "maturity"],
+      "stage_lengths_days": [7, 25, 20, 25, 15],
+      "ideal_temp_c": { "range_day": [20, 25], "notes": "Cool weather needed during early growth" },
+      "soil_ideal": { "text": "loam to clay loam", "ph_range": [6.0, 8.0] },
+      "irrigation_ideal": { "critical_stages": ["crown root initiation", "flowering", "grain filling"], "seasonal_requirement_mm": 450, "notes": "Irrigate if rains fail" },
+      "weather_ideal": { "notes": ["Avoid high temperature during grain filling"] },
+      "contingencies": [
+        {
+          "hazard": "heat_wave",
+          "stage_window": "grain filling",
+          "measures": ["provide irrigation to reduce canopy temperature"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["wheat"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    }
+  ],
+  "dataset_sources": [
+    {
+      "key": "crida_rj9_jodhpur",
+      "title": "CRIDA Contingency Plan - Jodhpur, Rajasthan",
+      "url": null,
+      "tier": "primary",
+      "last_checked": "2025-08-13"
+    }
+  ]
+}
