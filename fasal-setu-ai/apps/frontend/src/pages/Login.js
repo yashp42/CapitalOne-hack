@@ -207,6 +207,70 @@ const Login = () => {
   // State for location detection
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationPermissionStatus, setLocationPermissionStatus] = useState('prompt'); // 'prompt', 'granted', 'denied'
+  // State for reverse geocoding
+  const [reverseGeocodedLocation, setReverseGeocodedLocation] = useState(null); // Store auto-detected state/district
+  const [locationMismatchWarning, setLocationMismatchWarning] = useState(false); // Warning if user changes location manually
+
+  // Function to reverse geocode coordinates using LocationIQ API
+  const reverseGeocodeLocation = async (lat, lon) => {
+    try {
+      const options = {
+        method: 'GET', 
+        headers: {
+          accept: 'application/json'
+        }
+      };
+
+      const response = await fetch(
+        `https://us1.locationiq.com/v1/reverse?lat=${lat}&lon=${lon}&format=json&key=pk.f17bff92c09589cfb3ea210be85903ac`, 
+        options
+      );
+      
+      if (!response.ok) {
+        throw new Error(`LocationIQ API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.address && data.address.state) {
+        const detectedState = data.address.state;
+        const detectedDistrict = data.address.state_district || data.address.county || data.address.city;
+        
+        // Store the reverse geocoded location
+        setReverseGeocodedLocation({
+          state: detectedState,
+          district: detectedDistrict,
+          displayName: data.display_name
+        });
+        
+        // Auto-populate the form fields
+        setFormData(prev => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            state: detectedState,
+            district: detectedDistrict
+          }
+        }));
+        
+        setMessage({ 
+          type: 'success', 
+          text: `Location detected: ${detectedState}, ${detectedDistrict}` 
+        });
+        
+        return { state: detectedState, district: detectedDistrict };
+      } else {
+        throw new Error('Unable to determine state/district from coordinates');
+      }
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+      setMessage({ 
+        type: 'warning', 
+        text: `Location detected but unable to auto-fill state/district: ${error.message}` 
+      });
+      return null;
+    }
+  };
 
   // Function to request location permission and get coordinates
   const requestLocationAccess = async () => {
@@ -233,10 +297,9 @@ const Login = () => {
       });
 
       setLocationPermissionStatus('granted');
-      setMessage({ 
-        type: 'success', 
-        text: `Location detected successfully! Accuracy: ${Math.round(locationData.accuracy)}m` 
-      });
+      
+      // Perform reverse geocoding to auto-populate state/district
+      await reverseGeocodeLocation(locationData.lat, locationData.lon);
 
     } catch (error) {
       console.error('Location error:', error);
@@ -327,6 +390,23 @@ const Login = () => {
           ...formData.location,
           [child]: value
         };
+        
+        // Check if user is changing location manually after GPS detection
+        if (reverseGeocodedLocation && locationPermissionStatus === 'granted') {
+          const isManualChange = (child === 'state' && value !== reverseGeocodedLocation.state) ||
+                                 (child === 'district' && value !== reverseGeocodedLocation.district);
+          
+          if (isManualChange) {
+            setLocationMismatchWarning(true);
+            setMessage({ 
+              type: 'warning', 
+              text: `⚠️ You're changing the location from what we detected via GPS (${reverseGeocodedLocation.state}, ${reverseGeocodedLocation.district}). This may affect location-based recommendations.` 
+            });
+          } else {
+            setLocationMismatchWarning(false);
+            setMessage({ type: '', text: '' });
+          }
+        }
         
         if (newLocation.state && newLocation.district) {
           fetchCoordinatesForLocation(newLocation.state, newLocation.district);
@@ -700,11 +780,13 @@ const Login = () => {
                       ? 'bg-green-100/80 text-green-700 border-green-300/50' 
                       : message.type === 'info'
                       ? 'bg-blue-100/80 text-blue-700 border-blue-300/50'
+                      : message.type === 'warning'
+                      ? 'bg-orange-100/80 text-orange-700 border-orange-300/50'
                       : 'bg-red-100/80 text-red-700 border-red-300/50'
                   }`}
                 >
                   <div className="flex items-center space-x-2">
-                    {message.type === 'success' ? <FaCheck /> : message.type === 'info' ? <span>ℹ️</span> : <span>⚠️</span>}
+                    {message.type === 'success' ? <FaCheck /> : message.type === 'info' ? <span>ℹ️</span> : message.type === 'warning' ? <span>⚠️</span> : <span>❌</span>}
                     <span>{message.text}</span>
                   </div>
                 </motion.div>
@@ -925,10 +1007,22 @@ const Login = () => {
                         </div>
                         <p className="text-xs text-blue-600">
                           {locationPermissionStatus === 'granted' 
-                            ? 'Using your precise GPS coordinates for better farming recommendations'
-                            : 'Get precise coordinates for accurate weather data and farming insights'
+                            ? (reverseGeocodedLocation 
+                                ? `Using your precise GPS coordinates for better farming recommendations. Auto-detected: ${reverseGeocodedLocation.state}, ${reverseGeocodedLocation.district}`
+                                : 'Using your precise GPS coordinates for better farming recommendations')
+                            : 'Get precise coordinates and auto-fill state/district for accurate weather data and farming insights'
                           }
                         </p>
+                        
+                        {/* Location Mismatch Warning */}
+                        {locationMismatchWarning && (
+                          <div className="mt-2 p-2 bg-orange-50/80 border border-orange-200/50 rounded-lg">
+                            <div className="flex items-center space-x-2 text-xs text-orange-700">
+                              <span>⚠️</span>
+                              <span>Manual location differs from GPS detection</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <div className="space-y-3">
@@ -975,13 +1069,18 @@ const Login = () => {
                         {/* Coordinate Preview */}
                         {coordinates && (
                           <div className="bg-green-50/50 p-2 rounded-lg border border-green-200/50">
-                            <div className="flex items-center space-x-1 text-xs text-green-700">
+                            <div className="flex items-center space-x-1 text-xs text-green-700 mb-1">
                               <span>✅</span>
                               <span>
                                 Precise Location: {coordinates.lat.toFixed(6)}, {coordinates.lon.toFixed(6)}
                                 {coordinates.accuracy && ` (±${Math.round(coordinates.accuracy)}m accuracy)`}
                               </span>
                             </div>
+                            {reverseGeocodedLocation && (
+                              <div className="text-xs text-green-600 pl-4">
+                                📍 Detected: {reverseGeocodedLocation.state}, {reverseGeocodedLocation.district}
+                              </div>
+                            )}
                           </div>
                         )}
 
