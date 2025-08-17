@@ -1,14 +1,26 @@
 import React, { Suspense } from 'react';
 
-// Enhanced lazy loading with error boundaries and retry logic
+// Enhanced lazy loading with error boundaries and simplified retry logic
 export const createLoadableComponent = (importFn, fallback = null) => {
   const LazyComponent = React.lazy(() => 
     importFn().catch(err => {
       console.error('Failed to load component:', err);
-      // Retry once after a short delay
-      return new Promise(resolve => 
-        setTimeout(() => resolve(importFn()), 1000)
-      );
+      // Return a fallback component instead of retrying to prevent infinite loops
+      return {
+        default: () => (
+          <div className="flex items-center justify-center p-8 text-gray-600">
+            <div className="text-center">
+              <p>Component failed to load</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="mt-2 px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600"
+              >
+                Reload Page
+              </button>
+            </div>
+          </div>
+        )
+      };
     })
   );
 
@@ -28,8 +40,13 @@ const ComponentLoader = () => (
 
 // Preload components based on user interaction
 export const preloadComponent = (importFn) => {
-  const componentImport = importFn();
-  return componentImport;
+  try {
+    const componentImport = importFn();
+    return componentImport;
+  } catch (error) {
+    console.error('Failed to preload component:', error);
+    return null;
+  }
 };
 
 // Preload on hover for better UX

@@ -97,7 +97,7 @@ const tokenManager = {
   }
 };
 
-// API utility function with automatic token refresh
+// API utility function with automatic token refresh and timeout handling
 const apiRequest = async (endpoint, options = {}) => {
   const url = `${API_BASE_URL}${endpoint}`;
   
@@ -111,6 +111,8 @@ const apiRequest = async (endpoint, options = {}) => {
         ...options.headers,
       },
       credentials: 'include', // Include cookies for server-side handling
+      // Add timeout to prevent hanging requests
+      signal: AbortSignal.timeout(30000), // 30 second timeout
       ...options,
     };
 
@@ -175,6 +177,9 @@ const apiRequest = async (endpoint, options = {}) => {
     
     return data;
   } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout - please check your connection and try again');
+    }
     throw new Error(error.message || 'Network error');
   }
 };

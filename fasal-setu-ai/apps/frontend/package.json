@@ -24,9 +24,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "cross-env HOST=127.0.0.1 PORT=3000 react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
+    "start": "cross-env HOST=127.0.0.1 PORT=3000 craco start",
+    "build": "craco build",
+    "test": "craco test",
     "eject": "react-scripts eject",
     "analyze": "npm run build && npx webpack-bundle-analyzer build/static/js/*.js"
   },
@@ -49,6 +49,7 @@
     ]
   },
   "devDependencies": {
+    "@craco/craco": "^7.1.0",
     "autoprefixer": "^10.4.21",
     "cross-env": "^10.0.0",
     "postcss": "^8.5.6",
