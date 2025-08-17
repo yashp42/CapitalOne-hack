@@ -601,44 +601,21 @@ const Login = () => {
     }
   };
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        duration: 0.6,
-        ease: [0.25, 0.25, 0.25, 0.75]
-      }
-    }
-  };
-
+  // Simplified animation variants - keeping only essential transitions
   const formVariants = {
     enter: {
       x: 0,
       opacity: 1,
       transition: {
-        duration: 0.4,
+        duration: 0.3,
         ease: "easeOut"
       }
     },
     exit: {
-      x: -50,
+      x: -20,
       opacity: 0,
       transition: {
-        duration: 0.3,
+        duration: 0.2,
         ease: "easeIn"
       }
     }
@@ -651,9 +628,9 @@ const Login = () => {
         {/* Gradient Fallback - Shows immediately while image loads */}
         <div className="w-full h-full bg-gradient-to-br from-green-100 via-blue-50 to-green-200" />
         
-        {/* Actual Background Image - Fades in when loaded */}
+        {/* Actual Background Image - Fades in when loaded with performance optimization */}
         <div 
-          className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ${
+          className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 will-change-auto ${
             backgroundImageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           style={{
@@ -677,46 +654,17 @@ const Login = () => {
           }} />
         </div>
 
-        {/* Animated glow effects - brighter and more subtle */}
-        <motion.div
-          animate={{
-            scale: [1, 1.1, 1],
-            opacity: [0.1, 0.2, 0.1]
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-radial from-emerald-200/20 to-transparent rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{
-            scale: [1.1, 1, 1.1],
-            opacity: [0.08, 0.15, 0.08]
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-gradient-radial from-blue-200/15 to-transparent rounded-full blur-3xl"
-        />
+        {/* Replaced animated glow effects with CSS transitions */}
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-radial from-emerald-200/20 to-transparent rounded-full blur-3xl opacity-10"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-gradient-radial from-blue-200/15 to-transparent rounded-full blur-3xl opacity-10"></div>
       </div>
 
       {/* Main Content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6 pt-20">
-        <motion.div 
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-          className="w-full max-w-xs sm:max-w-sm lg:max-w-md"
-        >
+        <div className="w-full max-w-xs sm:max-w-sm lg:max-w-md opacity-0 animate-fadeIn">
 
           {/* Main Form Card */}
-          <motion.div 
-            variants={itemVariants}
-            className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 p-4 sm:p-6 mb-4 backdrop-saturate-150"
+          <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 p-4 sm:p-6 mb-4 backdrop-saturate-150 transition-all duration-300 ease-in"
             style={{
               backdropFilter: 'blur(20px) saturate(150%)',
               borderColor: 'rgba(156, 163, 175, 0.3)',
@@ -725,7 +673,7 @@ const Login = () => {
             {/* Form Header */}
             <div className="text-center mb-4 sm:mb-6">
               <motion.div
-                animate={{ scale: [1, 1.05, 1] }}
+                animate={{ scale: [1, 1.02, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
                 className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 bg-gradient-to-br from-emerald-100/90 to-blue-100/90 rounded-xl flex items-center justify-center backdrop-blur-sm border border-gray-200/50"
               >
@@ -764,7 +712,8 @@ const Login = () => {
                 <motion.div 
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
                   className={`mb-4 sm:mb-6 p-3 rounded-xl border text-xs sm:text-sm ${
                     message.type === 'success' 
                       ? 'bg-green-100/80 text-green-700 border-green-300/50' 
@@ -781,7 +730,7 @@ const Login = () => {
               )}
             </AnimatePresence>
 
-            {/* Form Steps */}
+            {/* Form Steps - Keep AnimatePresence for smooth transitions between form steps */}
             <AnimatePresence mode="wait">
               {/* Phone Number Step */}
               {step === 'phone' && (
@@ -819,12 +768,10 @@ const Login = () => {
                       <div id="recaptcha-container"></div>
                     </div>
                     
-                    <motion.button
+                    <button
                       onClick={handleSendOTP}
                       disabled={loading || formData.phoneNumber.length !== 10}
-                      className="w-full py-2.5 sm:py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:from-emerald-500 hover:to-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 shadow-lg hover:shadow-emerald-500/25 text-xs sm:text-sm"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                      className="w-full py-2.5 sm:py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:from-emerald-500 hover:to-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 shadow-lg hover:shadow-emerald-500/25 text-xs sm:text-sm transform hover:scale-[1.01] active:scale-[0.99]"
                     >
                       {loading ? (
                         <div className="flex items-center justify-center space-x-2">
@@ -834,7 +781,7 @@ const Login = () => {
                       ) : (
                         'Send Verification Code'
                       )}
-                    </motion.button>
+                    </button>
                   </div>
                 </motion.div>
               )}
@@ -867,12 +814,10 @@ const Login = () => {
                       </p>
                     </div>
                     
-                    <motion.button
+                    <button
                       onClick={handleVerifyOTP}
                       disabled={loading || formData.otp.length !== 6}
-                      className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:from-primary-500 hover:to-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-xs sm:text-sm"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                      className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:from-primary-500 hover:to-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-xs sm:text-sm transform hover:scale-[1.01] active:scale-[0.99]"
                     >
                       {loading ? (
                         <div className="flex items-center justify-center space-x-2">
@@ -882,7 +827,7 @@ const Login = () => {
                       ) : (
                         'Verify Code'
                       )}
-                    </motion.button>
+                    </button>
 
                     <button
                       onClick={resetForm}
@@ -1196,12 +1141,10 @@ const Login = () => {
                       </div>
                     </div>
                     
-                    <motion.button
+                    <button
                       onClick={handleSignup}
                       disabled={loading || !formData.firstName.trim()}
-                      className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:from-primary-500 hover:to-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-xs sm:text-sm"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                      className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:from-primary-500 hover:to-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-xs sm:text-sm transform hover:scale-[1.01] active:scale-[0.99]"
                     >
                       {loading ? (
                         <div className="flex items-center justify-center space-x-2">
@@ -1211,7 +1154,7 @@ const Login = () => {
                       ) : (
                         'Create Professional Account'
                       )}
-                    </motion.button>
+                    </button>
                   </div>
                 </motion.div>
               )}
@@ -1219,10 +1162,7 @@ const Login = () => {
 
             {/* Toggle Login/Signup */}
             {step === 'phone' && (
-              <motion.div 
-                variants={itemVariants}
-                className="text-center mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-300/50"
-              >
+              <div className="text-center mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-300/50">
                 <p className="text-gray-600 text-xs sm:text-sm font-semibold">
                   {isSignup ? 'Already have a professional account?' : "Don't have an account?"}
                 </p>
@@ -1232,21 +1172,18 @@ const Login = () => {
                 >
                   {isSignup ? 'Sign In' : 'Create Account'}
                 </button>
-              </motion.div>
+              </div>
             )}
-          </motion.div>
+          </div>
 
 
           {/* Footer */}
-          <motion.div 
-            variants={itemVariants}
-            className="text-center mt-6"
-          >
+          <div className="text-center mt-6 animate-fadeIn">
             <p className="text-gray-600 text-xs font-medium">
               Powered by advanced AI • Trusted by farmers across India
             </p>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </div>
 
       {/* Floating Chat Button */}
