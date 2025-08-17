@@ -2,7 +2,7 @@
 """
 Simple, effective web search tool with graceful fallbacks.
 
-Primary provider: DuckDuckGo (ddgs).
+Primary provider: DuckDuckGo (duckduckgo_search).
 Optional fallbacks (enabled by env keys): Brave, Serper (Google), Bing.
 
 Args (all optional):
@@ -48,7 +48,7 @@ from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
 
 # Optional deps (gracefully degrade if not installed)
 try:
-    from ddgs import DDGS  # pip install ddgs
+    from duckduckgo_search import DDGS  # pip install duckduckgo_search
 except Exception:
     DDGS = None
 

@@ -159,20 +159,12 @@ def run(args: Dict[str, Any]) -> Dict[str, Any]:
             record, confidence = got
 
     if not record:
-        return {
-            "error": "Could not geocode location. Provide 'state' and 'district', or 'query'='District, State'.",
-            "confidence": 0.0,
-            "data": None
-        }
+        raise ValueError("Could not geocode location. Provide 'state' and 'district', or 'query'='District, State'.")
 
     lat = record.get("lat")
     lon = record.get("lon")
     if lat is None or lon is None:
-        return {
-            "error": "Geo record found but missing lat/lon in dataset.",
-            "confidence": confidence,
-            "data": None
-        }
+        raise ValueError("Geo record found but missing lat/lon in dataset.")
 
     out = {
         "data": {
