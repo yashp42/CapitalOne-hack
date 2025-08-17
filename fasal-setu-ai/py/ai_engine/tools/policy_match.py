@@ -59,12 +59,31 @@ def _read_any(path: str) -> Optional[Any]:
     if pd is None:
         return None
     try:
+        # Try CSV first for .csv files but be resilient to mis-labelled binaries (e.g., xlsx renamed .csv)
         if path.lower().endswith(".csv"):
-            df = pd.read_csv(path)
+            try:
+                df = pd.read_csv(path, encoding='utf-8', on_bad_lines='skip')
+            except Exception:
+                # Fallback: maybe it's actually an Excel file with .csv extension
+                try:
+                    df = pd.read_excel(path)
+                except Exception:
+                    return None
         elif path.lower().endswith((".xlsx", ".xls")):
-            df = pd.read_excel(path)
+            try:
+                df = pd.read_excel(path)
+            except Exception:
+                # Fallback: try CSV read if excel parser fails
+                try:
+                    df = pd.read_csv(path, encoding='utf-8', on_bad_lines='skip')
+                except Exception:
+                    return None
         else:
             return None
+
+        if df is None:
+            return None
+
         df.columns = _norm_cols(list(df.columns))
         return df
     except Exception:
@@ -96,7 +115,17 @@ def _load_all() -> Tuple[List[str], Optional[Any]]:
     # unify common aliases -> normalized keys your schema expects
     aliases = {
         # Basic scheme info
-        "scheme_name": "scheme",
+    "scheme_name": "scheme",
+    "slug": "scheme",
+    "details": "description",
+    "benefits": "benefit",
+    "application": "link",
+    "documents": "eligibility",
+    "level": "category",
+    "schemecategory": "category",
+    "schemeCategory": "category",
+    "tags": "tags",
+    "State": "state",
         "policy_name": "scheme",
         "scheme_title": "scheme",
         

@@ -98,6 +98,21 @@ Example Patterns:
    b) Add state/district from profile
    c) rag_search for additional context
 
+    Notes for the planner about `policy_match` data source:
+    - The policy tool scans a CSV at `data/static_json/policy/agriculture_schemes_with_state.csv`.
+    - Relevant CSV column names (example header):
+       scheme_name, slug, details, benefits, eligibility, application, documents, level, schemeCategory, tags, State
+    - Map these columns to the policy schema as follows when forming queries and interpreting results:
+       - scheme_name / slug -> scheme
+       - details -> description
+       - benefits -> benefit
+       - eligibility / documents -> eligibility
+       - application -> link
+       - level / schemeCategory -> category
+       - tags -> tags
+       - State -> state
+    Use `policy_match` whenever the user's intent relates to schemes, loans, subsidies, or credit; include `state` from profile when available.
+
    When you get: "loan for small farmer"
    You should:
    a) policy_match: {{"category": "credit", "flags": ["smallholder"]}}
@@ -113,6 +128,22 @@ Example Patterns:
    d) web_search: "tomato price trend forecast [state] [month]"
    Intent: market_advice
    Template: sell_or_hold_decision
+
+   Storage examples (encourage planner to call `storage_find` for WDRA/warehouse queries):
+      "nearest WDRA warehouse in Patna, Bihar" →
+         {"tool": "storage_find", "args": {"state": "Bihar", "district": "Patna", "limit": 3}}
+
+      "WDRA registered warehouses in Gujarat" →
+         {"tool": "storage_find", "args": {"state": "Gujarat", "limit": 3}}
+
+   Cold-storage / state-level examples (planner guidance):
+      - Users may ask about cold storage or state-level storage options without a district.
+         In those cases call `storage_find` with only the state set. Example:
+            "state-level cold storage options in Tamil Nadu" →
+               {"tool": "storage_find", "args": {"state": "Tamil Nadu", "limit": 3}}
+
+      - For queries about pledging to a warehouse, warehouse receipt loans, or storing grain,
+         prefer `storage_find` first and include `state` from profile if available.
 
 5. For Credit & Policy:
    When you get: "Need loan for drip irrigation system"
