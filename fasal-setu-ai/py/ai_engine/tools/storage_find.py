@@ -42,7 +42,7 @@ Return envelope (unchanged):
   },
   "source_stamp": {
     "type": "wdra_csv",
-    "dir": "py/ai_engine/data/static_json/storage/wdra",
+    "dir": "data/static_json/storage/wdra",
     "files": ["*.csv"],
     "source_url": "https://wdra.gov.in/web/wdra/registered-warehouses",
     "executed_at": "<iso8601>"
@@ -65,7 +65,7 @@ except Exception:
 
 # Allow override via env; default to repo data path
 WDRA_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "..", "data", "static_json", "storage", "wdra"
+    os.path.dirname(__file__), "../../..", "data", "static_json", "storage", "wdra"
 ))
 
 _WS = re.compile(r"\s+")

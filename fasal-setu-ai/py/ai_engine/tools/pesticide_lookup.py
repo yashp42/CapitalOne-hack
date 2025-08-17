@@ -2,7 +2,7 @@
 Pesticide lookup tool (file-based, filterable, ranked).
 
 Reads JSON files in:
-  py/ai_engine/data/static_json/pesticides/
+  data/static_json/pesticides/
 
 Each file contains an array of entries with schema like:
 {
@@ -46,7 +46,7 @@ Return envelope:
     "items": [ { ...matching entry..., "source_file":"<file>.json" }, ... ],
     "count": <int>
   },
-  "source_stamp": { "type":"static_pack", "path":"py/ai_engine/data/static_json/pesticides" },
+  "source_stamp": { "type":"static_pack", "path":"data/static_json/pesticides" },
   "matched": { "filters": { ...original filters normalized... } },
   "_meta": { "route":"local_scan", "scanned_files":[...], "sort":"status->as_on_date(desc)->phi_days(asc)" }
 }
@@ -60,7 +60,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 DATA_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "..", "data", "static_json", "pesticides"
+    os.path.dirname(__file__), "../../..", "data", "static_json", "pesticides"
 ))
 
 # ---------------------------- utils ----------------------------
