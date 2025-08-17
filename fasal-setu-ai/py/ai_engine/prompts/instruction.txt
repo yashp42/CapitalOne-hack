@@ -88,8 +88,11 @@ Example Patterns:
    
    Geocode examples and tips:
    - If input is ambiguous, prefer calling geocode_tool rather than adding lat/lon to missing.
-   - Use structured state+district when available.
+   - Use structured state+district when available: {"state": "Karnataka", "district": "Bengaluru"}
+   - If only district is mentioned, YOU must determine the appropriate state for that district before calling geocode_tool.
+     Example: If user says "in Varanasi", you should identify "Uttar Pradesh" as the state, then call {"state": "Uttar Pradesh", "district": "Varanasi"}
    - If only state provided, call geocode_tool with the state capital query (e.g., {"query": "Patna, Bihar"}).
+   - For free-text locations, use query parameter: {"query": "Mysore, Karnataka"} or {"query": "Karnataka, Mysore"} - works in either order.
 
 2. For Crop Advisory:
    When you get: "when to plant rice"
@@ -176,12 +179,13 @@ Example Patterns:
    Template: pesticide_safe_recommendation
 
 3. For Temperature Risk:
-   When you get: "heat risk for my rice crop"
+   When you get: "heat risk for my rice crop in Varanasi"
    You should:
    a) Get location from query/profile
-   b) If state/district only → geocode_tool first
-   c) Then weather_outlook with coordinates
-   d) Finally rag_search and regional_crop_info to interpret risk
+   b) If district only → first determine the state (Varanasi is in Uttar Pradesh), then call geocode_tool with {"state": "Uttar Pradesh", "district": "Varanasi"}
+   c) If state/district → geocode_tool with {"state": "...", "district": "..."}
+   d) Then weather_outlook with coordinates from geocode_tool result
+   e) Finally rag_search and regional_crop_info to interpret risk
 
 4. For Crop Advisory:
    When you get: "when to plant rice"
@@ -192,6 +196,7 @@ Example Patterns:
 
 - Remember:
 - If only state provided (district missing), do NOT add district to "missing". Use regional_crop_info for state-level info.
+- When only district is provided in the query (no state), call geocode_tool with just {"district": "<district>"} - the tool will attempt to find the correct state.
 - Always use geocode_tool before weather_outlook if only state/district given. If only state present, call geocode_tool with a free-text query for the state capital, e.g. {"query": "<state> capital"} to get lat/lon.
  - Chain the results: use output from one tool as input to next
 - If location missing, add ["lat", "lon"] to missing array
@@ -201,8 +206,12 @@ Available Tools and Their Capabilities:
 
 1. Location & Weather:
    geocode_tool: Get coordinates for any Indian district
-   Input: {{"state": "Karnataka", "district": "Bengaluru"}} or {{"query": "Bengaluru, Karnataka"}}
-   Output: {{"lat": 12.97, "lon": 77.59, "matched_state": "Karnataka", "matched_district": "Bengaluru"}}
+   Input: 
+      1. With state and district: {{"state": "Karnataka", "district": "Bengaluru"}}
+      2. With free-text query: {{"query": "Bengaluru, Karnataka"}} - will parse in either order
+   Output: {{"lat": 12.97, "lon": 77.59, "matched_state": "Karnataka", "matched_district": "Bengaluru", "confidence": 0.95}}
+   
+   Note: When only a district is mentioned in the farmer's query, YOU should determine the appropriate state for that district before calling geocode_tool.
 
    weather_outlook: Get detailed weather forecast
    Input: {{"lat": <float>, "lon": <float>, "days": 3}}

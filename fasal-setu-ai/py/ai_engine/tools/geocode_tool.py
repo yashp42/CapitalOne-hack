@@ -4,9 +4,9 @@ Geocode tool (offline, deterministic)
 Looks up centroid lat/lon for (state, district) from:
   data/static_json/geo/district_centroids.json
 
-Input args (any one of):
-  - {"state": "...", "district": "..."}
-  - {"query": "District, State"}  # will parse "district, state" in either order
+Input args (must use one of these formats):
+  - {"state": "...", "district": "..."}  # Both state and district are required
+  - {"query": "District, State"}         # Will parse "district, state" in either order
 
 Returns (common envelope):
 {
@@ -15,6 +15,9 @@ Returns (common envelope):
             "confidence": 0.95, "method": "static_centroid" },
   "source_stamp": { "type":"local_dataset", "path":"data/static_json/geo/district_centroids.json" }
 }
+
+Note: When only a district name is known, the LLM should determine the appropriate
+state for that district before calling this tool.
 """
 from __future__ import annotations
 
@@ -152,14 +155,14 @@ def run(args: Dict[str, Any]) -> Dict[str, Any]:
     if state and district:
         record = _find_exact(state, district)
         confidence = 0.95 if record else 0.0
-
-    if not record and district:
-        got = _best_by_district_only(district)
-        if got:
-            record, confidence = got
+        
+    # Removed district-only inference - LLM should determine state
 
     if not record:
-        raise ValueError("Could not geocode location. Provide 'state' and 'district', or 'query'='District, State'.")
+        if district and not state:
+            raise ValueError("District provided without state. Both 'state' and 'district' are required for geocoding.")
+        else:
+            raise ValueError("Could not geocode location. Provide 'state' and 'district', or 'query'='District, State'.")
 
     lat = record.get("lat")
     lon = record.get("lon")
