@@ -7,7 +7,7 @@ Provides comprehensive region-specific agricultural information including:
 - Local agricultural practices
 - Climate-appropriate recommendations
 
-Data source: JSON files under py/ai_engine/data/static_json/crop_calendar/<state>_<district>.json
+Data source: JSON files under data/static_json/crop_calendar/<state>_<district>.json
 Resolution: Exact matching with smart fallback to RAG/web search
 
 Args:
@@ -43,7 +43,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 # path to .../data/static_json/crop_calendar
 DATA_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "..", "data", "static_json", "crop_calendar"
+    os.path.dirname(__file__), "../../..", "data", "static_json", "crop_calendar"
 ))
 
 _WS = re.compile(r"\s+")

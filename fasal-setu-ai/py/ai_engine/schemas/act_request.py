@@ -2,10 +2,7 @@ from typing import Any, Dict, List, Literal, Union
 
 from pydantic import BaseModel
 
-try:
-    from ..graph.state import Message
-except ImportError:
-    from graph.state import Message
+from py.ai_engine.graph.state import Message
 
 
 class ActRequest(BaseModel):
