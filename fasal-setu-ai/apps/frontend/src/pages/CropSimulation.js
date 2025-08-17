@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, Suspense, useMemo } from 'react';
+import React, { useState, useEffect, useRef, Suspense, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { OrbitControls, Text, Box, Sphere } from '@react-three/drei';
@@ -65,82 +65,80 @@ const LoadingScreen = () => (
   </div>
 );
 
-// 3D Crop Plant Component - Realistic grass field simulation
+// 3D Crop Plant Component - Optimized for performance
 function CropPlant({ stage, farmData }) {
   const grassFieldRef = useRef();
   const grassBlades = useRef([]);
   const soilParticles = useRef([]);
 
-  // Load soil texture (hooks must be called unconditionally)
+  // Load soil texture with error handling - must be called unconditionally
   const soilTexture = useLoader(TextureLoader, '/assets/soil-texture.jpg');
   
-  // Configure texture properties for realism
+  // Configure texture properties
   useEffect(() => {
     if (soilTexture) {
       soilTexture.wrapS = soilTexture.wrapT = THREE.RepeatWrapping;
-      soilTexture.repeat.set(3, 3); // Repeat texture 3x3 times across the surface
+      soilTexture.repeat.set(2, 2); // Reduced from 3x3 for performance
       soilTexture.offset.set(0, 0);
     }
   }, [soilTexture]);
 
+  // Reduced animation frequency for better performance
   useFrame((state) => {
-    // Wind sway every 10 seconds - more pronounced and realistic
-    const windCycle = Math.sin(state.clock.elapsedTime * 0.1) * 0.8; // 10-second cycle (2π/0.628 ≈ 10s)
-    const windStrength = (farmData.forecast[0]?.condition === 'Windy') ? 0.6 : 0.3;
-    const windSpeed = (farmData.forecast[0]?.condition === 'Windy') ? 1.5 : 1.0;
+    // Simpler wind animation - only every 20 seconds instead of 10
+    const windCycle = Math.sin(state.clock.elapsedTime * 0.05) * 0.5; // 20-second cycle
+    const windStrength = (farmData.forecast[0]?.condition === 'Windy') ? 0.4 : 0.2; // Reduced strength
     
-    // Individual grass blade movement with 10-second wind gusts
-    grassBlades.current.forEach((blade, i) => {
-      if (blade) {
-        // Main wind sway every 10 seconds
-        const windGust = Math.sin(state.clock.elapsedTime * 0.628 + i * 0.2) * windStrength * windCycle;
-        // Subtle natural movement
-        const naturalSway = Math.sin(state.clock.elapsedTime * 0.5 + i * 0.1) * 0.08;
-        // Micro movements for realism
-        const microSway = Math.sin(state.clock.elapsedTime * 2 + i * 0.05) * 0.02;
-        
-        blade.rotation.z = windGust + naturalSway + microSway;
-        blade.rotation.x = Math.sin(state.clock.elapsedTime * 0.3 + i * 0.2) * 0.03;
-      }
-    });
+    // Simplified grass blade movement - only update every few frames for performance
+    if (Math.floor(state.clock.elapsedTime * 60) % 3 === 0) { // Update every 3rd frame
+      grassBlades.current.forEach((blade, i) => {
+        if (blade && i % 2 === 0) { // Only animate every other blade for performance
+          const windGust = Math.sin(state.clock.elapsedTime * 0.3 + i * 0.1) * windStrength * windCycle;
+          const naturalSway = Math.sin(state.clock.elapsedTime * 0.2 + i * 0.05) * 0.04; // Reduced movement
+          
+          blade.rotation.z = windGust + naturalSway;
+        }
+      });
+    }
 
-    // Subtle soil particle movement
-    soilParticles.current.forEach((particle, i) => {
-      if (particle && farmData.lastIrrigated === 'Today') {
-        particle.position.y = Math.sin(state.clock.elapsedTime * 2 + i) * 0.02 - 0.3;
-      }
-    });
+    // Simplified soil particle movement
+    if (farmData.lastIrrigated === 'Today' && Math.floor(state.clock.elapsedTime * 60) % 5 === 0) {
+      soilParticles.current.forEach((particle, i) => {
+        if (particle && i % 3 === 0) { // Only animate every 3rd particle
+          particle.position.y = Math.sin(state.clock.elapsedTime + i) * 0.01 - 0.3;
+        }
+      });
+    }
   });
 
-  // Calculate grass field parameters based on growth stage
-  const fieldWidth = 80; // Massively expanded horizontally for huge field
-  const fieldDepth = 60; // Significantly expanded depth for massive coverage
-  const maxGrassHeight = 2.5;
-  const maxGrassWidth = 0.15;
+  // Reduced field size and grass count for better mobile performance
+  const fieldWidth = 40; // Reduced from 80
+  const fieldDepth = 30; // Reduced from 60
+  const maxGrassHeight = 2.0; // Slightly reduced
+  const maxGrassWidth = 0.12;
 
-  // Generate stable grass positions that NEVER change on re-renders
+  // Generate fewer grass positions for better performance
   const grassPositions = useMemo(() => {
     const positions = [];
-    
-    // Use seeded random-like function for consistent results
     const seededRandom = (seed) => {
       const x = Math.sin(seed * 12.9898) * 43758.5453;
       return x - Math.floor(x);
     };
     
-    for (let i = 0; i < 1800; i++) { // Max possible grass blades
-      const x = (seededRandom(i * 2.1) - 0.5) * fieldWidth + (seededRandom(i * 3.7) - 0.5) * 0.3;
-      const z = (seededRandom(i * 5.3) - 0.5) * fieldDepth + (seededRandom(i * 7.1) - 0.5) * 0.3;
-      const baseHeight = maxGrassHeight * (0.6 + seededRandom(i * 11.2) * 0.8); // Base height variation
-      const baseThickness = Math.max(0.04, maxGrassWidth * (0.7 + seededRandom(i * 13.4) * 0.6)); // Base thickness variation
+    // Reduced grass count from 1800 to 800 for better mobile performance
+    for (let i = 0; i < 800; i++) {
+      const x = (seededRandom(i * 2.1) - 0.5) * fieldWidth;
+      const z = (seededRandom(i * 5.3) - 0.5) * fieldDepth;
+      const baseHeight = maxGrassHeight * (0.6 + seededRandom(i * 11.2) * 0.4);
+      const baseThickness = Math.max(0.04, maxGrassWidth * (0.7 + seededRandom(i * 13.4) * 0.3));
       
       positions.push({ x, z, baseHeight, baseThickness, id: i });
     }
     return positions;
-  }, []); // Empty dependency array - positions NEVER change
+  }, []);
 
   // Calculate current visible grass based on growth stage
-  const visibleGrassCount = Math.floor((stage / 100) * 1800);
+  const visibleGrassCount = Math.floor((stage / 100) * 800); // Reduced from 1800
   const currentGrassPositions = grassPositions.slice(0, visibleGrassCount);
 
   return (
@@ -625,6 +623,16 @@ const CropSimulation = () => {
   // Get initial growth percentage from URL search params (if provided)
   const urlParams = new URLSearchParams(window.location.search);
   const initialGrowthPercent = parseInt(urlParams.get('growth')) || 0;
+
+  // Optimized reduced animation variants for better mobile performance
+  const reducedMotionVariants = useMemo(() => ({
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { duration: 0.3 } },
+    exit: { opacity: 0, transition: { duration: 0.2 } }
+  }), []);
+
+  const fastTransition = useMemo(() => ({ duration: 0.2 }), []);
+  const mediumTransition = useMemo(() => ({ duration: 0.3 }), []);
   
   // Debug: Log the received parameters
   useEffect(() => {
@@ -652,6 +660,136 @@ const CropSimulation = () => {
   const [newMessage, setNewMessage] = useState('');
   const [isChatTyping, setIsChatTyping] = useState(false);
   const [dailyActivities, setDailyActivities] = useState([]);
+
+  // Realistic farm data that updates based on user activities
+  const [farmData, setFarmData] = useState({
+    lastIrrigated: 'Never',
+    lastFertilized: 'Never',
+    lastSowed: 'Today',
+    currentTemp: null, // Will be populated by weather API
+    soilTemp: null, // Will be populated by weather API  
+    humidity: 65,
+    soilMoisture: null, // Will be populated by weather API
+    cropStage: 'Just Planted',
+    expectedHarvest: 'Calculating...',
+    weatherToday: 'Loading...',
+    forecast: [
+      { condition: 'Sunny', temp: 25, day: 'Loading...', icon: FaSun },
+      { condition: 'Sunny', temp: 25, day: 'Loading...', icon: FaSun }
+    ], // Start with default data to prevent errors
+    nutrients: {
+      nitrogen: 60, // Starts moderate, needs fertilizing
+      phosphorus: 55,
+      potassium: 65
+    },
+    pests: {
+      detected: false,
+      risk: 'Low',
+      lastChecked: 'Never'
+    },
+    irrigation: {
+      nextScheduled: 'Needs scheduling',
+      totalWaterUsed: '0 L',
+      efficiency: 85
+    }
+  });
+
+  // Simulate realistic crop growth based on activities and care
+  const simulateCropGrowth = useCallback((activity) => {
+    let growthBoost = 0;
+    let updatedFarmData = { ...farmData };
+    
+    switch (activity) {
+      case 'irrigation':
+        const currentMoisture = farmData.soilMoisture || 50; // Use API value or default
+        growthBoost = currentMoisture < 50 ? 3 : 1;
+        updatedFarmData.soilMoisture = Math.min(100, currentMoisture + 25);
+        updatedFarmData.lastIrrigated = 'Today';
+        updatedFarmData.totalWaterUsed = (parseInt(farmData.irrigation?.totalWaterUsed || 0) + 50) + ' L';
+        break;
+      case 'fertilization':
+        growthBoost = 4;
+        updatedFarmData.nutrients = updatedFarmData.nutrients || {};
+        updatedFarmData.nutrients.nitrogen = Math.min(100, (farmData.nutrients?.nitrogen || 60) + 20);
+        updatedFarmData.nutrients.phosphorus = Math.min(100, (farmData.nutrients?.phosphorus || 50) + 15);
+        updatedFarmData.nutrients.potassium = Math.min(100, (farmData.nutrients?.potassium || 55) + 10);
+        updatedFarmData.lastFertilized = 'Today';
+        break;
+      case 'pest_check':
+        growthBoost = 1;
+        updatedFarmData.pests = updatedFarmData.pests || {};
+        updatedFarmData.pests.lastChecked = 'Today';
+        break;
+      case 'daily_care':
+        growthBoost = 2;
+        break;
+      default:
+        growthBoost = 0.5; // Natural growth from interaction
+    }
+    
+    // Update crop stage with realistic growth
+    const newStage = Math.min(100, cropStage + growthBoost);
+    setCropStage(newStage);
+    
+    // Update farm stage description with real data
+    const daysRemaining = harvestData ? harvestData.days_remaining : Math.max(1, Math.round((100 - newStage) * 1.2));
+    if (newStage < 10) {
+      updatedFarmData.cropStage = 'Germination';
+      updatedFarmData.expectedHarvest = harvestData ? `${daysRemaining} days` : `${daysRemaining} days (estimated)`;
+    } else if (newStage < 25) {
+      updatedFarmData.cropStage = 'Seedling';
+      updatedFarmData.expectedHarvest = harvestData ? `${daysRemaining} days` : `${daysRemaining} days (estimated)`;
+    } else if (newStage < 45) {
+      updatedFarmData.cropStage = 'Vegetative Growth';
+      updatedFarmData.expectedHarvest = harvestData ? `${daysRemaining} days` : `${daysRemaining} days (estimated)`;
+    } else if (newStage < 65) {
+      updatedFarmData.cropStage = 'Tillering';
+      updatedFarmData.expectedHarvest = harvestData ? `${daysRemaining} days` : `${daysRemaining} days (estimated)`;
+    } else if (newStage < 85) {
+      updatedFarmData.cropStage = 'Flowering';
+      updatedFarmData.expectedHarvest = harvestData ? `${daysRemaining} days` : `${daysRemaining} days (estimated)`;
+    } else if (newStage < 100) {
+      updatedFarmData.cropStage = 'Grain Filling';
+      updatedFarmData.expectedHarvest = harvestData ? `${daysRemaining} days` : `${daysRemaining} days (estimated)`;
+    } else {
+      updatedFarmData.cropStage = 'Ready for Harvest!';
+      updatedFarmData.expectedHarvest = harvestData?.status === 'ready_for_harvest' ? 'Now!' : 'Now!';
+    }
+    
+    // Natural degradation over time - only if soil moisture is available from API
+    if (updatedFarmData.soilMoisture !== null) {
+      updatedFarmData.soilMoisture = Math.max(30, updatedFarmData.soilMoisture - 2);
+    }
+    if (updatedFarmData.nutrients) {
+      updatedFarmData.nutrients.nitrogen = Math.max(40, (updatedFarmData.nutrients.nitrogen || 60) - 1);
+    }
+    
+    setFarmData(updatedFarmData);
+    return growthBoost;
+  }, [farmData, cropStage, harvestData]);
+
+  // Optimized animation variants for better performance
+  const containerVariants = useMemo(() => ({
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05, // Reduced from 0.1
+        delayChildren: 0.1 // Reduced from 0.2
+      }
+    }
+  }), []);
+
+  const itemVariants = useMemo(() => ({
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.3, // Reduced from 0.6
+        ease: "easeOut"
+      }
+    }
+  }), []);
 
   // WMO Weather code mapping
   const WMO = {
@@ -769,41 +907,6 @@ const CropSimulation = () => {
     
     return forecast;
   };
-
-  // Realistic farm data that updates based on user activities
-  const [farmData, setFarmData] = useState({
-    lastIrrigated: 'Never',
-    lastFertilized: 'Never',
-    lastSowed: 'Today',
-    currentTemp: null, // Will be populated by weather API
-    soilTemp: null, // Will be populated by weather API  
-    humidity: 65,
-    soilMoisture: null, // Will be populated by weather API
-    cropStage: 'Just Planted',
-    expectedHarvest: isLoadingHarvest ? 'Loading...' : (harvestData ? `${harvestData.days_remaining} days` : 'Calculating...'),
-    weatherToday: 'Loading...',
-    forecast: [
-      { condition: 'Sunny', temp: 25, day: 'Loading...', icon: FaSun },
-      { condition: 'Sunny', temp: 25, day: 'Loading...', icon: FaSun }
-    ], // Start with default data to prevent errors
-    nutrients: {
-      nitrogen: 60, // Starts moderate, needs fertilizing
-      phosphorus: 55,
-      potassium: 65
-    },
-    pests: {
-      detected: false,
-      risk: 'Low',
-      lastChecked: 'Never'
-    },
-    irrigation: {
-      nextScheduled: 'Needs scheduling',
-      totalWaterUsed: '0 L',
-      efficiency: '0%'
-    },
-    plantHealth: 'Newly Planted',
-    growthRate: 'Awaiting Care'
-  });
 
   // Fetch harvest estimation data
   useEffect(() => {
@@ -974,76 +1077,6 @@ const CropSimulation = () => {
     );
   }
 
-  // Simulate realistic crop growth based on activities and care
-  const simulateCropGrowth = (activity) => {
-    let growthBoost = 0;
-    let updatedFarmData = { ...farmData };
-    
-    switch (activity) {
-      case 'irrigation':
-        const currentMoisture = farmData.soilMoisture || 50; // Use API value or default
-        growthBoost = currentMoisture < 50 ? 3 : 1;
-        updatedFarmData.soilMoisture = Math.min(100, currentMoisture + 25);
-        updatedFarmData.lastIrrigated = 'Today';
-        updatedFarmData.totalWaterUsed = (parseInt(farmData.irrigation.totalWaterUsed) + 50) + ' L';
-        break;
-      case 'fertilization':
-        growthBoost = 4;
-        updatedFarmData.nutrients.nitrogen = Math.min(100, farmData.nutrients.nitrogen + 20);
-        updatedFarmData.nutrients.phosphorus = Math.min(100, farmData.nutrients.phosphorus + 15);
-        updatedFarmData.nutrients.potassium = Math.min(100, farmData.nutrients.potassium + 10);
-        updatedFarmData.lastFertilized = 'Today';
-        break;
-      case 'pest_check':
-        growthBoost = 1;
-        updatedFarmData.pests.lastChecked = 'Today';
-        break;
-      case 'daily_care':
-        growthBoost = 2;
-        break;
-      default:
-        growthBoost = 0.5; // Natural growth from interaction
-    }
-    
-    // Update crop stage with realistic growth
-    const newStage = Math.min(100, cropStage + growthBoost);
-    setCropStage(newStage);
-    
-    // Update farm stage description with real data
-    const daysRemaining = harvestData ? harvestData.days_remaining : Math.max(1, Math.round((100 - newStage) * 1.2));
-    if (newStage < 10) {
-      updatedFarmData.cropStage = 'Germination';
-      updatedFarmData.expectedHarvest = harvestData ? `${daysRemaining} days` : `${daysRemaining} days (estimated)`;
-    } else if (newStage < 25) {
-      updatedFarmData.cropStage = 'Seedling';
-      updatedFarmData.expectedHarvest = harvestData ? `${daysRemaining} days` : `${daysRemaining} days (estimated)`;
-    } else if (newStage < 45) {
-      updatedFarmData.cropStage = 'Vegetative Growth';
-      updatedFarmData.expectedHarvest = harvestData ? `${daysRemaining} days` : `${daysRemaining} days (estimated)`;
-    } else if (newStage < 65) {
-      updatedFarmData.cropStage = 'Tillering';
-      updatedFarmData.expectedHarvest = harvestData ? `${daysRemaining} days` : `${daysRemaining} days (estimated)`;
-    } else if (newStage < 85) {
-      updatedFarmData.cropStage = 'Flowering';
-      updatedFarmData.expectedHarvest = harvestData ? `${daysRemaining} days` : `${daysRemaining} days (estimated)`;
-    } else if (newStage < 100) {
-      updatedFarmData.cropStage = 'Grain Filling';
-      updatedFarmData.expectedHarvest = harvestData ? `${daysRemaining} days` : `${daysRemaining} days (estimated)`;
-    } else {
-      updatedFarmData.cropStage = 'Ready for Harvest!';
-      updatedFarmData.expectedHarvest = harvestData?.status === 'ready_for_harvest' ? 'Now!' : 'Now!';
-    }
-    
-    // Natural degradation over time - only if soil moisture is available from API
-    if (updatedFarmData.soilMoisture !== null) {
-      updatedFarmData.soilMoisture = Math.max(30, updatedFarmData.soilMoisture - 2);
-    }
-    updatedFarmData.nutrients.nitrogen = Math.max(40, updatedFarmData.nutrients.nitrogen - 1);
-    
-    setFarmData(updatedFarmData);
-    return growthBoost;
-  };
-
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
 
@@ -1154,30 +1187,7 @@ const CropSimulation = () => {
 
       setChatMessages(prev => [...prev, botMessage]);
       setIsChatTyping(false);
-    }, 1500);
-  };
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        duration: 0.6,
-        ease: [0.25, 0.25, 0.25, 0.75]
-      }
-    }
+    }, 800); // Reduced from 1500ms for better UX
   };
 
   return (

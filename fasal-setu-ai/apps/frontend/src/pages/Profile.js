@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI, cropAPI } from '../services/api';
-import { motion } from 'framer-motion';
 import { 
   FaUser, 
   FaEdit, 
@@ -223,30 +222,6 @@ const Profile = () => {
     }
   };
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        duration: 0.6,
-        ease: [0.25, 0.25, 0.25, 0.75]
-      }
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-secondary-200/60 via-white to-secondary-700/30 pt-24 pb-8">
@@ -356,48 +331,34 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary-200/60 via-white to-secondary-700/30 pt-24 pb-8">
       <div className="container mx-auto px-4 max-w-6xl">
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-          className="space-y-6"
-        >
+        <div className="space-y-6">
           {/* Header */}
-          <motion.div variants={itemVariants} className="text-center">
+          <div className="text-center">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
               My Profile
             </h1>
             <p className="text-gray-600">
               Manage your account information and farming details
             </p>
-          </motion.div>
+          </div>
 
           {/* Success/Error Messages */}
           {success && (
-            <motion.div 
-              variants={itemVariants}
-              className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl"
-            >
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl">
               {success}
-            </motion.div>
+            </div>
           )}
           
           {error && (
-            <motion.div 
-              variants={itemVariants}
-              className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl"
-            >
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl">
               {error}
-            </motion.div>
+            </div>
           )}
 
           {/* Profile Dashboard */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Profile Overview Card - Second on mobile, first on desktop */}
-            <motion.div
-              variants={itemVariants}
-              className="lg:col-span-2 order-2 lg:order-1 bg-primary/20 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/50 p-6"
-            >
+            <div className="lg:col-span-2 order-2 lg:order-1 bg-primary/20 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/50 p-6">
               <div className="flex justify-between items-start mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">Profile Information</h2>
                 <button
@@ -627,13 +588,10 @@ const Profile = () => {
                   )}
                 </div>
               )}
-            </motion.div>
+            </div>
 
             {/* Profile Stats Sidebar - First on mobile, second on desktop */}
-            <motion.div
-              variants={itemVariants}
-              className="order-1 lg:order-2 space-y-6"
-            >
+            <div className="order-1 lg:order-2 space-y-6">
               {/* Profile Picture Card */}
               <div className="bg-primary/20 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/50 p-6 text-center">
                 <div className="w-24 h-24 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -739,9 +697,9 @@ const Profile = () => {
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

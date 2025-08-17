@@ -1,8 +1,26 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaPaperPlane, FaMicrophone, FaRobot, FaUser, FaTimes, FaEyeSlash, FaEye } from 'react-icons/fa';
+import { FaPaperPlane, FaMicrophone, FaRobot, FaUser, FaTimes, FaEyeSlash, FaEye, FaComments } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import FloatingChatButton from '../components/FloatingChatButton';
+
+// Memoized FloatingChatButton to prevent unnecessary re-renders
+const FloatingChatButton = React.memo(() => {
+  const navigate = useNavigate();
+  return (
+    <motion.button
+      onClick={() => navigate('/chatbot')}
+      className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-full shadow-lg hover:shadow-xl flex items-center justify-center z-50 transition-all duration-300"
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ delay: 0.5, duration: 0.2 }}
+      title="Chat with AI Assistant"
+    >
+      <FaComments className="text-xl" />
+    </motion.button>
+  );
+});
 
 const Chatbot = () => {
   const navigate = useNavigate();
@@ -19,15 +37,22 @@ const Chatbot = () => {
   const [showQuickQuestions, setShowQuickQuestions] = useState(true);
   const messagesEndRef = useRef(null);
 
-  const scrollToBottom = () => {
+  // Reduced animation variants for better mobile performance
+  const reducedMotion = useMemo(() => ({
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.2 } },
+    exit: { opacity: 0, y: -5, transition: { duration: 0.1 } }
+  }), []);
+
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, scrollToBottom]);
 
-  // Preload background image
+  // Optimized image preloading with lazy loading
   useEffect(() => {
     const preloadImage = () => {
       const image = new Image();
@@ -35,10 +60,12 @@ const Chatbot = () => {
       image.src = '/assets/desktop-wallpaper-rice-agriculture-field-golden-hour-grass.jpg';
     };
     
-    preloadImage();
+    // Delay image loading to improve initial page load
+    const timer = setTimeout(preloadImage, 100);
+    return () => clearTimeout(timer);
   }, []);
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = useCallback(async () => {
     if (inputMessage.trim()) {
       // Add user message
       const userMessage = {
@@ -52,7 +79,7 @@ const Chatbot = () => {
       setInputMessage('');
       setIsTyping(true);
 
-      // Simulate AI thinking delay
+      // Reduced AI thinking delay for better UX
       setTimeout(() => {
         const botResponse = {
           type: 'bot',
@@ -61,47 +88,46 @@ const Chatbot = () => {
         };
         setMessages(prev => [...prev, botResponse]);
         setIsTyping(false);
-      }, 1500);
+      }, 800); // Reduced from 1500ms
     }
-  };
+  }, [inputMessage]);
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
-  };
+  }, [handleSendMessage]);
 
-  const quickQuestions = [
+  // Memoized quick questions to prevent re-renders
+  const quickQuestions = useMemo(() => [
     "What crops grow best in my region?",
-    "Current weather forecast",
+    "Current weather forecast", 
     "Market prices for wheat",
     "Pest control advice"
-  ];
+  ], []);
 
   return (
     <div className="h-screen bg-gray-50 relative overflow-hidden">
-      {/* Red Cross Button - Fixed Position */}
+      {/* Red Cross Button - Simplified animations */}
       <motion.button
         onClick={() => navigate('/')}
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
-        whileHover={{ scale: 1.1, rotate: 90 }}
-        whileTap={{ scale: 0.9 }}
-        className="fixed top-4 right-4 md:top-6 md:right-6 z-50 w-10 h-10 md:w-12 md:h-12 bg-red-500/90 backdrop-blur-sm border border-red-400/50 rounded-full flex items-center justify-center text-white hover:bg-red-500 transition-all duration-300 shadow-lg hover:shadow-red-500/25"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2 }}
+        className="fixed top-4 right-4 md:top-6 md:right-6 z-50 w-10 h-10 md:w-12 md:h-12 bg-red-500/90 backdrop-blur-sm border border-red-400/50 rounded-full flex items-center justify-center text-white hover:bg-red-500 transition-all duration-200 shadow-lg hover:shadow-red-500/25"
       >
         <FaTimes className="text-sm md:text-lg" />
       </motion.button>
 
-      {/* Background with blur effects */}
+      {/* Background with simplified effects */}
       <div className="absolute inset-0 z-0">
         {/* Gradient Fallback - Shows immediately while image loads */}
-        <div className="w-full h-full bg-gradient-to-br from-green-200 via-yellow-100 to-green-300" style={{filter: 'blur(1px)'}} />
+        <div className="w-full h-full bg-gradient-to-br from-secondary-200 via-yellow-100 to-secondary-400" />
         
-        {/* Actual Background Image - Fades in when loaded */}
+        {/* Actual Background Image - Simple fade in when loaded */}
         <div 
-          className={`w-full h-full bg-cover bg-center bg-fixed absolute inset-0 transition-opacity duration-1000 ${
+          className={`w-full h-full bg-cover bg-center bg-fixed absolute inset-0 transition-opacity duration-500 ${
             backgroundImageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           style={{
@@ -115,40 +141,18 @@ const Chatbot = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-transparent to-transparent" />
       </div>
 
-      {/* Animated Glow Effects */}
-      <motion.div
-        animate={{
-          scale: [1, 1.1, 1],
-          opacity: [0.2, 0.3, 0.2]
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-        className="absolute top-1/4 left-1/4 w-32 h-32 md:w-64 md:h-64 bg-gradient-radial from-emerald-300/20 to-transparent rounded-full blur-3xl"
-      />
-      <motion.div
-        animate={{
-          scale: [1.1, 1, 1.1],
-          opacity: [0.1, 0.2, 0.1]
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-        className="absolute bottom-1/4 right-1/4 w-24 h-24 md:w-48 md:h-48 bg-gradient-radial from-blue-300/15 to-transparent rounded-full blur-3xl"
-      />
+      {/* Simplified glow effects - static instead of animated */}
+      <div className="absolute top-1/4 left-1/4 w-32 h-32 md:w-64 md:h-64 bg-gradient-radial from-emerald-300/15 to-transparent rounded-full blur-3xl opacity-30" />
+      <div className="absolute bottom-1/4 right-1/4 w-24 h-24 md:w-48 md:h-48 bg-gradient-radial from-blue-300/10 to-transparent rounded-full blur-3xl opacity-20" />
 
       {/* Main Chat Container */}
       <div className="relative z-10 h-screen flex flex-col p-4 md:p-6 lg:p-8 max-w-4xl mx-auto">
         
         {/* Chat Header */}
         <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
           className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 p-3 md:p-4 mb-4 md:mb-6 shadow-xl flex-shrink-0"
         >
           <div className="flex items-center space-x-3 md:space-x-4">
@@ -167,22 +171,22 @@ const Chatbot = () => {
 
         {/* Chat Messages Area */}
         <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
           className={`flex-1 bg-white/70 backdrop-blur-xl rounded-2xl border border-gray-200/50 overflow-hidden shadow-xl min-h-0 ${
             showQuickQuestions ? 'mb-4 md:mb-6' : 'mb-3 md:mb-4'
           }`}
         >
           <div className="h-full overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4 scrollbar-thin scrollbar-thumb-emerald-400/50 scrollbar-track-gray-100/50">
-            <AnimatePresence>
+            <AnimatePresence mode="popLayout">
               {messages.map((message, index) => (
                 <motion.div
                   key={index}
-                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  variants={reducedMotion}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
                   className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div className={`max-w-[280px] sm:max-w-xs md:max-w-md lg:max-w-lg flex items-start space-x-2 md:space-x-3 ${
@@ -201,7 +205,7 @@ const Chatbot = () => {
                     </div>
                     
                     {/* Message Bubble */}
-                    <div className={`px-3 md:px-4 py-2 md:py-3 rounded-2xl backdrop-blur-sm border ${
+                    <div className={`px-3 md:px-4 py-2 md:py-3 rounded-2xl backdrop-blur-sm border transition-opacity duration-200 ${
                       message.type === 'user' 
                         ? 'bg-gradient-to-br from-blue-500/90 to-purple-600/90 text-white border-blue-400/50 rounded-br-md' 
                         : 'bg-white/80 text-gray-800 border-gray-200/50 rounded-bl-md'
@@ -222,9 +226,10 @@ const Chatbot = () => {
             <AnimatePresence>
               {isTyping && (
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
+                  variants={reducedMotion}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
                   className="flex justify-start"
                 >
                   <div className="flex items-start space-x-2 md:space-x-3">
@@ -247,28 +252,26 @@ const Chatbot = () => {
           </div>
         </motion.div>
 
-        {/* Quick Questions */}
+        {/* Quick Questions - Simplified animations */}
         <AnimatePresence>
           {showQuickQuestions && (
             <motion.div 
-              initial={{ opacity: 0, y: 20, height: 0 }}
-              animate={{ opacity: 1, y: 0, height: "auto" }}
-              exit={{ opacity: 0, y: -20, height: 0 }}
-              transition={{ duration: 0.4 }}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
               className="mb-3 md:mb-4 flex-shrink-0"
             >
               {/* Quick Questions Header with Toggle */}
               <div className="flex items-center justify-between mb-3">
                 <span className="text-gray-700 text-sm font-medium">Quick Questions</span>
-                <motion.button
+                <button
                   onClick={() => setShowQuickQuestions(false)}
-                  whileHover={{ scale: 1.1, rotate: 90 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="w-6 h-6 bg-gray-100/80 backdrop-blur-sm border border-gray-200/50 rounded-full flex items-center justify-center text-gray-600 hover:bg-red-100/80 hover:border-red-300/50 hover:text-red-600 transition-all duration-300"
+                  className="w-6 h-6 bg-gray-100/80 backdrop-blur-sm border border-gray-200/50 rounded-full flex items-center justify-center text-gray-600 hover:bg-red-100/80 hover:border-red-300/50 hover:text-red-600 transition-all duration-200"
                   title="Hide quick questions"
                 >
                   <FaTimes className="text-xs" />
-                </motion.button>
+                </button>
               </div>
               
               {/* Quick Questions Grid */}
@@ -277,13 +280,11 @@ const Chatbot = () => {
                   <motion.button
                     key={index}
                     onClick={() => setInputMessage(question)}
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    whileTap={{ scale: 0.98 }}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="p-2 md:p-3 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl text-gray-700 text-xs md:text-sm hover:bg-white/80 hover:border-emerald-400/50 transition-all duration-300 text-left shadow-sm"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2, delay: index * 0.05 }}
+                    className="p-2 md:p-3 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl text-gray-700 text-xs md:text-sm hover:bg-white/80 hover:border-emerald-400/50 transition-all duration-200 text-left shadow-sm"
                   >
                     {question}
                   </motion.button>
@@ -298,12 +299,11 @@ const Chatbot = () => {
           {!showQuickQuestions && (
             <motion.button
               onClick={() => setShowQuickQuestions(true)}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="mb-3 md:mb-4 w-full p-2 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl text-gray-700 text-sm hover:bg-white/80 hover:border-emerald-400/50 transition-all duration-300 flex items-center justify-center space-x-2 flex-shrink-0 shadow-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="mb-3 md:mb-4 w-full p-2 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl text-gray-700 text-sm hover:bg-white/80 hover:border-emerald-400/50 transition-all duration-200 flex items-center justify-center space-x-2 flex-shrink-0 shadow-sm"
             >
               <FaEye className="text-xs" />
               <span>Show Quick Questions</span>
@@ -313,9 +313,9 @@ const Chatbot = () => {
 
         {/* Chat Input */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
           className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 p-3 md:p-4 shadow-xl flex-shrink-0"
         >
           <div className="flex space-x-2 md:space-x-3">
@@ -325,28 +325,22 @@ const Chatbot = () => {
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask me about crops, weather, farming techniques..."
-                className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-400/50 transition-all duration-300 resize-none h-10 md:h-12 overflow-hidden text-sm md:text-base"
+                className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-400/50 transition-all duration-200 resize-none h-10 md:h-12 overflow-hidden text-sm md:text-base"
                 rows="1"
               />
             </div>
             
-            <motion.button
+            <button
               onClick={handleSendMessage}
               disabled={!inputMessage.trim() || isTyping}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-400 hover:to-emerald-500 transition-all duration-300 flex items-center space-x-1 md:space-x-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-emerald-500/25"
+              className="px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-400 hover:to-emerald-500 transition-all duration-200 flex items-center space-x-1 md:space-x-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-emerald-500/25"
             >
               <FaPaperPlane className="text-xs md:text-sm" />
-            </motion.button>
+            </button>
             
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-3 md:px-4 py-2 md:py-3 bg-gray-200/80 backdrop-blur-sm text-gray-600 rounded-xl hover:bg-gray-300/80 transition-all duration-300 border border-gray-200/50"
-            >
+            <button className="px-3 md:px-4 py-2 md:py-3 bg-gray-200/80 backdrop-blur-sm text-gray-600 rounded-xl hover:bg-gray-300/80 transition-all duration-200 border border-gray-200/50">
               <FaMicrophone className="text-xs md:text-sm" />
-            </motion.button>
+            </button>
           </div>
         </motion.div>
       </div>
