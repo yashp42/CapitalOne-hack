@@ -35,7 +35,7 @@ API_LIMIT = 500
 API_SLEEP = 0.25  # polite paging delay
 
 # Static fallback directory (files already in target schema)
-STATIC_DIR = pathlib.Path(__file__).resolve().parent.parent.parent.parent / "data" / "static_json" / "mandi"
+STATIC_DIR = pathlib.Path(__file__).resolve().parent.parent / "data" / "static_json" / "mandi"
 
 # ----------------------------
 # Helpers

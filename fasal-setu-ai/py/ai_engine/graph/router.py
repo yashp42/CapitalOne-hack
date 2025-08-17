@@ -15,7 +15,20 @@ class MessageEncoder(json.JSONEncoder):
             return o.model_dump()
         return super().default(o)
 
-load_dotenv()
+# Load environment variables - try multiple paths for different deployment scenarios
+env_paths = [
+    Path(__file__).resolve().parent.parent.parent.parent / ".env",  # Development (from project root)
+    Path(__file__).resolve().parent.parent / ".env",  # ai_engine folder
+    Path.cwd() / ".env",  # Current working directory
+]
+
+for env_path in env_paths:
+    if env_path.exists():
+        load_dotenv(env_path)
+        break
+else:
+    # Try loading from default location
+    load_dotenv()
 
 
 def _get_llm():

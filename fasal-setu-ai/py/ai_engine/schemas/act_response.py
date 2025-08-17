@@ -2,7 +2,10 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
 
-from py.ai_engine.graph.state import ToolCall
+try:
+    from ..graph.state import ToolCall
+except ImportError:
+    from graph.state import ToolCall
 
 
 class ActResponse(BaseModel):

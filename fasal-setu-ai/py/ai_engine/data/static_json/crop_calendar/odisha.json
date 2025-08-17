@@ -1,0 +1,38 @@
+{
+  "state": "Odisha",
+  "district": null,
+  "agro_climatic_zone": null,
+  "source_type": "calendar_pdf",
+  "source_url": null,
+  "doc_date": null,
+  "last_checked": "2025-08-13",
+  "normal_annual_rain_mm": null,
+  "rainfall_pattern_notes": null,
+  "dominant_soils": [],
+  "crops": [
+    {
+      "crop_name": "rice",
+      "season": "Kharif",
+      "planting_window": { "start": null, "end": null },
+      "stages": ["nursery", "transplanting", "tillering", "panicle initiation", "flowering", "maturity"],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": null, "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [],
+      "market_mapping": { "commodity_names": ["paddy", "rice"] },
+      "data_gaps": [],
+      "sources": ["src1"]
+    }
+  ],
+  "dataset_sources": [
+    {
+      "key": "src1",
+      "title": "District Level Crop Weather Calendar for Kharif Rice - Odisha",
+      "url": "file-HqfBEosu4gcaywAKrD5x9A",
+      "tier": "primary",
+      "last_checked": "2025-08-13"
+    }
+  ]
+}

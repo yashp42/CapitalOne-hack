@@ -2,7 +2,7 @@
 Policy match tool (file-based, schema-compliant, high recall).
 
 Scans CSV/XLSX files under:
-  data/static_json/policy/
+  py/ai_engine/data/static_json/policy/
 
 Outputs per schemas/policy.schema.json: PolicyMatchResponse.
 
@@ -31,7 +31,7 @@ except Exception:
     pd = None
 
 POLICY_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "../../..", "data", "static_json", "policy"
+    os.path.dirname(__file__), "..", "data", "static_json", "policy"
 ))
 
 _WS = re.compile(r"\s+")
