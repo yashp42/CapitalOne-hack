@@ -7,7 +7,7 @@ Deterministic, rule-based variety ranking using provided tool outputs.
 Inputs expected via `facts` dict (populated from tool_calls[*].output):
  - "variety_lookup": {"varieties": [ {..}, ... ], "provider": str, "retrieved_at": str, "confidence": float}
  - "calendar_lookup": {"crop": str, "district": str, "sowing_window": {"start":"YYYY-MM-DD","end":"YYYY-MM-DD"}, "typical_maturity_days": int, ...}
- - Optional: "weather_outlook", "soil", "prices_fetch", "rag_search"
+ - Optional: "eather_outlook", "soil", "prices_fetch", "rag_search"
 
 Behavior:
  - If required tools (variety_lookup, calendar_lookup) are missing -> return dict indicating missing fields.

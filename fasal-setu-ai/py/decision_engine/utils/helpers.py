@@ -6,7 +6,7 @@ Helper utilities for the Decision Engine.
 - find_tool_output: safe getter for facts
 - extract_provenance_from_facts: discover sources/doc ids across facts (defensive)
 - compute_confidence: conservative heuristic to compute confidence for a result
-- safe_get: nested-key safe retrieval
+- safe_get: nested-key sfe retrieval
 - normalize: simple clamp/normalize helper
 """
 
@@ -62,11 +62,11 @@ def build_facts_from_toolcalls(tool_calls: Iterable) -> Dict[str, Dict[str, Any]
         try:
             if isinstance(tc, dict):
                 # Validate/parse to ToolCall model (may raise ValidationError or ValueError)
-                parsed = ToolCall.parse_obj(tc)
+                parsed = ToolCall.model_validate(tc)
             elif isinstance(tc, ToolCall):
                 parsed = tc
             else:
-                parsed = ToolCall.parse_obj(tc)
+                parsed = ToolCall.model_validate(tc)
         except Exception as exc:
             # catch any parse error (ValidationError, ValueError, TypeError, etc.)
             logger.warning("ToolCall at index %s failed to parse; including raw output. Error: %s", idx, exc)

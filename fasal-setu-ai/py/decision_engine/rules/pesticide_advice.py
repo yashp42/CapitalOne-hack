@@ -6,7 +6,7 @@ Decision template: "pesticide_safe_recommendation"
 Purpose:
  - Given pesticide catalog outputs and optional pest diagnosis, recommend safe pesticide products
    and highlight safety constraints (pre-harvest interval, toxicity notes, restricted uses).
- - Deterministic rule-based selection: filter products by pest (if known), crop compatibility (if known),
+ - Deterministic rule-baed selection: filter products by pest (if known), crop compatibility (if known),
    and PHI (pre-harvest interval) relative to days-to-harvest (if known).
 
 Expected inputs (facts dict keys, provided from tool_calls[*]['output']):
@@ -86,18 +86,33 @@ def _safe_get(d: Optional[Dict[str, Any]], *keys, default=None):
 def _normalize_products(pest_out: Any) -> List[Dict[str, Any]]:
     """
     Accept either dict with "products" key or a list directly.
+    Handles nested structures like facts.pesticide.data.items
     Returns list of product dicts.
     """
     if pest_out is None:
         return []
     if isinstance(pest_out, dict):
+        # Check for nested data structure like your input
+        if "data" in pest_out and isinstance(pest_out["data"], dict):
+            if "items" in pest_out["data"] and isinstance(pest_out["data"]["items"], list):
+                return pest_out["data"]["items"]
+        
+        # Direct lists under various keys
         products = pest_out.get("products") or pest_out.get("items") or pest_out.get("data")
         if isinstance(products, list):
             return products
+        
+        # Check if products is itself a dict with nested items
+        if isinstance(products, dict) and "items" in products:
+            items = products["items"]
+            if isinstance(items, list):
+                return items
+        
         # sometimes the dict itself is a single product
         # detect typical product keys to decide if pest_out is a product
-        if any(k in pest_out for k in ("name", "active_ingredient", "target_pests", "crops")):
+        if any(k in pest_out for k in ("name", "active_ingredient", "target_pests", "targets", "crop_name")):
             return [pest_out]
+        return []
         return []
     if isinstance(pest_out, list):
         return [p for p in pest_out if isinstance(p, dict)]
@@ -106,14 +121,30 @@ def _normalize_products(pest_out: Any) -> List[Dict[str, Any]]:
 
 def _matches_pest(product: Dict[str, Any], pest_names: List[str]) -> bool:
     """
-    Return True if any pest in pest_names is found in product['target_pests'] using case-insensitive substring matching.
-    If product has no target list, we return False.
+    Return True if any pest in pest_names is found in product target fields using case-insensitive substring matching.
+    Handles both list formats (target_pests) and single string formats (target).
     """
     if not pest_names:
         return False
+    
+    # Check various target field formats
     targets = product.get("target_pests") or product.get("targets") or product.get("pests") or []
+    
+    # Handle single target field (like your data: "target": "Aphids" or "pest_target": "aphids")
+    single_target = product.get("target") or product.get("pest_target")
+    if single_target:
+        if isinstance(targets, list):
+            targets.append(single_target)
+        else:
+            targets = [single_target]
+    
     if not targets:
         return False
+    
+    # Ensure targets is a list
+    if not isinstance(targets, list):
+        targets = [targets]
+    
     targets_norm = [str(t).lower() for t in targets if t is not None]
     for p in pest_names:
         if not p:
@@ -127,14 +158,31 @@ def _matches_pest(product: Dict[str, Any], pest_names: List[str]) -> bool:
 
 def _matches_crop(product: Dict[str, Any], crop: Optional[str]) -> bool:
     """
-    Return True if product explicitly lists allowed crops and crop matches (case-insensitive substring).
-    If product has no crops list, treat as unspecified (do not reject).
+    Return True if product is compatible with the given crop.
+    Checks both explicit crop lists and single crop_name field.
+    If product has no crop specification, treat as compatible (do not reject).
     """
     if not crop:
         return True  # nothing to check
+    
+    # Check explicit crop lists
     crops = product.get("crops") or product.get("allowed_crops") or product.get("crop_list") or []
+    
+    # Also check single crop_name field (like your data: "crop_name": "Potato")
+    single_crop = product.get("crop_name") or product.get("crop")
+    if single_crop:
+        if isinstance(crops, list):
+            crops.append(single_crop)
+        else:
+            crops = [single_crop]
+    
     if not crops:
-        return True
+        return True  # no crop restriction, compatible with all
+    
+    # Ensure crops is a list
+    if not isinstance(crops, list):
+        crops = [crops]
+    
     cl = str(crop).lower()
     for c in crops:
         try:
@@ -252,9 +300,9 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
     if not facts or not isinstance(facts, dict):
         return {"action": "require_more_info", "items": [], "confidence": 0.0, "notes": "No facts provided", "missing": ["pesticide_lookup"]}
 
-    pesticide_out = facts.get("pesticide_lookup")
+    pesticide_out = facts.get("pesticide_lookup") or facts.get("pesticide")
     if not pesticide_out:
-        return {"action": "require_more_info", "items": [], "confidence": 0.0, "notes": "Missing required tool output 'pesticide_lookup'", "missing": ["pesticide_lookup"]}
+        return {"action": "require_more_info", "items": [], "confidence": 0.0, "notes": "Missing required tool output 'pesticide_lookup' or 'pesticide'", "missing": ["pesticide_lookup"]}
 
     # try to extract crop and pest from intent (preferable)
     user_crop = None
@@ -307,8 +355,12 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
     candidates = []
     for p in products:
         try:
-            # product name
-            pname = _safe_get(p, "name") or _safe_get(p, "product_name") or _safe_get(p, "title") or "unknown_product"
+            # product name - handle various name fields
+            pname = (_safe_get(p, "name") or 
+                    _safe_get(p, "product_name") or 
+                    _safe_get(p, "title") or 
+                    _safe_get(p, "active_ingredient") or  # fallback to active ingredient
+                    "unknown_product")
             # allowed crops check
             crop_ok = _matches_crop(p, user_crop)
             # pest match: user_pest OR rag-detected pests

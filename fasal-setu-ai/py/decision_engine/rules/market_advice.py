@@ -112,8 +112,8 @@ def _extract_price_history(prices_out: Any) -> List[Tuple[datetime, float]]:
             for rec in candidates:
                 if not isinstance(rec, dict):
                     continue
-                date_raw = rec.get("date") or rec.get("timestamp") or rec.get("ts")
-                price_raw = rec.get("price") or rec.get("value") or rec.get("price_per_qtl") or rec.get("price_per_kg") or rec.get("price_value")
+                date_raw = rec.get("date") or rec.get("timestamp") or rec.get("ts") or rec.get("arrival_date")
+                price_raw = rec.get("price") or rec.get("value") or rec.get("price_per_qtl") or rec.get("price_per_kg") or rec.get("price_value") or rec.get("modal_price_rs_per_qtl")
                 d = _parse_date(date_raw)
                 try:
                     p = float(price_raw) if price_raw is not None else None
@@ -133,8 +133,8 @@ def _extract_price_history(prices_out: Any) -> List[Tuple[datetime, float]]:
         # list of simple prices or dicts
         for rec in prices_out:
             if isinstance(rec, dict):
-                date_raw = rec.get("date") or rec.get("timestamp")
-                price_raw = rec.get("price") or rec.get("value")
+                date_raw = rec.get("date") or rec.get("timestamp") or rec.get("arrival_date")
+                price_raw = rec.get("price") or rec.get("value") or rec.get("modal_price_rs_per_qtl")
                 d = _parse_date(date_raw)
                 try:
                     p = float(price_raw) if price_raw is not None else None
@@ -235,6 +235,68 @@ def _extract_storage_cost(storage_out: Optional[Dict[str, Any]]) -> Optional[flo
     return None
 
 
+def _handle_insufficient_price_data(series: List[Tuple[Optional[datetime], float]], facts: Dict[str, Any], intent: Any) -> Dict[str, Any]:
+    """
+    Handle cases where we have some price data but not enough for trend analysis.
+    Provides a basic recommendation based on current price and storage availability.
+    """
+    if not series:
+        return {"action": "require_more_info", "items": [], "confidence": 0.0, "notes": "No price data available", "missing": ["prices_fetch.price_history"]}
+    
+    # Get the most recent price
+    latest_price = series[-1][1]  # (date, price) tuple
+    
+    # Check storage availability
+    storage_out = facts.get("storage_find") or facts.get("storage")
+    storage_available = False
+    storage_note = ""
+    
+    if storage_out:
+        # Try to determine if storage is available
+        if isinstance(storage_out, dict):
+            facilities = storage_out.get("data", {}).get("facilities", []) or storage_out.get("facilities", [])
+            if facilities:
+                active_facilities = [f for f in facilities if f.get("status", "").lower() == "active"]
+                if active_facilities:
+                    storage_available = True
+                    storage_note = f"Storage available at {len(active_facilities)} facilities"
+    
+    # Basic recommendation logic for insufficient data
+    if storage_available:
+        recommendation = "hold_short_term"
+        reason = "Limited price history available. Storage facilities accessible - consider holding for better price discovery."
+        confidence = 0.4  # Lower confidence due to limited data
+    else:
+        recommendation = "sell_now"
+        reason = "Limited price history and storage options. Recommend immediate sale to avoid uncertainty."
+        confidence = 0.3  # Lower confidence due to limited data
+    
+    # Create decision item
+    item = {
+        "name": recommendation,  # Use "name" instead of "recommendation"
+        "score": confidence,     # Use "score" instead of "confidence" 
+        "current_price": latest_price,
+        "price_points_available": len(series),
+        "reasons": [reason],
+        "tradeoffs": ["Limited price history - trend analysis not possible"],
+        "meta": {
+            "price_history_insufficient": True,
+            "storage_available": storage_available,
+            "storage_note": storage_note,
+            "current_price": latest_price
+        },
+        "sources": []
+    }
+    
+    return {
+        "action": "basic_market_recommendation",
+        "items": [item],
+        "handler_confidence": confidence,
+        "confidence": None,
+        "notes": f"Basic recommendation based on {len(series)} price point(s). For better analysis, provide at least {MIN_PRICE_POINTS} price points."
+    }
+
+
 def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
     """
     Main handler called by orchestrator.
@@ -245,14 +307,19 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
     if not facts or not isinstance(facts, dict):
         return {"action": "require_more_info", "items": [], "confidence": 0.0, "notes": "No facts provided", "missing": ["prices_fetch"]}
 
-    prices_out = facts.get("prices_fetch")
+    # Try both "prices_fetch" and "prices" keys for compatibility
+    prices_out = facts.get("prices_fetch") or facts.get("prices")
     if not prices_out:
         return {"action": "require_more_info", "items": [], "confidence": 0.0, "notes": "Missing required tool output 'prices_fetch'", "missing": ["prices_fetch"]}
 
     # extract series
     series = _extract_price_history(prices_out)
-    if not series or len(series) < MIN_PRICE_POINTS:
-        return {"action": "require_more_info", "items": [], "confidence": 0.0, "notes": "Insufficient price history points (need at least {})".format(MIN_PRICE_POINTS), "missing": ["prices_fetch.price_history"]}
+    if not series:
+        return {"action": "require_more_info", "items": [], "confidence": 0.0, "notes": "No price data found", "missing": ["prices_fetch.price_history"]}
+    
+    # Handle insufficient price history with basic recommendation
+    if len(series) < MIN_PRICE_POINTS:
+        return _handle_insufficient_price_data(series, facts, intent)
 
     # determine lookback window (allow override from intent)
     window = TREND_WINDOW_DAYS
@@ -275,8 +342,8 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
     if not stats:
         return {"action": "require_more_info", "items": [], "confidence": 0.0, "notes": "Unable to compute trend/volatility from price history", "missing": []}
 
-    # optional storage info
-    storage_out = facts.get("storage_find")
+    # optional storage info - try both "storage_find" and "storage" keys for compatibility
+    storage_out = facts.get("storage_find") or facts.get("storage")
     storage_cost = _extract_storage_cost(storage_out)
 
     # Decision logic (deterministic):

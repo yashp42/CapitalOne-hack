@@ -337,7 +337,7 @@ class DecisionResponseModel(BaseModel):
     request_id: Optional[str] = None
     intent: str
     decision_template: str
-    decision_timestamp: datetime
+    decision_timestamp: Optional[datetime] = Field(default_factory=lambda: datetime.now())
     status: Literal["complete", "incomplete", "invalid_input", "handler_not_found"] = "complete"
     result: Optional[DecisionResult] = None
     evidence: Optional[List[EvidenceItem]] = Field(default_factory=list)

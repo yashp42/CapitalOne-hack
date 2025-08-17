@@ -217,10 +217,27 @@ def process_act_intent(raw_payload: Dict[str, Any]) -> Dict[str, Any]:
 
     # 1) Validate incoming ActIntent
     try:
-        act = ActIntentModel.parse_obj(raw_payload)
+        act = ActIntentModel.model_validate(raw_payload)
     except ValidationError as e:
         logger.exception("Invalid ActIntentModel")
-        return {"error": "invalid_act_intent", "details": e.errors(), "trace_id": trace_id}
+        return {
+            "request_id": raw_payload.get("request_id", trace_id),
+            "intent": raw_payload.get("intent", "unknown"),
+            "decision_template": raw_payload.get("decision_template", "unknown"),
+            "decision_timestamp": datetime.now(timezone.utc).isoformat(),
+            "status": "invalid_input",
+            "result": None,
+            "evidence": [],
+            "provenance": [],
+            "audit_trace": [],
+            "confidence": 0.0,
+            "missing": [],
+            "source_id": None,
+            "source_type": None,
+            "error": "invalid_act_intent", 
+            "details": e.errors(), 
+            "trace_id": trace_id
+        }
 
     # 2) Build facts from tool_calls[*].output (DE must NOT fetch data)
     # Use helper build_facts_from_toolcalls which expects list of {"tool":name, "output":...}
@@ -255,7 +272,23 @@ def process_act_intent(raw_payload: Dict[str, Any]) -> Dict[str, Any]:
 
     if handler is None:
         logger.error("No handler found for intent: %s", act.intent)
-        return {"error": "unknown_intent", "intent": act.intent, "trace_id": trace_id}
+        return {
+            "request_id": act.request_id or trace_id,
+            "intent": act.intent,
+            "decision_template": act.decision_template,
+            "decision_timestamp": datetime.now(timezone.utc).isoformat(),
+            "status": "handler_not_found",
+            "result": None,
+            "evidence": [],
+            "provenance": [],
+            "audit_trace": [],
+            "confidence": 0.0,
+            "missing": [],
+            "source_id": None,
+            "source_type": None,
+            "error": "unknown_intent", 
+            "trace_id": trace_id
+        }
 
     # 5) Safe handler invocation
     try:
@@ -354,7 +387,7 @@ def process_act_intent(raw_payload: Dict[str, Any]) -> Dict[str, Any]:
     # Final validation
     if DecisionResponseModel is not None:
         try:
-            return DecisionResponseModel.parse_obj(final_response).dict()
+            return DecisionResponseModel.model_validate(final_response).model_dump()
         except Exception as e:
             final_response["_validation_error"] = f"DecisionResponseModel validation failed: {e}"
     return final_response

@@ -342,8 +342,14 @@ def handle(*,intent: Any, facts: Dict[str, Any]) -> Dict[str, Any]:
     if not facts or not isinstance(facts, dict):
         return {"action": "require_more_info", "items": [], "confidence": 0.0, "notes": "No facts provided", "missing": ["weather_outlook", "calendar_lookup"]}
 
-    weather = facts.get("weather_outlook")
-    calendar = facts.get("calendar_lookup")
+    weather = facts.get("weather_outlook") or facts.get("weather")
+    calendar = facts.get("calendar_lookup") or facts.get("calendar")
+
+    # Handle nested data structure - extract actual data if present
+    if weather and isinstance(weather, dict) and "data" in weather:
+        weather = weather["data"]
+    if calendar and isinstance(calendar, dict) and "data" in calendar:
+        calendar = calendar["data"]
 
     if not weather:
         missing.append("weather_outlook")

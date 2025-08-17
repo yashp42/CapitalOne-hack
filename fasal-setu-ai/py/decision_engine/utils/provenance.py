@@ -6,7 +6,7 @@ This module uses the extraction helpers in utils/helpers.py and the strict model
 defined in models.py (via helpers). It intentionally avoids making hard assumptions
 about tool schemas - instead it calls the helper `extract_provenance_from_facts`
 to discover provenance strings from validated tool outputs, and then provides
-deterministic, configurable ordering and deduplication utilities.
+deterministic, confiurable ordering and deduplication utilities.
 
 Functions:
  - dedupe_preserve_order(seq): remove duplicates while preserving first-seen order.
