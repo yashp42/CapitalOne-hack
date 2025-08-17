@@ -17,7 +17,7 @@ Rules:
   - geocode_tool: {state, district} → {lat, lon} for any Indian district
   - weather_outlook: {lat, lon, days?} → daily/hourly weather forecast
   - prices_fetch: {state, district, commodity?} → mandi prices
-  - calendar_lookup: {state, district, crop?} → crop calendars
+  - regional_crop_info: {state, district, crop?} → regional crop data (varieties, calendars, practices)
   - policy_match: {state, profile} → matching policies
   - pesticide_lookup: {crop, pest, stage?} → safe pesticides
   - storage_find: {state, district, lat?, lon?} → storage facilities
@@ -27,6 +27,18 @@ Rules:
 - For location-based queries:
   1. If lat/lon present → use directly in weather_outlook/soil_api
   2. If state/district present → use geocode_tool first
-  3. If location unclear → add ["lat","lon"] to missing
+  3. If only state is present (district missing): do NOT mark district as missing.
+    - Treat state-only as sufficient: call `regional_crop_info` with {"state": "<state>"} to get state-wide info.
+    - For weather_outlook, call `geocode_tool` with a free-text query for the state's capital (e.g. {"query": "Patna, Bihar"}) or {"query": "<state> capital"} so the pipeline can get lat/lon.
+  4. If location unclear and no state/district → add ["lat","lon"] to missing
+  
+  Geocode best-practices for the planner (use these examples when composing tool_calls):
+  - Prefer structured args when available:
+    {"tool": "geocode_tool", "args": {"state": "Karnataka", "district": "Bengaluru Rural"}}
+  - If farmer query contains a free-text location, format as "District, State" and call geocode with query:
+    {"tool": "geocode_tool", "args": {"query": "Bengaluru Rural, Karnataka"}}
+  - If only state is known, query the state capital (do not add district to missing):
+    {"tool": "geocode_tool", "args": {"query": "<state> capital"}}
+  - Do not report missing ["lat","lon"] if you plan to call geocode_tool; call geocode_tool instead and use its result to fill lat/lon for downstream tools.
 - Use farmer profile fields when available. Do not invent values.
 - For greetings/smalltalk → use general_answer only.

@@ -36,7 +36,7 @@ import time
 import argparse
 import pathlib
 import hashlib
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 from dotenv import load_dotenv
 from pinecone import Pinecone, ServerlessSpec
@@ -69,7 +69,8 @@ else:
     load_dotenv()  # fallback to default search
 
 # Data dir default matches your notebook layout
-DATA_DIR = pathlib.Path(os.getenv("DATA_DIR", str(HERE / "py" / "ai_engine" / "tools" / "data")))
+# Default to the local rag_data folder inside this tools package (preferred for repo-local corpora)
+DATA_DIR = pathlib.Path(os.getenv("DATA_DIR", str(HERE / "rag_data")))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
@@ -321,7 +322,8 @@ def upsert_chunks(chunks: List[Dict[str, Any]],
         attempt, backoff = 0, 1.0
         while True:
             try:
-                index.upsert(vectors=vectors, namespace=ns)
+                # cast index to Any to avoid strict type checks from pinecone stubs
+                cast(Any, index).upsert(vectors=vectors, namespace=ns)
                 total += len(vectors)
                 break
             except Exception as e:
@@ -371,6 +373,16 @@ def _normalize_match(m: Dict[str, Any]) -> Dict[str, Any]:
         "source_stamp": meta.get("source_stamp", meta.get("path", "")),
     }
 
+
+def _extract_matches(res: Any) -> List[Dict[str, Any]]:
+    """Safe extraction of matches from Pinecone response or dict-like object."""
+    if res is None:
+        return []
+    if isinstance(res, dict):
+        return res.get("matches", []) or []
+    # try attribute
+    return getattr(res, "matches", []) or []
+
 def semantic_search(query: str,
                     top_k: int = DEFAULT_TOP_K,
                     namespace: Optional[str] = None,
@@ -387,21 +399,36 @@ def semantic_search(query: str,
         include_metadata=True,
         filter=metadata_filter or None,
     )
-    matches = res.get("matches", []) if isinstance(res, dict) else getattr(res, "matches", [])
+    matches = _extract_matches(res)
+    # limit returned results to top 2 chunks for downstream consumers
+    top_n = min(int(top_k), 2)
+    matches = matches[:top_n]
     return [_normalize_match(m) for m in matches]
 
 # --- MMR reranker (uses numpy if available) ----------------------------------
 def _mmr_rerank(query_vec, cand_vecs, lambda_mult: float = 0.7, top_k: int = 5) -> List[int]:
-    n = cand_vecs.shape[0]
+    """MMR reranker using numpy when available. Falls back to simple similarity sort.
+
+    Returns indices of selected candidate vectors.
+    """
+    if np is None:
+        # fallback: rank by dot-product similarity
+        sims = [float(sum(a * b for a, b in zip(query_vec, cv))) for cv in cand_vecs]
+        idxs = sorted(range(len(sims)), key=lambda i: sims[i], reverse=True)
+        return idxs[:top_k]
+
+    n = int(getattr(cand_vecs, "shape", (len(cand_vecs), 0))[0])
     if n == 0:
         return []
     top_k = min(top_k, n)
 
-    qnorm = np.linalg.norm(query_vec)
-    cnorms = np.linalg.norm(cand_vecs, axis=1)
+    qvec = np.array(query_vec, dtype=np.float32)
+    cvecs = np.array(cand_vecs, dtype=np.float32)
+    qnorm = np.linalg.norm(qvec)
+    cnorms = np.linalg.norm(cvecs, axis=1)
     qnorm = 1e-9 if qnorm == 0 else qnorm
     cnorms = np.where(cnorms == 0, 1e-9, cnorms)
-    sim_to_query = (cand_vecs @ query_vec) / (cnorms * qnorm)
+    sim_to_query = (cvecs @ qvec) / (cnorms * qnorm)
 
     selected: List[int] = []
     remaining = set(range(n))
@@ -410,8 +437,8 @@ def _mmr_rerank(query_vec, cand_vecs, lambda_mult: float = 0.7, top_k: int = 5) 
             i = int(np.argmax(sim_to_query))
             selected.append(i); remaining.remove(i); continue
 
-        sel_vecs = cand_vecs[selected]
-        sims_matrix = (cand_vecs @ sel_vecs.T) / (cnorms[:, None] * np.linalg.norm(sel_vecs, axis=1)[None, :])
+        sel_vecs = cvecs[selected]
+        sims_matrix = (cvecs @ sel_vecs.T) / (cnorms[:, None] * np.linalg.norm(sel_vecs, axis=1)[None, :])
         max_sim_to_selected = np.max(sims_matrix, axis=1)
         mmr_scores = lambda_mult * sim_to_query - (1.0 - lambda_mult) * max_sim_to_selected
         mmr_scores[selected] = -np.inf  # mask already selected
@@ -447,7 +474,7 @@ def semantic_search_reranked(query: str,
         include_metadata=True,
         filter=metadata_filter or None,
     )
-    matches = res.get("matches", []) if isinstance(res, dict) else getattr(res, "matches", [])
+    matches = _extract_matches(res)
     if not matches:
         return []
 
@@ -461,6 +488,9 @@ def semantic_search_reranked(query: str,
     selected_local = _mmr_rerank(np.array(q_vec, dtype=np.float32), cand_vecs,
                                  lambda_mult=lambda_mult, top_k=min(top_k, len(idxs)))
     selected_global = [idxs[i] for i in selected_local]
+    # limit to top 2 chunks for downstream consumers
+    top_n = min(int(top_k), 2)
+    selected_global = selected_global[:top_n]
     return [_normalize_match(matches[i]) for i in selected_global]
 
 def rag_search(args: Union[str, Dict[str, Any]]) -> Dict[str, Any]:

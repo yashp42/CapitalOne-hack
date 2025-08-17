@@ -22,7 +22,7 @@ Common Agricultural Queries and Response Patterns:
    You should:
    a) Get location data: geocode_tool with state/district
    b) Check weather patterns: weather_outlook (longer forecast)
-   c) calendar_lookup for regional varieties
+   c) regional_crop_info for local varieties and practices
    d) rag_search for local success stories
    e) web_search: "wheat varieties [state] [district] climate resilient"
    Intent: "variety_selection"
@@ -37,6 +37,19 @@ Common Agricultural Queries and Response Patterns:
    d) web_search: "crop frost protection measures [crop] [temperature]"
    Intent: temperature_risk
    Template: frost_or_heat_risk_assessment
+ 
+Soil-related cues (when to call `soil_api`):
+   - Soil properties (SoilGrids): phrases include "soil pH", "soil type", "texture", "clay/sand %", "CEC", "organic carbon", "SOC", "bulk density", "salinity", "sodicity", "gypsum", "lime".
+      Tool call example:
+      {"tool": "soil_api", "args": {"provider": "soilgrids", "properties": ["phh2o","clay","sand","silt","cec","soc"], "depths": ["0-5cm","15-30cm"]}}
+
+   - Moisture/temperature (Open-Meteo): phrases include "soil moisture", "root-zone moisture", "soil temperature", "is soil warm enough for sowing", "irrigation timing vs soil moisture".
+      Tool call example:
+      {"tool": "soil_api", "args": {"provider": "openmeteo", "variables": ["soil_moisture_0_to_10cm","soil_temperature_0cm"], "hourly": true}}
+
+   - Irrigation decisions: combine `weather_outlook` + `soil_api` (openmeteo) to balance forecast rainfall with soil moisture.
+
+   - Fertilizer/ameliorant questions: use `soil_api` (soilgrids) to get pH/SOC/texture, then `rag_search` for best-practice rates and corrections.
 Available Intents and Templates:
 - Intents: {intents}
 - Templates: {templates}
@@ -63,11 +76,17 @@ Example Patterns:
    You should:
    a) First call geocode_tool: {{"state": "Karnataka", "district": "Bengaluru"}}
    b) From result, use coordinates in weather_outlook: {{"lat": <result.lat>, "lon": <result.lon>}}
+   
+   Geocode examples and tips:
+   - If input is ambiguous, prefer calling geocode_tool rather than adding lat/lon to missing.
+   - Use structured state+district when available.
+   - If only state provided, call geocode_tool with the state capital query (e.g., {"query": "Patna, Bihar"}).
 
 2. For Crop Advisory:
    When you get: "when to plant rice"
    You should:
-   a) calendar_lookup with state/district
+   a) regional_crop_info with state (district optional) — state-only is sufficient
+      - If district missing, do not add it to "missing"; instead call regional_crop_info with {"state": "<state>"} to get state-wide guidance or a list of districts.
    b) weather_outlook for current conditions
    c) rag_search for best practices
 
@@ -122,18 +141,19 @@ Example Patterns:
    a) Get location from query/profile
    b) If state/district only → geocode_tool first
    c) Then weather_outlook with coordinates
-   d) Finally rag_search to interpret risk
+   d) Finally rag_search and regional_crop_info to interpret risk
 
 4. For Crop Advisory:
    When you get: "when to plant rice"
    You should:
-   a) calendar_lookup with state/district
+   a) regional_crop_info with state/district
    b) weather_outlook for current conditions
    c) rag_search for best practices
 
-Remember:
-- Always use geocode_tool before weather_outlook if only state/district given
-- Chain the results: use output from one tool as input to next
+- Remember:
+- If only state provided (district missing), do NOT add district to "missing". Use regional_crop_info for state-level info.
+- Always use geocode_tool before weather_outlook if only state/district given. If only state present, call geocode_tool with a free-text query for the state capital, e.g. {"query": "<state> capital"} to get lat/lon.
+ - Chain the results: use output from one tool as input to next
 - If location missing, add ["lat", "lon"] to missing array
 - If query unclear, use rag_search last for interpretation
 

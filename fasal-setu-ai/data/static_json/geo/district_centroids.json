@@ -2,6 +2,82 @@
   "records": [
     { "state": "Karnataka", "district": "Bengaluru Rural", "lat": 13.21, "lon": 77.64 },
     { "state": "Karnataka", "district": "Bengaluru Urban", "lat": 12.97, "lon": 77.59 },
-    { "state": "Bihar", "district": "Patna", "lat": 25.61, "lon": 85.14 }
+    { "state": "Bihar", "district": "Patna", "lat": 25.61, "lon": 85.14 },
+
+    { "state": "Maharashtra", "district": "Mumbai", "lat": 19.07, "lon": 72.88 },
+    { "state": "Maharashtra", "district": "Pune", "lat": 18.52, "lon": 73.86 },
+    { "state": "Maharashtra", "district": "Nagpur", "lat": 21.15, "lon": 79.09 },
+    { "state": "Maharashtra", "district": "Nashik", "lat": 20.00, "lon": 73.78 },
+
+    { "state": "Tamil Nadu", "district": "Chennai", "lat": 13.08, "lon": 80.27 },
+    { "state": "Tamil Nadu", "district": "Coimbatore", "lat": 11.02, "lon": 76.96 },
+    { "state": "Tamil Nadu", "district": "Madurai", "lat": 9.93, "lon": 78.12 },
+    { "state": "Tamil Nadu", "district": "Tiruchirappalli", "lat": 10.80, "lon": 78.69 },
+
+    { "state": "Kerala", "district": "Thiruvananthapuram", "lat": 8.52, "lon": 76.94 },
+    { "state": "Kerala", "district": "Kochi", "lat": 9.97, "lon": 76.28 },
+    { "state": "Kerala", "district": "Kozhikode", "lat": 11.26, "lon": 75.78 },
+
+    { "state": "Delhi", "district": "New Delhi", "lat": 28.61, "lon": 77.23 },
+
+    { "state": "Uttar Pradesh", "district": "Lucknow", "lat": 26.85, "lon": 80.95 },
+    { "state": "Uttar Pradesh", "district": "Kanpur", "lat": 26.45, "lon": 80.35 },
+    { "state": "Uttar Pradesh", "district": "Varanasi", "lat": 25.32, "lon": 82.97 },
+    { "state": "Uttar Pradesh", "district": "Agra", "lat": 27.18, "lon": 78.01 },
+
+    { "state": "West Bengal", "district": "Kolkata", "lat": 22.57, "lon": 88.36 },
+    { "state": "West Bengal", "district": "Darjeeling", "lat": 27.04, "lon": 88.27 },
+    { "state": "West Bengal", "district": "Howrah", "lat": 22.59, "lon": 88.31 },
+
+    { "state": "Madhya Pradesh", "district": "Bhopal", "lat": 23.25, "lon": 77.41 },
+    { "state": "Madhya Pradesh", "district": "Indore", "lat": 22.72, "lon": 75.86 },
+    { "state": "Madhya Pradesh", "district": "Gwalior", "lat": 26.21, "lon": 78.18 },
+
+    { "state": "Gujarat", "district": "Ahmedabad", "lat": 23.03, "lon": 72.58 },
+    { "state": "Gujarat", "district": "Surat", "lat": 21.17, "lon": 72.83 },
+    { "state": "Gujarat", "district": "Vadodara", "lat": 22.31, "lon": 73.18 },
+    { "state": "Gujarat", "district": "Rajkot", "lat": 22.30, "lon": 70.80 },
+
+    { "state": "Rajasthan", "district": "Jaipur", "lat": 26.91, "lon": 75.79 },
+    { "state": "Rajasthan", "district": "Udaipur", "lat": 24.58, "lon": 73.68 },
+    { "state": "Rajasthan", "district": "Jodhpur", "lat": 26.29, "lon": 73.02 },
+
+    { "state": "Punjab", "district": "Amritsar", "lat": 31.64, "lon": 74.86 },
+    { "state": "Punjab", "district": "Ludhiana", "lat": 30.91, "lon": 75.85 },
+    { "state": "Punjab", "district": "Chandigarh", "lat": 30.74, "lon": 76.79 },
+
+    { "state": "Haryana", "district": "Gurgaon", "lat": 28.46, "lon": 77.03 },
+    { "state": "Haryana", "district": "Faridabad", "lat": 28.41, "lon": 77.31 },
+
+    { "state": "Assam", "district": "Guwahati", "lat": 26.18, "lon": 91.75 },
+    { "state": "Assam", "district": "Dibrugarh", "lat": 27.48, "lon": 94.91 },
+
+    { "state": "Odisha", "district": "Bhubaneswar", "lat": 20.27, "lon": 85.84 },
+    { "state": "Odisha", "district": "Cuttack", "lat": 20.47, "lon": 85.88 },
+    { "state": "Madhya Pradesh", "district": "Betul", "lat": 21.903513, "lon": 77.904101 },
+    { "state": "Odisha", "district": "Bhadrak", "lat": 21.068425, "lon": 86.497139 },
+    { "state": "Bihar", "district": "Bhagalpur", "lat": 25.239305, "lon": 87.002119 },
+    { "state": "Maharashtra", "district": "Bhandara", "lat": 21.1667, "lon": 79.650002 },
+    { "state": "West Bengal", "district": "Darjeeling", "lat": 27.041527, "lon": 88.272768 },
+    { "state": "Assam", "district": "Darrang", "lat": 26.441811, "lon": 92.033565 },
+    { "state": "Madhya Pradesh", "district": "Datia", "lat": 25.673026, "lon": 78.458158 },
+    { "state": "Rajasthan", "district": "Dausa", "lat": 26.899411, "lon": 76.334441 },
+    { "state": "Karnataka", "district": "Davangere", "lat": 14.492934, "lon": 75.936375 },
+    { "state": "Odisha", "district": "Debagarh", "lat": 21.546245, "lon": 84.744026 },
+    { "state": "Uttarakhand", "district": "Dehradun", "lat": 30.325264, "lon": 78.041576 },
+    { "state": "Jharkhand", "district": "Deoghar", "lat": 24.481265, "lon": 86.700615 },
+    { "state": "Uttar Pradesh", "district": "Deoria", "lat": 26.500556, "lon": 83.783389 },
+    { "state": "Madhya Pradesh", "district": "Dewas", "lat": 22.962736, "lon": 76.071156 },
+    { "state": "Tripura", "district": "Dhalai", "lat": 23.938769, "lon": 91.868389 },
+    { "state": "Tamil Nadu", "district": "Dindigul", "lat": 10.361936, "lon": 77.968908 },
+    { "state": "Madhya Pradesh", "district": "Dindori", "lat": 22.939702, "lon": 81.083584 },
+    { "state": "Gujarat", "district": "Dohad", "lat": 22.823003, "lon": 74.263925 },
+    { "state": "Jharkhand", "district": "Dumka", "lat": 24.271014, "lon": 87.249367 },
+    { "state": "Rajasthan", "district": "Dungarpur", "lat": 23.837104, "lon": 73.716702 },
+    { "state": "Chhattisgarh", "district": "Durg", "lat": 21.188278, "lon": 81.275855 },
+    { "state": "Sikkim", "district": "East", "lat": 27.328923, "lon": 88.616469 },
+    { "state": "Meghalaya", "district": "East Garo Hills", "lat": 25.528369, "lon": 90.593784 },
+    { "state": "Andhra Pradesh", "district": "East Godavari", "lat": 16.969397, "lon": 82.236435 }
+
   ]
 }
