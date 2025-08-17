@@ -601,24 +601,10 @@ const Login = () => {
     }
   };
 
-  // Simplified animation variants - keeping only essential transitions
+  // Simplified animation variants - keeping only essential ones
   const formVariants = {
-    enter: {
-      x: 0,
-      opacity: 1,
-      transition: {
-        duration: 0.3,
-        ease: "easeOut"
-      }
-    },
-    exit: {
-      x: -20,
-      opacity: 0,
-      transition: {
-        duration: 0.2,
-        ease: "easeIn"
-      }
-    }
+    enter: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -20 }
   };
 
   return (
@@ -628,9 +614,9 @@ const Login = () => {
         {/* Gradient Fallback - Shows immediately while image loads */}
         <div className="w-full h-full bg-gradient-to-br from-green-100 via-blue-50 to-green-200" />
         
-        {/* Actual Background Image - Fades in when loaded with performance optimization */}
+        {/* Actual Background Image - Fades in when loaded */}
         <div 
-          className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 will-change-auto ${
+          className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ${
             backgroundImageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           style={{
@@ -654,17 +640,17 @@ const Login = () => {
           }} />
         </div>
 
-        {/* Replaced animated glow effects with CSS transitions */}
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-radial from-emerald-200/20 to-transparent rounded-full blur-3xl opacity-10"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-gradient-radial from-blue-200/15 to-transparent rounded-full blur-3xl opacity-10"></div>
+        {/* Animated glow effects - simplified with CSS */}
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-radial from-emerald-200/20 to-transparent rounded-full blur-3xl animate-pulse-slow" />
+        <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-gradient-radial from-blue-200/15 to-transparent rounded-full blur-3xl animate-pulse-slow animation-delay-2s" />
       </div>
 
       {/* Main Content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6 pt-20">
-        <div className="w-full max-w-xs sm:max-w-sm lg:max-w-md opacity-0 animate-fadeIn">
+        <div className="w-full max-w-xs sm:max-w-sm lg:max-w-md animate-fade-in">
 
           {/* Main Form Card */}
-          <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 p-4 sm:p-6 mb-4 backdrop-saturate-150 transition-all duration-300 ease-in"
+          <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 p-4 sm:p-6 mb-4 backdrop-saturate-150 transition-all duration-500 hover:shadow-3xl"
             style={{
               backdropFilter: 'blur(20px) saturate(150%)',
               borderColor: 'rgba(156, 163, 175, 0.3)',
@@ -672,13 +658,9 @@ const Login = () => {
           >
             {/* Form Header */}
             <div className="text-center mb-4 sm:mb-6">
-              <motion.div
-                animate={{ scale: [1, 1.02, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 bg-gradient-to-br from-emerald-100/90 to-blue-100/90 rounded-xl flex items-center justify-center backdrop-blur-sm border border-gray-200/50"
-              >
+              <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 bg-gradient-to-br from-emerald-100/90 to-blue-100/90 rounded-xl flex items-center justify-center backdrop-blur-sm border border-gray-200/50 transition-transform duration-300 hover:scale-105">
                 <FaShieldAlt className="text-lg sm:text-xl text-emerald-700" />
-              </motion.div>
+              </div>
               
               <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-primary-600 mb-2">
                 {isSignup ? 'Create Professional Account' : 'Secure Login'}
@@ -712,8 +694,7 @@ const Login = () => {
                 <motion.div 
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
+                  exit={{ opacity: 0, y: -10 }}
                   className={`mb-4 sm:mb-6 p-3 rounded-xl border text-xs sm:text-sm ${
                     message.type === 'success' 
                       ? 'bg-green-100/80 text-green-700 border-green-300/50' 
@@ -730,7 +711,7 @@ const Login = () => {
               )}
             </AnimatePresence>
 
-            {/* Form Steps - Keep AnimatePresence for smooth transitions between form steps */}
+            {/* Form Steps */}
             <AnimatePresence mode="wait">
               {/* Phone Number Step */}
               {step === 'phone' && (
@@ -740,6 +721,7 @@ const Login = () => {
                   initial="exit"
                   animate="enter"
                   exit="exit"
+                  transition={{ duration: 0.3 }}
                 >
                   <div className="space-y-3 sm:space-y-4">
                     <div>
@@ -771,7 +753,7 @@ const Login = () => {
                     <button
                       onClick={handleSendOTP}
                       disabled={loading || formData.phoneNumber.length !== 10}
-                      className="w-full py-2.5 sm:py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:from-emerald-500 hover:to-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 shadow-lg hover:shadow-emerald-500/25 text-xs sm:text-sm transform hover:scale-[1.01] active:scale-[0.99]"
+                      className="w-full py-2.5 sm:py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:from-emerald-500 hover:to-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 shadow-lg hover:shadow-emerald-500/25 text-xs sm:text-sm hover:scale-[1.02] active:scale-[0.98]"
                     >
                       {loading ? (
                         <div className="flex items-center justify-center space-x-2">
@@ -794,6 +776,7 @@ const Login = () => {
                   initial="exit"
                   animate="enter"
                   exit="exit"
+                  transition={{ duration: 0.3 }}
                 >
                   <div className="space-y-3 sm:space-y-4">
                     <div>
@@ -817,7 +800,7 @@ const Login = () => {
                     <button
                       onClick={handleVerifyOTP}
                       disabled={loading || formData.otp.length !== 6}
-                      className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:from-primary-500 hover:to-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-xs sm:text-sm transform hover:scale-[1.01] active:scale-[0.99]"
+                      className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:from-primary-500 hover:to-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-xs sm:text-sm hover:scale-[1.02] active:scale-[0.98]"
                     >
                       {loading ? (
                         <div className="flex items-center justify-center space-x-2">
@@ -847,6 +830,7 @@ const Login = () => {
                   initial="exit"
                   animate="enter"
                   exit="exit"
+                  transition={{ duration: 0.3 }}
                 >
                   <div className="space-y-3 sm:space-y-4 max-h-96 overflow-y-auto pr-2">
                     {/* Basic Information */}
@@ -1144,7 +1128,7 @@ const Login = () => {
                     <button
                       onClick={handleSignup}
                       disabled={loading || !formData.firstName.trim()}
-                      className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:from-primary-500 hover:to-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-xs sm:text-sm transform hover:scale-[1.01] active:scale-[0.99]"
+                      className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:from-primary-500 hover:to-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-xs sm:text-sm hover:scale-[1.02] active:scale-[0.98]"
                     >
                       {loading ? (
                         <div className="flex items-center justify-center space-x-2">
@@ -1162,7 +1146,7 @@ const Login = () => {
 
             {/* Toggle Login/Signup */}
             {step === 'phone' && (
-              <div className="text-center mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-300/50">
+              <div className="text-center mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-300/50 transition-opacity duration-300">
                 <p className="text-gray-600 text-xs sm:text-sm font-semibold">
                   {isSignup ? 'Already have a professional account?' : "Don't have an account?"}
                 </p>
@@ -1178,7 +1162,7 @@ const Login = () => {
 
 
           {/* Footer */}
-          <div className="text-center mt-6 animate-fadeIn">
+          <div className="text-center mt-6 transition-opacity duration-500">
             <p className="text-gray-600 text-xs font-medium">
               Powered by advanced AI • Trusted by farmers across India
             </p>

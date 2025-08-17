@@ -125,14 +125,13 @@ const Chatbot = () => {
         {/* Gradient Fallback - Shows immediately while image loads */}
         <div className="w-full h-full bg-gradient-to-br from-secondary-200 via-yellow-100 to-secondary-400" />
         
-        {/* Actual Background Image - iOS compatible version */}
+        {/* Actual Background Image - Simple fade in when loaded */}
         <div 
-          className={`w-full h-full bg-cover bg-center absolute inset-0 transition-opacity duration-500 ${
+          className={`w-full h-full bg-cover bg-center bg-fixed absolute inset-0 transition-opacity duration-500 ${
             backgroundImageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           style={{
             backgroundImage: backgroundImageLoaded ? `url('/assets/desktop-wallpaper-rice-agriculture-field-golden-hour-grass.jpg')` : 'none',
-            backgroundAttachment: 'scroll', // Fixed for iOS compatibility
             filter: 'brightness(0.9) contrast(1.1) blur(1px)'
           }}
         />

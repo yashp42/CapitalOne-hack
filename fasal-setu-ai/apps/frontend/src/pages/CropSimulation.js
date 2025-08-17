@@ -70,20 +70,36 @@ function CropPlant({ stage, farmData }) {
   const grassFieldRef = useRef();
   const grassBlades = useRef([]);
   const soilParticles = useRef([]);
+  const [soilTextureReady, setSoilTextureReady] = useState(false);
 
-  // Load soil texture with error handling - must be called unconditionally
+  // Always load soil texture - this is safe to call unconditionally
   const soilTexture = useLoader(TextureLoader, '/assets/soil-texture.jpg');
-  
-  // Configure texture properties
+
+  // Configure texture properties and mark as ready when loaded
   useEffect(() => {
     if (soilTexture) {
+      // Configure texture wrapping and repeat
       soilTexture.wrapS = soilTexture.wrapT = THREE.RepeatWrapping;
-      soilTexture.repeat.set(2, 2); // Reduced from 3x3 for performance
+      soilTexture.repeat.set(2, 2);
       soilTexture.offset.set(0, 0);
+      
+      // Wait for texture to be fully loaded before marking as ready
+      if (soilTexture.image && soilTexture.image.complete) {
+        setSoilTextureReady(true);
+      } else {
+        // Listen for when texture image loads
+        const checkTextureLoad = () => {
+          if (soilTexture.image && soilTexture.image.complete) {
+            setSoilTextureReady(true);
+          } else {
+            // Check again shortly
+            setTimeout(checkTextureLoad, 100);
+          }
+        };
+        checkTextureLoad();
+      }
     }
-  }, [soilTexture]);
-
-  // Reduced animation frequency for better performance
+  }, [soilTexture]);  // Reduced animation frequency for better performance
   useFrame((state) => {
     // Simpler wind animation - only every 20 seconds instead of 10
     const windCycle = Math.sin(state.clock.elapsedTime * 0.05) * 0.5; // 20-second cycle
@@ -143,16 +159,29 @@ function CropPlant({ stage, farmData }) {
 
   return (
     <group ref={grassFieldRef} position={[0, -2, 0]}>
+      {/* Show subtle loading indicator while soil texture loads */}
+      {!soilTextureReady && (
+        <Text 
+          position={[0, 2, 0]} 
+          fontSize={0.3} 
+          color="#8B7355"
+          anchorX="center"
+          anchorY="middle"
+        >
+          Preparing soil...
+        </Text>
+      )}
+      
       {/* Realistic Soil Base - covers entire field with texture */}
       <group>
         {/* Main soil layer with realistic texture */}
         <Box args={[fieldWidth, 1, fieldDepth]} position={[0, -0.5, 0]}>
           <meshStandardMaterial 
             map={soilTexture}
-            color={soilTexture ? "#FFFFFF" : "#6B4423"} // Use white with texture, fallback to brown
+            color={soilTextureReady ? "#D2B48C" : "#6B4423"} // Sandy brown tint with texture, fallback to brown
             roughness={0.95}
             metalness={0.05}
-            normalScale={soilTexture ? [0.8, 0.8] : [0, 0]}
+            normalScale={soilTextureReady ? [0.8, 0.8] : [0, 0]}
           />
         </Box>
         
@@ -160,10 +189,10 @@ function CropPlant({ stage, farmData }) {
         <Box args={[fieldWidth + 10, 0.3, fieldDepth + 8]} position={[0, -0.85, 0]}>
           <meshStandardMaterial 
             map={soilTexture}
-            color={soilTexture ? "#8B7355" : "#5A3A1F"} // Darker tint for depth or fallback
+            color={soilTextureReady ? "#B8906B" : "#5A3A1F"} // Darker sandy brown or fallback
             roughness={0.98}
             metalness={0.02}
-            normalScale={soilTexture ? [0.6, 0.6] : [0, 0]}
+            normalScale={soilTextureReady ? [0.6, 0.6] : [0, 0]}
           />
         </Box>
 
@@ -171,7 +200,7 @@ function CropPlant({ stage, farmData }) {
         <Box args={[fieldWidth + 20, 0.2, fieldDepth + 16]} position={[0, -1.1, 0]}>
           <meshStandardMaterial 
             map={soilTexture}
-            color={soilTexture ? "#7A6B55" : "#4A3A1F"} // Even darker for deep soil
+            color={soilTextureReady ? "#A0824B" : "#4A3A1F"} // Even darker sandy brown
             roughness={0.99}
             metalness={0.01}
           />
@@ -181,7 +210,7 @@ function CropPlant({ stage, farmData }) {
         <Box args={[fieldWidth + 30, 0.15, fieldDepth + 24]} position={[0, -1.3, 0]}>
           <meshStandardMaterial 
             map={soilTexture}
-            color={soilTexture ? "#6A5B45" : "#3A2A1F"} // Deepest soil layer
+            color={soilTextureReady ? "#8B7355" : "#3A2A1F"} // Deep brown soil
             roughness={0.99}
             metalness={0.01}
           />
@@ -191,7 +220,7 @@ function CropPlant({ stage, farmData }) {
         <Box args={[fieldWidth + 40, 0.1, fieldDepth + 32]} position={[0, -1.45, 0]}>
           <meshStandardMaterial 
             map={soilTexture}
-            color={soilTexture ? "#5A4B35" : "#2A1A0F"} // Ultra-deep soil foundation
+            color={soilTextureReady ? "#6B5A3D" : "#2A1A0F"} // Deepest soil foundation
             roughness={0.99}
             metalness={0.01}
           />
@@ -212,7 +241,7 @@ function CropPlant({ stage, farmData }) {
               position={[x, y, z]}
             >
               <meshStandardMaterial 
-                map={i % 4 === 0 ? soilTexture : null} // Some particles use texture, others use solid color
+                map={i % 4 === 0 && soilTextureReady ? soilTexture : null} // Some particles use texture
                 color={i % 3 === 0 ? "#8B7355" : i % 3 === 1 ? "#654321" : "#4A4A4A"} 
                 roughness={0.9}
               />

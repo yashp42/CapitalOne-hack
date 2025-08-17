@@ -111,13 +111,17 @@ const Home = () => {
   const letterVariants = {
     hidden: {
       opacity: 0,
-      y: 20,
-      scale: 0.8
+      rotateY: 90,
+      y: 0,
+      scale: 1,
+      z: 0
     },
     visible: {
       opacity: 1,
+      rotateY: 0,
       y: 0,
       scale: 1,
+      z: 0,
       transition: {
         type: "tween",
         duration: 0.6,
@@ -221,14 +225,13 @@ const Home = () => {
           {/* Gradient Fallback - Shows immediately while image loads */}
           <div className="w-full h-full bg-gradient-to-br from-green-200 via-yellow-100 to-green-300" />
           
-          {/* Actual Background Image - Fades in when loaded with iOS fix */}
+          {/* Actual Background Image - Fades in when loaded */}
           <div 
-            className={`w-full h-full bg-cover bg-center absolute inset-0 transition-opacity duration-1000 ${
+            className={`w-full h-full bg-cover bg-center bg-fixed absolute inset-0 transition-opacity duration-1000 ${
               heroImageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             style={{
               backgroundImage: heroImageLoaded ? `url('/assets/desktop-wallpaper-rice-agriculture-field-golden-hour-grass.jpg')` : 'none',
-              backgroundAttachment: 'scroll', // Fixed for iOS compatibility
               filter: 'brightness(0.8) contrast(1.1)'
             }}
           />
@@ -274,30 +277,23 @@ const Home = () => {
                 initial="hidden"
                 animate="visible"
                 variants={titleContainerVariants}
-                className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight text-render-fix title-text-stable"
-                style={{ 
-                  perspective: "1000px",
-                  textRendering: "optimizeLegibility",
-                  WebkitFontSmoothing: "antialiased",
-                  MozOsxFontSmoothing: "grayscale"
-                }}
+                className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight perspective-1000"
+                style={{ perspective: "1000px" }}
               >
                 {titleLetters.map((letter, index) => (
                   <motion.span
                     key={index}
                     variants={letterVariants}
-                    className="inline-block bg-gradient-to-r from-primary-500 to-primary-700 bg-clip-text text-transparent"
+                    className="inline-block bg-gradient-to-r from-primary-500 to-primary-700 bg-clip-text text-transparent transform-style-preserve-3d"
                     style={{
                       transformOrigin: "center bottom",
+                      transformStyle: "preserve-3d",
                       display: "inline-block",
-                      backfaceVisibility: "hidden",
-                      WebkitBackfaceVisibility: "hidden",
-                      willChange: "transform",
-                      // Simplified transform for better Android compatibility
-                      transform: "translateZ(0)"
+                      backfaceVisibility: "hidden"
                     }}
                     whileHover={{
                       scale: 1.1,
+                      rotateY: 10,
                       transition: { duration: 0.3 }
                     }}
                   >
