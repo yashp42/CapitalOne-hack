@@ -78,8 +78,8 @@ const Home = () => {
       y: 0,
       opacity: 1,
       transition: {
-        duration: 0.6,
-        ease: [0.25, 0.25, 0.25, 0.75]
+        duration: 0.35,
+        ease: [0.2, 0.8, 0.2, 1] // Use easing instead of complex spring
       }
     }
   };
@@ -111,21 +111,16 @@ const Home = () => {
   const letterVariants = {
     hidden: {
       opacity: 0,
-      rotateY: 90,
-      y: 0,
-      scale: 1,
-      z: 0
+      y: 20,
+      scale: 0.8
     },
     visible: {
       opacity: 1,
-      rotateY: 0,
       y: 0,
       scale: 1,
-      z: 0,
       transition: {
-        type: "tween",
-        duration: 0.6,
-        ease: [0.25, 0.1, 0.25, 1]
+        duration: 0.35,
+        ease: [0.2, 0.8, 0.2, 1] // Use easing instead of spring
       }
     }
   };
@@ -154,8 +149,8 @@ const Home = () => {
       y: 0,
       scale: 1,
       transition: {
-        duration: 0.6,
-        ease: [0.25, 0.1, 0.25, 1]
+        duration: 0.35,
+        ease: [0.2, 0.8, 0.2, 1] // Use easing for better performance
       }
     },
     exit: {
@@ -163,8 +158,8 @@ const Home = () => {
       y: -20,
       scale: 0.95,
       transition: {
-        duration: 0.4,
-        ease: [0.25, 0.1, 0.25, 1]
+        duration: 0.25,
+        ease: [0.2, 0.8, 0.2, 1]
       }
     }
   };
@@ -217,9 +212,9 @@ const Home = () => {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 relative overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50 relative overflow-x-hidden page-wrapper">
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden" style={{ minHeight: 'calc(100vh - 0px)', paddingTop: '6rem', paddingBottom: '2rem' }}>
+      <section className="relative bg-section flex items-center justify-center overflow-hidden" style={{ paddingTop: '6rem', paddingBottom: '2rem' }}>
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           {/* Gradient Fallback - Shows immediately while image loads */}
@@ -227,7 +222,7 @@ const Home = () => {
           
           {/* Actual Background Image - Fades in when loaded */}
           <div 
-            className={`w-full h-full bg-cover bg-center bg-fixed absolute inset-0 transition-opacity duration-1000 ${
+            className={`w-full h-full bg-section absolute inset-0 transition-opacity duration-1000 ${
               heroImageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             style={{
@@ -272,29 +267,36 @@ const Home = () => {
                 </motion.div>
             </div>
 
-            <div className="relative inline-block flex-shrink-0">
+            <div className="relative inline-block flex-shrink-0" style={{ isolation: "isolate" }}>
               <motion.h1 
                 initial="hidden"
                 animate="visible"
                 variants={titleContainerVariants}
-                className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight perspective-1000"
-                style={{ perspective: "1000px" }}
+                className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight title-text-stability mobile-text-fix animating"
+                style={{ 
+                  willChange: "opacity", // Reduced willChange for better performance
+                  contain: "layout style paint" // Improve rendering performance
+                }}
+                onAnimationComplete={() => {
+                  // Remove animating class after animation completes
+                  const titleElement = document.querySelector('.title-text-stability');
+                  if (titleElement) titleElement.classList.remove('animating');
+                }}
               >
                 {titleLetters.map((letter, index) => (
                   <motion.span
                     key={index}
                     variants={letterVariants}
-                    className="inline-block bg-gradient-to-r from-primary-500 to-primary-700 bg-clip-text text-transparent transform-style-preserve-3d"
+                    className="inline-block bg-gradient-to-r from-primary-500 to-primary-700 bg-clip-text text-transparent"
                     style={{
-                      transformOrigin: "center bottom",
-                      transformStyle: "preserve-3d",
                       display: "inline-block",
-                      backfaceVisibility: "hidden"
+                      WebkitFontSmoothing: "antialiased",
+                      fontSmooth: "always",
+                      textRendering: "optimizeSpeed" // Optimize for performance over quality during animations
                     }}
                     whileHover={{
-                      scale: 1.1,
-                      rotateY: 10,
-                      transition: { duration: 0.3 }
+                      scale: 1.05,
+                      transition: { duration: 0.15, ease: [0.2, 0.8, 0.2, 1] }
                     }}
                   >
                     {letter.char}
@@ -347,7 +349,7 @@ const Home = () => {
                   whileHover={{ 
                     scale: 1.05, 
                     y: -2,
-                    boxShadow: "0 20px 40px rgba(45, 90, 58, 0.4)"
+                    transition: { duration: 0.15, ease: [0.2, 0.8, 0.2, 1] }
                   }}
                   whileTap={{ scale: 0.95 }}
                   className="group relative w-full px-3 xs:px-4 sm:px-6 md:px-8 py-2.5 xs:py-3 sm:py-3.5 bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-xl xs:rounded-2xl text-xs xs:text-sm sm:text-base font-semibold overflow-hidden transition-all duration-300"
@@ -364,7 +366,7 @@ const Home = () => {
                   whileHover={{ 
                     scale: 1.05, 
                     y: -2,
-                    boxShadow: "0 20px 40px rgba(197, 174, 139, 0.4)"
+                    transition: { duration: 0.15, ease: [0.2, 0.8, 0.2, 1] }
                 }}
                 whileTap={{ scale: 0.95 }}
                 className="group relative w-full xs:w-auto max-w-xs sm:max-w-none px-3 xs:px-4 sm:px-6 md:px-8 py-2.5 xs:py-3 sm:py-3.5 bg-gradient-to-r from-secondary-600 to-secondary-500 text-white rounded-xl xs:rounded-2xl text-xs xs:text-sm sm:text-base font-semibold overflow-hidden transition-all duration-300"
@@ -483,7 +485,7 @@ const Home = () => {
           
           {/* Actual Background Image - Fades in when loaded */}
           <div 
-            className={`w-full h-full bg-cover bg-center bg-no-repeat absolute inset-0 transition-opacity duration-1000 ${
+            className={`w-full h-full bg-section absolute inset-0 transition-opacity duration-1000 ${
               aboutImageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             style={{

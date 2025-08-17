@@ -108,7 +108,13 @@ const Chatbot = () => {
   ], []);
 
   return (
-    <div className="h-screen bg-gray-50 relative overflow-hidden">
+    <div className="h-screen bg-gray-50 relative overflow-hidden page-wrapper"
+      style={{
+        minHeight: '100svh',     /* stable on iOS 16+ */
+        minHeight: '100dvh',     /* newer devices */
+        minHeight: '100vh'       /* fallback */
+      }}
+    >
       {/* Red Cross Button - Simplified animations */}
       <motion.button
         onClick={() => navigate('/')}
@@ -127,7 +133,7 @@ const Chatbot = () => {
         
         {/* Actual Background Image - Simple fade in when loaded */}
         <div 
-          className={`w-full h-full bg-cover bg-center bg-fixed absolute inset-0 transition-opacity duration-500 ${
+          className={`w-full h-full bg-section absolute inset-0 transition-opacity duration-500 ${
             backgroundImageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           style={{

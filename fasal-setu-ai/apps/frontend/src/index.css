@@ -3,6 +3,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Viewport units that don't jump when the address bar hides */
+:root {
+  --vh: 1svh; /* fallback if needed */
+}
+
+/* iOS background fix baseline */
+.bg-section {
+  min-height: 100svh;     /* stable on iOS 16+ */
+  min-height: 100dvh;     /* newer devices */
+  min-height: 100vh;      /* fallback */
+  background-size: cover;      /* don't use contain */
+  background-position: center;
+  background-repeat: no-repeat;
+  /* Avoid this on iOS: background-attachment: fixed; */
+}
+
+/* Don't apply transforms to top-level wrappers that contain fixed elements */
+.page-wrapper {
+  transform: none !important; /* Ensure no parent transform if using fixed children */
+}
+
+/* Disable pointer events during transitions on large elements */
+.animating { 
+  pointer-events: none; 
+}
+
 body {
   margin: 0;
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -18,10 +44,20 @@ code {
 }
 
 .parallax-bg {
-  background-attachment: fixed;
+  background-attachment: scroll; /* Changed from fixed for iOS compatibility */
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
+}
+
+/* If you had fixed backgrounds, scope them out on iOS */
+@supports (-webkit-touch-callout: none) {
+  .bg-fixed { 
+    background-attachment: scroll !important; 
+  }
+  .parallax-bg {
+    background-attachment: scroll !important;
+  }
 }
 
 .parallax-element {
@@ -91,4 +127,71 @@ code {
 
 .animation-delay-2s {
   animation-delay: 2s;
+}
+
+/* Improved text rendering for title animations */
+.title-text-stability {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-kerning: auto;
+  text-rendering: optimizeLegibility;
+  -webkit-backface-visibility: visible !important;
+  backface-visibility: visible !important;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+/* Prevent text disappearing during scroll on mobile */
+.mobile-text-fix {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-font-smoothing: subpixel-antialiased;
+  text-rendering: geometricPrecision;
+  contain: layout style paint;
+}
+
+/* Improve gradient text rendering */
+.gradient-text-stable {
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent;
+  background-attachment: local;
+}
+
+/* iOS background image fixes */
+.ios-bg-fix {
+  background-attachment: scroll !important; /* Override fixed attachment on iOS */
+  -webkit-background-size: cover;
+  background-size: cover;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Prevent background zoom on iOS devices */
+@supports (-webkit-touch-callout: none) {
+  .bg-fixed {
+    background-attachment: scroll !important;
+  }
+  
+  .hero-bg-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    -webkit-background-size: cover !important;
+    z-index: -1;
+  }
+}
+
+/* Apple device specific fixes */
+@media screen and (-webkit-min-device-pixel-ratio: 2) {
+  .bg-cover {
+    background-size: cover !important;
+    -webkit-background-size: cover !important;
+  }
 }
