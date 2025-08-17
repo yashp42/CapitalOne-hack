@@ -1,6 +1,7 @@
+from typing import Any, Dict
+
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import Any, Dict
 
 app = FastAPI(title="Decision Engine")
 

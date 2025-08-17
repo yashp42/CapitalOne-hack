@@ -1,6 +1,7 @@
+from typing import Any, Dict, List
+
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import Any, Dict, List
 
 app = FastAPI(title="LLM-2 Formatter")
 

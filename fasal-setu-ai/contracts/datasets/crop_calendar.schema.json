@@ -1,2 +1,50 @@
-// TODO: define schema
-{}
+{
+  "state": null,
+  "district": null,
+  "agro_climatic_zone": null,
+  "source_type": null,
+  "source_url": null,
+  "doc_date": null,
+  "last_checked": null,
+  "normal_annual_rain_mm": null,
+  "rainfall_pattern_notes": null,
+  "dominant_soils": [],
+  "crops": [
+    {
+      "crop_name": null,
+      "season": null,
+      "planting_window": { "start": null, "end": null },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": null, "ph_range": null },
+      "irrigation_ideal": {
+        "critical_stages": [],
+        "seasonal_requirement_mm": null,
+        "notes": null
+      },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": null,
+          "stage_window": null,
+          "measures": [],
+          "alt_crops": null,
+          "inputs_support_notes": null
+        }
+      ],
+      "market_mapping": { "commodity_names": [] },
+      "data_gaps": [],
+      "sources": []
+    }
+  ],
+  "dataset_sources": [
+    {
+      "key": null,
+      "title": null,
+      "url": null,
+      "tier": null,
+      "last_checked": null
+    }
+  ]
+}

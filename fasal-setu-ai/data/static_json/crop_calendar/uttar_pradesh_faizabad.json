@@ -1,0 +1,132 @@
+{
+  "state": "Uttar Pradesh",
+  "district": "Faizabad",
+  "agro_climatic_zone": "Eastern Plain Zone — Sub-humid Deep Inceptisols",
+  "source_type": "CRIDA_contingency",
+  "source_url": null,
+  "doc_date": null,
+  "last_checked": "2025-08-13",
+  "normal_annual_rain_mm": null,
+  "rainfall_pattern_notes": null,
+  "dominant_soils": ["deep inceptisols"],
+  "crops": [
+    {
+      "crop_name": "rice",
+      "season": "Kharif",
+      "planting_window": { "start": "06-25", "end": "07-31" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": "upland to medium land", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "beushaning/khelua in direct-sown; drain waterlogging" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "delayed_onset",
+          "stage_window": "sowing",
+          "measures": ["dry/direct seeding with short-duration varieties", "community nursery & transplanting", "life-saving irrigation"],
+          "alt_crops": ["maize", "pearl millet", "pigeonpea", "blackgram", "greengram", "sesame"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": ["AICRPDA_2008"]
+        },
+        {
+          "hazard": "mid_season_drought",
+          "stage_window": "vegetative–flowering",
+          "measures": ["gap filling", "postpone top-dressing", "mulching", "foliar K spray", "life-saving irrigation"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": ["AICRPDA_2008"]
+        },
+        {
+          "hazard": "late_season_drought",
+          "stage_window": "grain filling–maturity",
+          "measures": ["life-saving irrigation", "harvest at physiological maturity", "prepare fields for rabi"],
+          "alt_crops": ["chickpea", "lentil", "mustard", "barley", "wheat"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": ["AICRPDA_2008"]
+        },
+        {
+          "hazard": "flooding",
+          "stage_window": "waterlogging",
+          "measures": ["surface drainage", "re/transplanting", "double transplanting if needed"],
+          "alt_crops": ["toria", "lentil", "mustard"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": ["AICRPDA_2008"]
+        }
+      ]
+    },
+    {
+      "crop_name": "pigeonpea",
+      "season": "Kharif",
+      "planting_window": { "start": "06-25", "end": "07-31" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": "well-drained uplands", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "avoid waterlogging" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "delayed_onset",
+          "stage_window": "establishment",
+          "measures": ["sow early/medium-duration cultivars", "intercrop with maize/blackgram/sesame"],
+          "alt_crops": ["blackgram", "sesame"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["pigeonpea", "arhar", "tur"] },
+          "data_gaps": [],
+          "sources": ["AICRPDA_2008"]
+        },
+        {
+          "hazard": "mid_season_drought",
+          "stage_window": "vegetative",
+          "measures": ["thinning", "straw mulching", "life-saving irrigation if possible"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["pigeonpea", "arhar", "tur"] },
+          "data_gaps": [],
+          "sources": ["AICRPDA_2008"]
+        }
+      ]
+    },
+    {
+      "crop_name": "chickpea",
+      "season": "Rabi",
+      "planting_window": { "start": "10-15", "end": "11-15" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": "residual moisture soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "one life-saving irrigation if dry" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "late_season_drought",
+          "stage_window": "flowering–pod fill",
+          "measures": ["one irrigation", "weeding to conserve moisture"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["chana", "gram"] },
+          "data_gaps": [],
+          "sources": ["AICRPDA_2008"]
+        }
+      ]
+    }
+  ],
+  "dataset_sources": [
+    {
+      "key": "AICRPDA_2008",
+      "title": "Crop and Contingency Planning for Rainfed Regions of India (AICRPDA Compendium, 2008) \n",
+      "url": "",
+      "tier": "primary",
+      "last_checked": "2025-08-13"
+    }
+  ]
+}
