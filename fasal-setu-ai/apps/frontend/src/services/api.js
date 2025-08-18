@@ -370,6 +370,23 @@ export const cropAPI = {
   // Get harvest estimation
   getHarvestEstimate: async (cropId) => {
     return apiRequest(`/crops/${cropId}/harvest-estimate`);
+  },
+
+  // Get crop details
+  getCropDetails: async (cropId) => {
+    return apiRequest(`/crops/${cropId}`);
+  }
+};
+
+// Crop Simulation Chat API calls
+export const cropSimChatAPI = {
+  // Send message to crop simulation chatbot
+  sendMessage: async (messageData) => {
+    return apiRequest('/crop-sim/chat', {
+      method: 'POST',
+      body: JSON.stringify(messageData),
+      signal: AbortSignal.timeout(90000), // 90 second timeout for AI processing
+    });
   }
 };
 

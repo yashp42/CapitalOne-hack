@@ -5,7 +5,7 @@ import { OrbitControls, Text, Box, Sphere } from '@react-three/drei';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as THREE from 'three';
 import { TextureLoader } from 'three';
-import { cropAPI, authAPI } from '../services/api'; // Import API service
+import { cropAPI, authAPI, cropSimChatAPI } from '../services/api'; // Import API service
 import { useAuth } from '../contexts/AuthContext'; // Import auth context
 import { 
   FaTemperatureHigh, 
@@ -19,6 +19,7 @@ import {
   FaBolt,
   FaRobot,
   FaPaperPlane,
+  FaBug,
 } from 'react-icons/fa';
 
 // Loading Skeleton Component
@@ -69,8 +70,25 @@ const LoadingScreen = () => (
 function CropPlant({ stage, farmData }) {
   const grassFieldRef = useRef();
   const grassBlades = useRef([]);
-  const soilParticles = useRef([]);
   const [soilTextureReady, setSoilTextureReady] = useState(false);
+  
+  // Stable moisture particle positions - only generated once
+  const [moistureParticlePositions] = useState(() => {
+    return Array.from({ length: 15 }, (_, i) => ({
+      x: (Math.random() - 0.5) * 50, // fieldWidth
+      z: (Math.random() - 0.5) * 50, // fieldDepth
+      y: -0.05 + Math.random() * 0.1
+    }));
+  });
+
+  // Stable fertilizer particle positions - only generated once
+  const [fertilizerParticlePositions] = useState(() => {
+    return Array.from({ length: 20 }, (_, i) => ({
+      x: (Math.random() - 0.5) * 50, // fieldWidth
+      z: (Math.random() - 0.5) * 50, // fieldDepth
+      y: 0.05 + Math.random() * 0.1
+    }));
+  });
 
   // Always load soil texture - this is safe to call unconditionally
   const soilTexture = useLoader(TextureLoader, '/assets/soil-texture.jpg');
@@ -113,15 +131,6 @@ function CropPlant({ stage, farmData }) {
           const naturalSway = Math.sin(state.clock.elapsedTime * 0.2 + i * 0.05) * 0.04; // Reduced movement
           
           blade.rotation.z = windGust + naturalSway;
-        }
-      });
-    }
-
-    // Simplified soil particle movement
-    if (farmData.lastIrrigated === 'Today' && Math.floor(state.clock.elapsedTime * 60) % 5 === 0) {
-      soilParticles.current.forEach((particle, i) => {
-        if (particle && i % 3 === 0) { // Only animate every 3rd particle
-          particle.position.y = Math.sin(state.clock.elapsedTime + i) * 0.01 - 0.3;
         }
       });
     }
@@ -226,39 +235,12 @@ function CropPlant({ stage, farmData }) {
           />
         </Box>
 
-        {/* Soil texture - dirt clumps and stones with texture variety */}
-        {Array.from({ length: 160 }, (_, i) => { // Increased from 120 to 160 for massive field
-          const size = 0.03 + Math.random() * 0.08;
-          const x = (Math.random() - 0.5) * fieldWidth;
-          const z = (Math.random() - 0.5) * fieldDepth;
-          const y = -0.1 + Math.random() * 0.2;
-          
-          return (
-            <Sphere
-              key={`soil-${i}`}
-              ref={(el) => (soilParticles.current[i] = el)}
-              args={[size]}
-              position={[x, y, z]}
-            >
-              <meshStandardMaterial 
-                map={i % 4 === 0 && soilTextureReady ? soilTexture : null} // Some particles use texture
-                color={i % 3 === 0 ? "#8B7355" : i % 3 === 1 ? "#654321" : "#4A4A4A"} 
-                roughness={0.9}
-              />
-            </Sphere>
-          );
-        })}
-
-        {/* Soil moisture indicators */}
-        {farmData.soilMoisture !== null && farmData.soilMoisture > 70 && Array.from({ length: 15 }, (_, i) => (
+        {/* Soil moisture indicators with stable positions */}
+        {farmData.soilMoisture !== null && farmData.soilMoisture > 70 && moistureParticlePositions.map((particle, i) => (
           <Sphere 
             key={`moisture-${i}`}
             args={[0.015]} 
-            position={[
-              (Math.random() - 0.5) * fieldWidth,
-              -0.05 + Math.random() * 0.1,
-              (Math.random() - 0.5) * fieldDepth
-            ]}
+            position={[particle.x, particle.y, particle.z]}
           >
             <meshStandardMaterial 
               color="#4A90E2" 
@@ -270,16 +252,12 @@ function CropPlant({ stage, farmData }) {
           </Sphere>
         ))}
 
-        {/* Fertilizer particles if recently fertilized */}
-        {farmData.lastFertilized === 'Today' && Array.from({ length: 20 }, (_, i) => (
+        {/* Fertilizer particles with stable positions if recently fertilized */}
+        {farmData.lastFertilized === 'Today' && fertilizerParticlePositions.map((particle, i) => (
           <Sphere 
             key={`fertilizer-${i}`}
             args={[0.01]} 
-            position={[
-              (Math.random() - 0.5) * fieldWidth,
-              0.05 + Math.random() * 0.1,
-              (Math.random() - 0.5) * fieldDepth
-            ]}
+            position={[particle.x, particle.y, particle.z]}
           >
             <meshStandardMaterial 
               color="#E6E6FA" 
@@ -600,7 +578,7 @@ function CropScene({ stage, farmData }) {
         target={[0, 0, 0]} // Keep focus on center of field
       />
       
-      {/* Dynamic lighting based on weather */}
+      {/* Dynamic lighting based on weather data */}
       <ambientLight 
         intensity={
           farmData.weatherToday === 'Sunny' ? 0.6 :
@@ -624,10 +602,9 @@ function CropScene({ stage, farmData }) {
         shadow-camera-top={10}
         shadow-camera-bottom={-10}
       />
-      {/* Additional point light for better illumination */}
       <pointLight position={[-10, 10, -10]} intensity={0.3} />
       
-      {/* Simple sky gradient background */}
+      {/* Dynamic sky background based on weather data */}
       <color 
         attach="background" 
         args={[
@@ -678,124 +655,85 @@ const CropSimulation = () => {
   const [weatherData, setWeatherData] = useState(null); // Weather data from API
   const [isLoadingWeather, setIsLoadingWeather] = useState(false); // Weather loading state
   const [weatherError, setWeatherError] = useState(null); // Weather error state
-  const [chatMessages, setChatMessages] = useState([
-    {
-      id: 1,
-      text: "Welcome to your Virtual Farm! 🌱 I see you've just planted your seeds. I'll help you take care of your crop as it grows. Ask me about watering, fertilizing, or any farming questions!",
-      isBot: true,
-      timestamp: new Date()
+  const [chatMessages, setChatMessages] = useState([]);
+  const [recentlyUpdated, setRecentlyUpdated] = useState({}); // Track recently updated fields
+  const [growthUpdated, setGrowthUpdated] = useState(false); // Track when growth is updated
+  
+  // Add welcome message when component loads
+  useEffect(() => {
+    if (cropId && harvestData) {
+      const welcomeMessage = {
+        id: 1,
+        text: `**Welcome to your Virtual ${harvestData.crop_name || 'Crop'} Farm!** 🌱 I can help you with **irrigation**, **fertilization**, **pest management**, and answer your farming questions. Your crop is currently **${cropStage.toFixed(1)}% grown**. How can I assist you today?`,
+        isBot: true,
+        timestamp: new Date()
+      };
+      setChatMessages([welcomeMessage]);
     }
-  ]);
+  }, [cropId, harvestData, cropStage]);
   const [newMessage, setNewMessage] = useState('');
   const [isChatTyping, setIsChatTyping] = useState(false);
   const [dailyActivities, setDailyActivities] = useState([]);
+  const [currentCrop, setCurrentCrop] = useState(null); // Store full crop data for next event display
 
-  // Realistic farm data that updates based on user activities
+  // Function to format text with bold markdown
+  const formatMessageText = (text) => {
+    if (!text) return text;
+    
+    // Split text by ** markers and create spans with bold styling
+    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        // Remove ** markers and make bold
+        const boldText = part.slice(2, -2);
+        return (
+          <span key={index} className="font-bold text-gray-900">
+            {boldText}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
+  // Farm data state - will be populated by LLM integration
   const [farmData, setFarmData] = useState({
-    lastIrrigated: 'Never',
-    lastFertilized: 'Never',
-    lastSowed: 'Today',
-    currentTemp: null, // Will be populated by weather API
-    soilTemp: null, // Will be populated by weather API  
-    humidity: 65,
-    soilMoisture: null, // Will be populated by weather API
-    cropStage: 'Just Planted',
-    expectedHarvest: 'Calculating...',
-    weatherToday: 'Loading...',
-    forecast: [
-      { condition: 'Sunny', temp: 25, day: 'Loading...', icon: FaSun },
-      { condition: 'Sunny', temp: 25, day: 'Loading...', icon: FaSun }
-    ], // Start with default data to prevent errors
+    lastIrrigated: 'Loading...',
+    lastFertilized: 'Loading...',
+    lastPestCheck: 'Loading...',
+    lastSowed: null,
+    currentTemp: null,
+    soilTemp: null,
+    humidity: null,
+    soilMoisture: null,
+    cropStage: null,
+    expectedHarvest: null,
+    weatherToday: null,
+    forecast: [],
     nutrients: {
-      nitrogen: 60, // Starts moderate, needs fertilizing
-      phosphorus: 55,
-      potassium: 65
+      nitrogen: null,
+      phosphorus: null,
+      potassium: null
     },
     pests: {
-      detected: false,
-      risk: 'Low',
-      lastChecked: 'Never'
+      detected: null,
+      risk: null,
+      lastChecked: null
     },
     irrigation: {
-      nextScheduled: 'Needs scheduling',
-      totalWaterUsed: '0 L',
-      efficiency: 85
+      nextScheduled: null,
+      totalWaterUsed: null,
+      efficiency: null
     }
   });
 
-  // Simulate realistic crop growth based on activities and care
+  // Growth simulation will be handled by LLM integration
   const simulateCropGrowth = useCallback((activity) => {
-    let growthBoost = 0;
-    let updatedFarmData = { ...farmData };
-    
-    switch (activity) {
-      case 'irrigation':
-        const currentMoisture = farmData.soilMoisture || 50; // Use API value or default
-        growthBoost = currentMoisture < 50 ? 3 : 1;
-        updatedFarmData.soilMoisture = Math.min(100, currentMoisture + 25);
-        updatedFarmData.lastIrrigated = 'Today';
-        updatedFarmData.totalWaterUsed = (parseInt(farmData.irrigation?.totalWaterUsed || 0) + 50) + ' L';
-        break;
-      case 'fertilization':
-        growthBoost = 4;
-        updatedFarmData.nutrients = updatedFarmData.nutrients || {};
-        updatedFarmData.nutrients.nitrogen = Math.min(100, (farmData.nutrients?.nitrogen || 60) + 20);
-        updatedFarmData.nutrients.phosphorus = Math.min(100, (farmData.nutrients?.phosphorus || 50) + 15);
-        updatedFarmData.nutrients.potassium = Math.min(100, (farmData.nutrients?.potassium || 55) + 10);
-        updatedFarmData.lastFertilized = 'Today';
-        break;
-      case 'pest_check':
-        growthBoost = 1;
-        updatedFarmData.pests = updatedFarmData.pests || {};
-        updatedFarmData.pests.lastChecked = 'Today';
-        break;
-      case 'daily_care':
-        growthBoost = 2;
-        break;
-      default:
-        growthBoost = 0.5; // Natural growth from interaction
-    }
-    
-    // Update crop stage with realistic growth
-    const newStage = Math.min(100, cropStage + growthBoost);
-    setCropStage(newStage);
-    
-    // Update farm stage description with real data
-    const daysRemaining = harvestData ? harvestData.days_remaining : Math.max(1, Math.round((100 - newStage) * 1.2));
-    if (newStage < 10) {
-      updatedFarmData.cropStage = 'Germination';
-      updatedFarmData.expectedHarvest = harvestData ? `${daysRemaining} days` : `${daysRemaining} days (estimated)`;
-    } else if (newStage < 25) {
-      updatedFarmData.cropStage = 'Seedling';
-      updatedFarmData.expectedHarvest = harvestData ? `${daysRemaining} days` : `${daysRemaining} days (estimated)`;
-    } else if (newStage < 45) {
-      updatedFarmData.cropStage = 'Vegetative Growth';
-      updatedFarmData.expectedHarvest = harvestData ? `${daysRemaining} days` : `${daysRemaining} days (estimated)`;
-    } else if (newStage < 65) {
-      updatedFarmData.cropStage = 'Tillering';
-      updatedFarmData.expectedHarvest = harvestData ? `${daysRemaining} days` : `${daysRemaining} days (estimated)`;
-    } else if (newStage < 85) {
-      updatedFarmData.cropStage = 'Flowering';
-      updatedFarmData.expectedHarvest = harvestData ? `${daysRemaining} days` : `${daysRemaining} days (estimated)`;
-    } else if (newStage < 100) {
-      updatedFarmData.cropStage = 'Grain Filling';
-      updatedFarmData.expectedHarvest = harvestData ? `${daysRemaining} days` : `${daysRemaining} days (estimated)`;
-    } else {
-      updatedFarmData.cropStage = 'Ready for Harvest!';
-      updatedFarmData.expectedHarvest = harvestData?.status === 'ready_for_harvest' ? 'Now!' : 'Now!';
-    }
-    
-    // Natural degradation over time - only if soil moisture is available from API
-    if (updatedFarmData.soilMoisture !== null) {
-      updatedFarmData.soilMoisture = Math.max(30, updatedFarmData.soilMoisture - 2);
-    }
-    if (updatedFarmData.nutrients) {
-      updatedFarmData.nutrients.nitrogen = Math.max(40, (updatedFarmData.nutrients.nitrogen || 60) - 1);
-    }
-    
-    setFarmData(updatedFarmData);
-    return growthBoost;
-  }, [farmData, cropStage, harvestData]);
+    // This will be replaced with LLM-powered growth simulation
+    console.log('Growth simulation triggered for activity:', activity);
+    return 0; // Placeholder return value
+  }, []);
 
   // Optimized animation variants for better performance
   const containerVariants = useMemo(() => ({
@@ -898,7 +836,7 @@ const CropSimulation = () => {
     }
   };
 
-  // Function to process weather data into forecast array
+  // Process weather data for display
   const processWeatherData = (data) => {
     if (!data || !data.daily) return [];
     
@@ -939,22 +877,55 @@ const CropSimulation = () => {
 
   // Fetch harvest estimation data
   useEffect(() => {
-    const fetchHarvestData = async () => {
+    const fetchCropData = async () => {
       if (!cropId) return;
       
       setIsLoadingHarvest(true);
       try {
-        const response = await cropAPI.getHarvestEstimate(cropId);
-        if (response.success) {
-          setHarvestData(response.data);
+        // Fetch both harvest estimate and crop details
+        const [harvestResponse, cropResponse] = await Promise.all([
+          cropAPI.getHarvestEstimate(cropId),
+          cropAPI.getCropDetails(cropId)
+        ]);
+
+        if (harvestResponse.success) {
+          setHarvestData(harvestResponse.data);
           // Update days since planting from API data
-          setDaysSincePlanting(response.data.days_since_sowing);
-          // Update crop stage from API if different
-          setCropStage(response.data.growth_percentage);
-          console.log('Harvest data loaded:', response.data);
+          setDaysSincePlanting(harvestResponse.data.days_since_sowing);
+          // Only update crop stage from API if URL parameter wasn't provided
+          if (!urlParams.get('growth')) {
+            setCropStage(harvestResponse.data.growth_percentage);
+          }
+          console.log('Harvest data loaded:', harvestResponse.data);
         }
+
+        // Update farm data with actual crop irrigation/fertilization dates
+        if (cropResponse.success && cropResponse.data.derived) {
+          const crop = cropResponse.data;
+          setCurrentCrop(crop); // Store full crop data
+          setFarmData(prev => ({
+            ...prev,
+            lastIrrigated: crop.derived.last_irrigation_at ? 
+              new Date(crop.derived.last_irrigation_at).toLocaleDateString() : 'Never',
+            lastFertilized: crop.derived.last_fertilization_at ? 
+              new Date(crop.derived.last_fertilization_at).toLocaleDateString() : 'Never',
+            lastPestCheck: crop.derived.last_pest_check_at ?
+              new Date(crop.derived.last_pest_check_at).toLocaleDateString() : 'Never'
+          }));
+          console.log('Crop data loaded:', crop);
+        } else {
+          // Set default values if crop data not available
+          setCurrentCrop(null);
+          setFarmData(prev => ({
+            ...prev,
+            lastIrrigated: 'Never',
+            lastFertilized: 'Never',
+            lastPestCheck: 'Never'
+          }));
+        }
+
       } catch (error) {
-        console.error('Failed to fetch harvest data:', error);
+        console.error('Failed to fetch crop data:', error);
         // Set fallback data based on crop growth stage
         const estimatedDays = Math.max(1, Math.round((100 - initialGrowthPercent) * 1.2));
         setHarvestData({
@@ -964,47 +935,62 @@ const CropSimulation = () => {
           status: 'growing',
           crop_name: 'Unknown'
         });
+        
+        // Set default farm values
+        setFarmData(prev => ({
+          ...prev,
+          lastIrrigated: 'Never',
+          lastFertilized: 'Never',
+          lastPestCheck: 'Never'
+        }));
       } finally {
         setIsLoadingHarvest(false);
       }
     };
 
-    fetchHarvestData();
+    fetchCropData();
   }, [cropId, initialGrowthPercent]);
 
-  // Update farm data when harvest data is loaded
+  // Harvest data processing will be handled by LLM integration
   useEffect(() => {
-    if (harvestData) {
-      setFarmData(prev => ({
-        ...prev,
-        expectedHarvest: harvestData.status === 'ready_for_harvest' ? 'Ready Now!' : `${harvestData.days_remaining} days`,
-        cropStage: harvestData.status === 'ready_for_harvest' ? 'Ready for Harvest!' : 
-                  harvestData.growth_percentage < 10 ? 'Germination' :
-                  harvestData.growth_percentage < 25 ? 'Seedling' :
-                  harvestData.growth_percentage < 45 ? 'Vegetative Growth' :
-                  harvestData.growth_percentage < 65 ? 'Tillering' :
-                  harvestData.growth_percentage < 85 ? 'Flowering' :
-                  harvestData.growth_percentage < 100 ? 'Grain Filling' : 'Ready for Harvest!'
-      }));
-    }
+    // Harvest data processing will be handled by LLM integration
+    console.log('Harvest data changed:', harvestData);
   }, [harvestData]);
 
-  // Natural daily progression (very slow)
+  // Natural daily progression will be handled by LLM integration
+  // useEffect for natural growth removed - will be replaced with LLM updates
+
+  // Fetch weather data based on location
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (cropStage < 100) {
-        setCropStage(prev => Math.min(100, prev + 0.1)); // Very slow natural growth
-        setDaysSincePlanting(prev => prev + 1);
+    const fetchUserLocationAndWeather = async () => {
+      try {
+        // First, get user profile to access location data
+        const profileResponse = await authAPI.getProfile();
+        if (profileResponse.success && profileResponse.data.location) {
+          const { lat, lon } = profileResponse.data.location;
+          
+          if (lat && lon) {
+            // Use user's stored location from database
+            fetchWeatherData(lat, lon);
+          } else {
+            // Fallback to Bangalore coordinates if user location is incomplete
+            fetchWeatherData(12.9716, 77.5946);
+          }
+        } else {
+          // Fallback to Bangalore coordinates if profile fetch fails
+          fetchWeatherData(12.9716, 77.5946);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user profile for location:', error);
+        // Fallback to Bangalore coordinates
+        fetchWeatherData(12.9716, 77.5946);
       }
-    }, 30000); // Every 30 seconds represents a day
+    };
 
-    return () => clearInterval(interval);
-  }, [cropStage]);
-
-  // Scroll to top when component mounts
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+    if (user) {
+      fetchUserLocationAndWeather();
+    }
+  }, [user]);
 
   // Fetch weather data based on location
   useEffect(() => {
@@ -1075,6 +1061,11 @@ const CropSimulation = () => {
     }
   }, [weatherData]);
 
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Authentication check - redirect if not authenticated
   if (loading) {
     return (
@@ -1121,102 +1112,123 @@ const CropSimulation = () => {
     setNewMessage('');
     setIsChatTyping(true);
 
-    // Process user activities and generate contextual responses
-    setTimeout(() => {
-      let botResponse = "I'm here to help with your farming needs!";
-      let activity = null;
-      let growthBoost = 0;
-      
-      const message = currentMessage.toLowerCase();
-      
-      // Detect farming activities
-      if (message.includes('water') || message.includes('irrigat')) {
-        activity = 'irrigation';
-        growthBoost = simulateCropGrowth(activity);
-        const newMoisture = (farmData.soilMoisture || 50) + 25;
-        botResponse = `Great! I've helped you water your crops. 💧 Your soil moisture increased to ${newMoisture}%. This boosted growth by ${growthBoost}%! Your crops are looking healthier now.`;
-        setLastActivity('Watered crops');
-      } else if (message.includes('fertiliz') || message.includes('nutrient') || message.includes('feed')) {
-        activity = 'fertilization';
-        growthBoost = simulateCropGrowth(activity);
-        botResponse = `Excellent! I've applied fertilizer to your crops. 🌱 Nutrient levels have improved significantly. This gave your crops a big growth boost of ${growthBoost}%! Remember to fertilize regularly for optimal growth.`;
-        setLastActivity('Applied fertilizer');
-      } else if (message.includes('pest') || message.includes('check') || message.includes('inspect')) {
-        activity = 'pest_check';
-        growthBoost = simulateCropGrowth(activity);
-        botResponse = `Good farming practice! 🔍 I've helped you check for pests and diseases. Everything looks healthy! Regular inspection is key to preventing problems. Growth boost: ${growthBoost}%.`;
-        setLastActivity('Pest inspection');
-      } else if (message.includes('care') || message.includes('tend') || message.includes('maintain')) {
-        activity = 'daily_care';
-        growthBoost = simulateCropGrowth(activity);
-        botResponse = `Wonderful! Daily care makes all the difference. 🚜 Your attentive farming has boosted growth by ${growthBoost}%. Keep up the great work!`;
-        setLastActivity('General crop care');
-      } else if (message.includes('health') || message.includes('how') || message.includes('doing')) {
-        growthBoost = simulateCropGrowth('interaction');
-        const daysLeft = harvestData ? harvestData.days_remaining : Math.max(0, 100 - cropStage);
-        const harvestDate = harvestData ? new Date(harvestData.estimated_harvest_date).toLocaleDateString() : 'Soon';
-        
-        if (cropStage < 10) {
-          botResponse = `Your crops are in early germination (${Math.round(cropStage)}% grown). Expected harvest in ${daysLeft} days (${harvestDate}). They need consistent moisture and patience. Consider watering if soil moisture is below 60%.`;
-        } else if (cropStage < 25) {
-          botResponse = `Seedling stage looks promising! ${Math.round(cropStage)}% growth. Harvest expected in ${daysLeft} days (${harvestDate}). Your young plants are establishing roots. Keep soil moist but not waterlogged.`;
-        } else if (cropStage < 45) {
-          botResponse = `Vegetative growth is excellent! ${Math.round(cropStage)}% complete. Expected harvest: ${daysLeft} days (${harvestDate}). This is when nitrogen is crucial for leaf development. Consider fertilizing soon.`;
-        } else if (cropStage < 65) {
-          botResponse = `Tillering stage - your crops are branching out! ${Math.round(cropStage)}% grown. Harvest in ${daysLeft} days (${harvestDate}). Balanced nutrients and consistent water are key now.`;
-        } else if (cropStage < 85) {
-          botResponse = `Flowering stage! ${Math.round(cropStage)}% complete. Expected harvest: ${daysLeft} days (${harvestDate}). This is critical - maintain consistent moisture and protect from pests. Phosphorus is especially important now.`;
-        } else if (cropStage < 100) {
-          botResponse = `Grain filling stage - almost there! ${Math.round(cropStage)}% grown. Harvest in just ${daysLeft} days (${harvestDate})! Monitor moisture carefully and prepare for harvest planning.`;
-        } else {
-          botResponse = `🎉 Congratulations! Your crops are fully mature and ${harvestData?.status === 'ready_for_harvest' ? 'ready for harvest NOW' : 'ready for harvest'}! This has been an excellent growing season.`;
-        }
-      } else if (message.includes('harvest') || message.includes('when') || message.includes('ready')) {
-        growthBoost = simulateCropGrowth('interaction');
-        if (harvestData) {
-          if (harvestData.status === 'ready_for_harvest') {
-            botResponse = `🎉 Great news! Your crops are ready for harvest RIGHT NOW! You've reached 100% maturity. Time to reap what you've sown!`;
-          } else {
-            const harvestDate = new Date(harvestData.estimated_harvest_date).toLocaleDateString();
-            botResponse = `🗓️ Based on your crop's progress, harvest is expected in ${harvestData.days_remaining} days (${harvestDate}). Your crop is currently ${Math.round(harvestData.growth_percentage)}% mature. Keep up the good care!`;
+    try {
+      // Prepare farm context for the AI
+      const farmContext = {
+        weather: {
+          current: farmData.weatherToday,
+          temperature: farmData.currentTemp,
+          soilMoisture: farmData.soilMoisture,
+          soilTemp: farmData.soilTemp,
+          forecast: farmData.forecast
+        },
+        soil: {
+          moisture: farmData.soilMoisture,
+          temperature: farmData.soilTemp
+        },
+        location: user?.location || "India"
+      };
+
+      // Call the crop simulation chat API
+      const response = await cropSimChatAPI.sendMessage({
+        message: currentMessage,
+        cropId: cropId,
+        farmContext: farmContext
+      });
+
+      if (response.success) {
+        // Update crop data if it changed (for events like irrigation/fertilization)
+        if (response.data.crop) {
+          const oldStage = cropStage;
+          const newStage = response.data.crop.growth_percent;
+          setCropStage(newStage);
+          setCurrentCrop(response.data.crop); // Update current crop data
+          
+          // Trigger growth animation if growth increased
+          if (newStage > oldStage) {
+            setGrowthUpdated(true);
+            setTimeout(() => setGrowthUpdated(false), 2000);
           }
-        } else {
-          botResponse = `📊 Your crops are ${Math.round(cropStage)}% mature. ${harvestData ? `Expected harvest in ${harvestData.days_remaining} days` : 'Harvest timing will be calculated once crop data is loaded'}. Keep watering and fertilizing for optimal results!`;
+          
+          // Update farm data with new irrigation/fertilization dates
+          if (response.data.detection.hasEvent) {
+            const eventType = response.data.detection.eventType;
+            
+            setFarmData(prev => ({
+              ...prev,
+              lastIrrigated: response.data.crop.derived?.last_irrigation_at ? 
+                new Date(response.data.crop.derived.last_irrigation_at).toLocaleDateString() : prev.lastIrrigated,
+              lastFertilized: response.data.crop.derived?.last_fertilization_at ? 
+                new Date(response.data.crop.derived.last_fertilization_at).toLocaleDateString() : prev.lastFertilized,
+              lastPestCheck: response.data.crop.derived?.last_pest_check_at ?
+                new Date(response.data.crop.derived.last_pest_check_at).toLocaleDateString() : prev.lastPestCheck
+            }));
+
+            // Mark field as recently updated for visual feedback
+            const fieldMap = {
+              irrigation: 'lastIrrigated',
+              fertilization: 'lastFertilized',
+              pest_check: 'lastPestCheck'
+            };
+            
+            if (fieldMap[eventType]) {
+              setRecentlyUpdated(prev => ({
+                ...prev,
+                [fieldMap[eventType]]: true
+              }));
+              
+              // Remove the highlight after 3 seconds
+              setTimeout(() => {
+                setRecentlyUpdated(prev => ({
+                  ...prev,
+                  [fieldMap[eventType]]: false
+                }));
+              }, 3000);
+            }
+            
+            // Add activity to daily log if it was an event
+            if (response.data.detection.eventType) {
+              const activityNames = {
+                irrigation: 'Watered crops',
+                fertilization: 'Applied fertilizer',
+                pest_check: 'Pest inspection'
+              };
+              
+              setDailyActivities(prev => [...prev, {
+                activity: activityNames[response.data.detection.eventType] || 'Farm activity',
+                timestamp: new Date(),
+                growthImpact: response.data.crop.growth_percent - cropStage
+              }]);
+            }
+          }
         }
-      } else if (message.includes('weather') || message.includes('forecast')) {
-        const tomorrowCondition = farmData.forecast[1]?.condition || 'unknown';
-        botResponse = `Current conditions: ${farmData.weatherToday} at ${farmData.currentTemp ? Math.round(farmData.currentTemp) + '°C' : 'loading...'}. Tomorrow will be ${tomorrowCondition}. ${tomorrowCondition === 'Rainy' ? 'You might not need to water tomorrow!' : 'Plan your watering schedule accordingly.'}`;
+
+        // Add bot response
+        const botMessage = {
+          id: Date.now() + 1,
+          text: response.data.response,
+          isBot: true,
+          timestamp: new Date()
+        };
+
+        setChatMessages(prev => [...prev, botMessage]);
       } else {
-        // Default encouraging response that still provides growth
-        growthBoost = simulateCropGrowth('interaction');
-        const responses = [
-          `Every question helps you become a better farmer! Your engagement boosted growth by ${growthBoost}%. Current stage: ${farmData.cropStage} (${Math.round(cropStage)}%).`,
-          `Your attention to your crops is wonderful! Growth increased by ${growthBoost}%. Soil moisture: ${farmData.soilMoisture !== null ? farmData.soilMoisture + '%' : 'loading...'}, Temperature: ${farmData.currentTemp ? Math.round(farmData.currentTemp) + '°C' : 'loading...'}.`,
-          `Keep asking questions - it shows you care about your crops! +${growthBoost}% growth. Your ${farmData.cropStage.toLowerCase()} stage plants appreciate the attention.`,
-          `Great farming mindset! Your crops grew ${growthBoost}% from your care and attention. Days since planting: ${daysSincePlanting}.`
-        ];
-        botResponse = responses[Math.floor(Math.random() * responses.length)];
+        throw new Error(response.message || 'Failed to get response');
       }
-
-      // Add activity to daily log
-      if (activity && lastActivity) {
-        setDailyActivities(prev => [...prev, {
-          activity: lastActivity,
-          timestamp: new Date(),
-          growthImpact: growthBoost
-        }]);
-      }
-
-      const botMessage = {
+    } catch (error) {
+      console.error('Chat API error:', error);
+      
+      const errorMessage = {
         id: Date.now() + 1,
-        text: botResponse,
+        text: "I'm experiencing some technical difficulties. Please try again later.",
         isBot: true,
         timestamp: new Date()
       };
 
-      setChatMessages(prev => [...prev, botMessage]);
+      setChatMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsChatTyping(false);
-    }, 800); // Reduced from 1500ms for better UX
+    }
   };
 
   return (
@@ -1232,30 +1244,49 @@ const CropSimulation = () => {
           <div className="lg:col-span-3 space-y-4 sm:space-y-6 lg:order-1">
             {/* Header */}
             <motion.div variants={itemVariants} className="text-center px-2 sm:px-0">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-4">
                 Virtual Crop Simulation
               </h1>
+              
               {cropId && (
-                <div className="bg-white/80 backdrop-blur-sm rounded-lg px-3 sm:px-4 py-2 mx-auto max-w-sm sm:max-w-md border border-green-200">
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    <span className="font-medium">Crop ID:</span> {cropId}
-                  </p>
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    <span className="font-medium">Starting Growth:</span> {initialGrowthPercent}%
-                  </p>
-                  {isLoadingHarvest ? (
-                    <div className="mt-2">
-                      <LoadingSkeleton className="w-32 h-3 mx-auto" />
+                <div className="bg-gradient-to-r from-green-50 to-blue-50 backdrop-blur-sm rounded-2xl p-4 sm:p-6 mx-auto max-w-lg border border-green-200/50 shadow-lg mb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    {/* Starting Growth */}
+                    <div className="bg-white/70 rounded-xl p-3 border border-blue-100">
+                      <p className="text-xs text-blue-500 font-medium uppercase tracking-wide mb-1">Starting Growth</p>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-green-400 to-green-600 transition-all duration-300"
+                            style={{ width: `${initialGrowthPercent}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm font-bold text-green-600">{initialGrowthPercent}%</span>
+                      </div>
                     </div>
-                  ) : harvestData && (
-                    <p className="text-xs sm:text-sm text-gray-600">
-                      <span className="font-medium">Crop:</span> {harvestData.crop_name || 'Loading...'}
-                    </p>
-                  )}
+                    
+                    {/* Crop Type */}
+                    {isLoadingHarvest ? (
+                      <div className="bg-white/70 rounded-xl p-3 border border-yellow-100">
+                        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Crop Type</p>
+                        <div className="animate-pulse">
+                          <div className="h-4 bg-gray-200 rounded w-16"></div>
+                        </div>
+                      </div>
+                    ) : harvestData && (
+                      <div className="bg-white/70 rounded-xl p-3 border border-yellow-100">
+                        <p className="text-xs text-yellow-600 font-medium uppercase tracking-wide mb-1">Crop Type</p>
+                        <p className="text-sm font-bold text-gray-700 capitalize">
+                          {harvestData.crop_name || 'Loading...'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
-              <p className="text-sm sm:text-base text-gray-600 px-2 sm:px-0">
-                Watch your crops grow in real-time with AI-powered farming insights
+              
+              <p className="text-sm sm:text-base text-gray-600 px-2 sm:px-0 max-w-2xl mx-auto leading-relaxed">
+                🌱 Watch your crops grow in real-time with <span className="font-semibold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">AI-powered farming insights</span>
               </p>
             </motion.div>
 
@@ -1300,14 +1331,20 @@ const CropSimulation = () => {
                 </Canvas>
               </div>
               
-              <div className="mt-3 sm:mt-4 bg-gray-100 rounded-lg sm:rounded-xl p-2 sm:p-3">
+              <div className={`mt-3 sm:mt-4 rounded-lg sm:rounded-xl p-2 sm:p-3 transition-all duration-500 ${
+                growthUpdated ? 'bg-green-100 border-2 border-green-300' : 'bg-gray-100'
+              }`}>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs sm:text-sm font-medium text-gray-600">Growth Progress</span>
-                  <span className="text-xs sm:text-sm font-bold text-green-600">{Math.round(cropStage)}%</span>
+                  <span className={`text-xs sm:text-sm font-bold transition-all duration-300 ${
+                    growthUpdated ? 'text-green-700 scale-110' : 'text-green-600'
+                  }`}>{Math.round(cropStage)}%</span>
                 </div>
                 <div className="w-full bg-gray-300 rounded-full h-1.5 sm:h-2">
                   <div
-                    className="bg-gradient-to-r from-green-400 to-green-600 h-1.5 sm:h-2 rounded-full transition-all duration-300"
+                    className={`h-1.5 sm:h-2 rounded-full transition-all duration-1000 ${
+                      growthUpdated ? 'bg-gradient-to-r from-green-500 to-green-700 animate-pulse' : 'bg-gradient-to-r from-green-400 to-green-600'
+                    }`}
                     style={{ width: `${cropStage}%` }}
                   />
                 </div>
@@ -1345,7 +1382,7 @@ const CropSimulation = () => {
             </div>
 
             {/* Chat Messages - Mobile-optimized height */}
-            <div className="h-48 sm:h-56 md:h-64 overflow-y-auto mb-3 sm:mb-4 space-y-2 sm:space-y-3 pr-1">
+            <div className="h-48 sm:h-56 md:h-64 overflow-y-auto mb-3 sm:mb-4 space-y-2 sm:space-y-3 pr-1" id="chat-container">
               <AnimatePresence>
                 {chatMessages.map((message) => (
                   <motion.div
@@ -1356,13 +1393,19 @@ const CropSimulation = () => {
                     className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
                   >
                     <div
-                      className={`max-w-[85%] sm:max-w-[80%] p-2 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm break-words ${
+                      className={`max-w-[85%] sm:max-w-[80%] p-2 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm break-words leading-relaxed ${
                         message.isBot
                           ? 'bg-gray-100 text-gray-800'
                           : 'bg-green-500 text-white'
                       }`}
                     >
-                      {message.text}
+                      {message.isBot ? (
+                        <div className="space-y-1">
+                          {formatMessageText(message.text)}
+                        </div>
+                      ) : (
+                        message.text
+                      )}
                     </div>
                   </motion.div>
                 ))}
@@ -1573,7 +1616,9 @@ const CropSimulation = () => {
                 <div className="space-y-3 sm:space-y-4">
                   <h3 className="text-base sm:text-lg font-semibold text-gray-800">Recent Activities</h3>
                   <div className="space-y-2 sm:space-y-3">
-                    <div className="flex items-center justify-between bg-gray-50 rounded-lg sm:rounded-xl p-2 sm:p-3">
+                    <div className={`flex items-center justify-between rounded-lg sm:rounded-xl p-2 sm:p-3 transition-all duration-300 ${
+                      recentlyUpdated.lastIrrigated ? 'bg-blue-100 border-2 border-blue-300 animate-pulse' : 'bg-gray-50'
+                    }`}>
                       <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                         <FaTint className="text-blue-500 text-xs sm:text-sm flex-shrink-0" />
                         <span className="text-xs sm:text-sm truncate">Last Irrigated</span>
@@ -1581,12 +1626,24 @@ const CropSimulation = () => {
                       <span className="text-xs sm:text-sm font-medium text-gray-600 ml-2">{farmData.lastIrrigated}</span>
                     </div>
                     
-                    <div className="flex items-center justify-between bg-gray-50 rounded-lg sm:rounded-xl p-2 sm:p-3">
+                    <div className={`flex items-center justify-between rounded-lg sm:rounded-xl p-2 sm:p-3 transition-all duration-300 ${
+                      recentlyUpdated.lastFertilized ? 'bg-green-100 border-2 border-green-300 animate-pulse' : 'bg-gray-50'
+                    }`}>
                       <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                         <FaSeedling className="text-green-500 text-xs sm:text-sm flex-shrink-0" />
                         <span className="text-xs sm:text-sm truncate">Last Fertilized</span>
                       </div>
                       <span className="text-xs sm:text-sm font-medium text-gray-600 ml-2">{farmData.lastFertilized}</span>
+                    </div>
+
+                    <div className={`flex items-center justify-between rounded-lg sm:rounded-xl p-2 sm:p-3 transition-all duration-300 ${
+                      recentlyUpdated.lastPestCheck ? 'bg-orange-100 border-2 border-orange-300 animate-pulse' : 'bg-gray-50'
+                    }`}>
+                      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                        <FaBug className="text-orange-500 text-xs sm:text-sm flex-shrink-0" />
+                        <span className="text-xs sm:text-sm truncate">Last Pest Check</span>
+                      </div>
+                      <span className="text-xs sm:text-sm font-medium text-gray-600 ml-2">{farmData.lastPestCheck}</span>
                     </div>
 
                     <div className="flex items-center justify-between bg-gray-50 rounded-lg sm:rounded-xl p-2 sm:p-3">
@@ -1598,6 +1655,168 @@ const CropSimulation = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Next Event Section */}
+                {currentCrop?.derived && (
+                  <div className="space-y-3 sm:space-y-4">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-800">Next Farming Activity</h3>
+                    <div className="space-y-2">
+                      {/* Next Event Card */}
+                      <div className={`rounded-lg sm:rounded-xl p-3 sm:p-4 border-2 transition-all duration-300 ${
+                        currentCrop.derived.event_restriction_active 
+                          ? 'bg-red-50 border-red-300' 
+                          : currentCrop.derived.next_event_due_date && 
+                            new Date(currentCrop.derived.next_event_due_date) <= new Date(Date.now() + 24*60*60*1000)
+                            ? 'bg-orange-50 border-orange-300 animate-pulse'
+                            : 'bg-green-50 border-green-300'
+                      }`}>
+                        <div className="flex items-start space-x-3">
+                          <div className={`p-2 rounded-lg ${
+                            currentCrop.derived.event_restriction_active 
+                              ? 'bg-red-100' 
+                              : 'bg-green-100'
+                          }`}>
+                            {currentCrop.derived.next_event === 'irrigation' && <FaTint className="text-blue-500 text-sm" />}
+                            {currentCrop.derived.next_event === 'fertilization' && <FaSeedling className="text-green-500 text-sm" />}
+                            {currentCrop.derived.next_event === 'pest_check' && <FaBug className="text-orange-500 text-sm" />}
+                            {currentCrop.derived.next_event === 'harvesting' && <FaCalendarAlt className="text-purple-500 text-sm" />}
+                            {!['irrigation', 'fertilization', 'pest_check', 'harvesting'].includes(currentCrop.derived.next_event) && 
+                             <FaCalendarAlt className="text-gray-500 text-sm" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <h4 className="text-sm font-semibold capitalize text-gray-800 truncate">
+                                {currentCrop.derived.next_event?.replace('_', ' ') || 'No Activity'}
+                              </h4>
+                              <div className="flex items-center space-x-2">
+                                {/* Days Until Badge */}
+                                {currentCrop.derived.next_event_days_until !== undefined && (
+                                  <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
+                                    currentCrop.derived.next_event_days_until === 0
+                                      ? 'bg-red-100 text-red-700 animate-pulse'
+                                      : currentCrop.derived.next_event_days_until <= 1
+                                        ? 'bg-orange-100 text-orange-700'
+                                        : currentCrop.derived.next_event_days_until <= 3
+                                          ? 'bg-yellow-100 text-yellow-700'
+                                          : 'bg-blue-100 text-blue-700'
+                                  }`}>
+                                    {currentCrop.derived.next_event_days_until === 0 
+                                      ? 'Due Now!' 
+                                      : currentCrop.derived.next_event_days_until === 1
+                                        ? '1 day'
+                                        : `${currentCrop.derived.next_event_days_until} days`
+                                    }
+                                  </span>
+                                )}
+                                {/* Date Badge */}
+                                {currentCrop.derived.next_event_due_date && (
+                                  <span className={`text-xs px-2 py-1 rounded-full ${
+                                    currentCrop.derived.event_restriction_active 
+                                      ? 'bg-red-100 text-red-700'
+                                      : new Date(currentCrop.derived.next_event_due_date) <= new Date()
+                                        ? 'bg-orange-100 text-orange-700'
+                                        : 'bg-green-100 text-green-700'
+                                  }`}>
+                                    {new Date(currentCrop.derived.next_event_due_date).toLocaleDateString()}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-600 mb-2">
+                              {currentCrop.derived.next_event_description || 'No description available'}
+                            </p>
+                            
+                            {/* Restriction Status */}
+                            {currentCrop.derived.event_restriction_active && currentCrop.derived.event_restriction_until && (
+                              <div className="bg-red-100 border border-red-200 rounded-lg p-2 mt-2">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                                  <span className="text-xs font-medium text-red-700">Activity Restricted</span>
+                                </div>
+                                <p className="text-xs text-red-600 mt-1">
+                                  {currentCrop.derived.event_restriction_message || 'Activities are temporarily restricted'}
+                                </p>
+                                <p className="text-xs text-red-500 mt-1">
+                                  Restriction ends: {new Date(currentCrop.derived.event_restriction_until).toLocaleDateString()}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {/* Due Status */}
+                            {!currentCrop.derived.event_restriction_active && currentCrop.derived.next_event_due_date && (
+                              <div className={`border rounded-lg p-2 mt-2 ${
+                                currentCrop.derived.next_event_days_until === 0
+                                  ? 'bg-red-100 border-red-200'
+                                  : currentCrop.derived.next_event_days_until <= 1
+                                    ? 'bg-orange-100 border-orange-200'
+                                    : currentCrop.derived.next_event_days_until <= 3
+                                      ? 'bg-yellow-100 border-yellow-200'
+                                      : 'bg-blue-100 border-blue-200'
+                              }`}>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-2">
+                                    <div className={`w-2 h-2 rounded-full ${
+                                      currentCrop.derived.next_event_days_until === 0
+                                        ? 'bg-red-500 animate-pulse'
+                                        : currentCrop.derived.next_event_days_until <= 1
+                                          ? 'bg-orange-500 animate-pulse'
+                                          : currentCrop.derived.next_event_days_until <= 3
+                                            ? 'bg-yellow-500'
+                                            : 'bg-blue-500'
+                                    }`}></div>
+                                    <span className={`text-xs font-medium ${
+                                      currentCrop.derived.next_event_days_until === 0
+                                        ? 'text-red-700'
+                                        : currentCrop.derived.next_event_days_until <= 1
+                                          ? 'text-orange-700'
+                                          : currentCrop.derived.next_event_days_until <= 3
+                                            ? 'text-yellow-700'
+                                            : 'text-blue-700'
+                                    }`}>
+                                      {currentCrop.derived.next_event_days_until === 0
+                                        ? '⚠️ Due Now - Action Required!'
+                                        : currentCrop.derived.next_event_days_until === 1
+                                          ? '🕐 Due Tomorrow'
+                                          : `📅 Due in ${currentCrop.derived.next_event_days_until} days`
+                                      }
+                                    </span>
+                                  </div>
+                                  <span className="text-xs text-gray-500">
+                                    {new Date(currentCrop.derived.next_event_due_date).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                
+                                {/* Progress bar for upcoming events */}
+                                {currentCrop.derived.next_event_days_until > 0 && currentCrop.derived.next_event_days_until <= 7 && (
+                                  <div className="mt-2">
+                                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                      <span>Progress to due date</span>
+                                      <span>{Math.max(0, 7 - currentCrop.derived.next_event_days_until)}/7 days</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                      <div 
+                                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                                          currentCrop.derived.next_event_days_until <= 1
+                                            ? 'bg-red-400'
+                                            : currentCrop.derived.next_event_days_until <= 3
+                                              ? 'bg-orange-400' 
+                                              : 'bg-blue-400'
+                                        }`}
+                                        style={{ 
+                                          width: `${Math.min(100, ((7 - currentCrop.derived.next_event_days_until) / 7) * 100)}%` 
+                                        }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Weather Forecast */}
                 <div className="space-y-3 sm:space-y-4">
