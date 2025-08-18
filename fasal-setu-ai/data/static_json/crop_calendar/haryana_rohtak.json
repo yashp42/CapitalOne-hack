@@ -1,0 +1,247 @@
+{
+  "state": "Haryana",
+  "district": "Rohtak",
+  "agro_climatic_zone": "Trans Gangetic Plains Zone (HR-4)",
+  "source_type": "CRIDA_contingency",
+  "source_url": null,
+  "doc_date": "2011-06-30",
+  "last_checked": null,
+  "normal_annual_rain_mm": 592,
+  "rainfall_pattern_notes": "SW monsoon June-Sep ~481 mm, NE monsoon Oct-Dec ~24 mm, Winter Jan-Feb ~53 mm, Summer Mar-May ~34 mm",
+  "dominant_soils": ["loamy sand", "sandy loam", "clay loam"],
+  "crops": [
+    {
+      "crop_name": "rice",
+      "season": "Kharif",
+      "planting_window": { "start": "06-15", "end": "07-15" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": null, "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "delayed_onset",
+          "stage_window": "early season drought",
+          "measures": [
+            "direct sowing of short duration varieties",
+            "SRI method with short duration varieties",
+            "nursery raising with community participation",
+            "life saving irrigation"
+          ],
+          "alt_crops": ["sorghum", "pearl millet", "maize", "pigeonpea", "sesame"],
+          "inputs_support_notes": "Seed from HAU Hisar, State Dept of Agriculture, NSC, HSDC",
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "mid_season_drought",
+          "stage_window": "vegetative to flowering",
+          "measures": [
+            "gap filling",
+            "postponement of top dressing",
+            "foliar spray with KCl",
+            "mulching",
+            "life saving irrigation"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "late_season_drought",
+          "stage_window": "grain filling to maturity",
+          "measures": [
+            "life saving irrigation",
+            "harvesting at physiological maturity"
+          ],
+          "alt_crops": ["wheat", "barley", "mustard", "chickpea"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "flooding",
+          "stage_window": "transient waterlogging",
+          "measures": [
+            "drainage management",
+            "re-transplanting",
+            "double transplanting"
+          ],
+          "alt_crops": ["barley", "gram", "mustard"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "pearl millet",
+      "season": "Kharif",
+      "planting_window": { "start": "06-15", "end": "07-15" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": null, "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "delayed_onset",
+          "stage_window": "early season drought",
+          "measures": [
+            "sowing with short duration varieties",
+            "thinning",
+            "life saving irrigation"
+          ],
+          "alt_crops": ["clusterbean", "cowpea", "sesame"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["pearl millet", "bajra"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "mid_season_drought",
+          "stage_window": "vegetative to flowering",
+          "measures": [
+            "thinning",
+            "mulching",
+            "life saving irrigation"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["pearl millet", "bajra"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "late_season_drought",
+          "stage_window": "grain filling to maturity",
+          "measures": [
+            "life saving irrigation",
+            "harvesting at physiological maturity"
+          ],
+          "alt_crops": ["mustard", "chickpea", "barley"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["pearl millet", "bajra"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "sorghum",
+      "season": "Kharif",
+      "planting_window": { "start": "06-15", "end": "07-15" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": null, "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "delayed_onset",
+          "stage_window": "early season drought",
+          "measures": [
+            "sowing short duration varieties",
+            "thinning",
+            "life saving irrigation"
+          ],
+          "alt_crops": ["clusterbean", "cowpea"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["sorghum", "jowar"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "mid_season_drought",
+          "stage_window": "vegetative to flowering",
+          "measures": [
+            "thinning",
+            "mulching",
+            "life saving irrigation"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["sorghum", "jowar"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "wheat",
+      "season": "Rabi",
+      "planting_window": { "start": "11-05", "end": "11-25" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": null, "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "heat_wave",
+          "stage_window": "various",
+          "measures": ["life saving irrigation"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["wheat"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "cold_wave",
+          "stage_window": "various",
+          "measures": ["light irrigation", "mulching"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["wheat"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "mustard",
+      "season": "Rabi",
+      "planting_window": { "start": "10-15", "end": "11-15" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": null, "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "cold_wave",
+          "stage_window": "various",
+          "measures": ["light irrigation", "mulching"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["mustard", "sarson"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "flooding",
+          "stage_window": "paira crop after rice",
+          "measures": ["drainage management", "re-sowing after flood recession"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["mustard", "sarson"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    }
+  ],
+  "dataset_sources": []
+}
