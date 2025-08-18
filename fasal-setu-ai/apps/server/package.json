@@ -9,7 +9,8 @@
   },
   "scripts": {
     "dev": "nodemon src/index.js",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "build": "npm install'"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
