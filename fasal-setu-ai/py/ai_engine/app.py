@@ -75,9 +75,15 @@ def create_app() -> FastAPI:
 
 if __name__ == "__main__":  # Allow running via: python -m py.ai_engine.app
     import uvicorn
+    import os
+    
+    # Get port from environment variable or use default
+    port = int(os.getenv("PORT", 8080))
+    host = os.getenv("HOST", "0.0.0.0")
+    
     # When this package is on PYTHONPATH, module path is 'ai_engine.app:app'
     # Fallback: if executed via python path/to/app.py, direct app object is used
     try:
-        uvicorn.run("ai_engine.app:app", host="127.0.0.1", port=8000, reload=False)
+        uvicorn.run("ai_engine.app:app", host=host, port=port, reload=False)
     except Exception:
-        uvicorn.run(app, host="127.0.0.1", port=8000, reload=False)
+        uvicorn.run(app, host=host, port=port, reload=False)
