@@ -65,8 +65,8 @@ if (process.env.NODE_ENV !== 'production' || process.env.DEBUG_CORS === 'true') 
 }
 
 const corsOptions = {
-  origin: process.env.NODE_ENV !== 'production' && process.env.ALLOW_ALL_ORIGINS === 'true' 
-    ? true  // Allow all origins in development mode when flag is set
+  origin: process.env.ALLOW_ALL_ORIGINS === 'true' 
+    ? true  // Allow all origins when flag is set (for debugging)
     : function(origin, callback) {
         // Allow requests with no origin (curl, Postman, mobile apps, etc)
         if (!origin) {

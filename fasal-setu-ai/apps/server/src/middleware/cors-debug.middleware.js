@@ -7,9 +7,17 @@
 
 export const corsDebug = (req, res, next) => {
   // Log basic request information
-  console.log('-------- CORS DEBUG --------');
+  console.log('====== CORS DEBUG START ======');
   console.log(`${req.method} ${req.url}`);
   console.log(`Origin: ${req.headers.origin || 'No Origin header'}`);
+  console.log(`Host: ${req.headers.host}`);
+  console.log(`Referer: ${req.headers.referer || 'No Referer'}`);
+  
+  // Log environment info
+  console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+  console.log(`ALLOW_ALL_ORIGINS: ${process.env.ALLOW_ALL_ORIGINS}`);
+  console.log(`FRONTEND_URL: ${process.env.FRONTEND_URL}`);
+  console.log(`ADDITIONAL_CORS_ORIGINS: ${process.env.ADDITIONAL_CORS_ORIGINS}`);
   
   // Log all request headers that might be relevant to CORS
   const corsRelevantHeaders = [
@@ -65,7 +73,7 @@ export const corsDebug = (req, res, next) => {
       }
     });
     
-    console.log('-------- END CORS DEBUG --------');
+    console.log('====== CORS DEBUG END ======');
     return originalEnd.apply(this, arguments);
   };
   
