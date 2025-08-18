@@ -14,7 +14,7 @@ import errorHandler from "./middleware/errorHandler.middleware.js";
 const app = express();
 
 app.use(cors({
-    origin: ["http://localhost:3000", "http://127.0.0.1:3000", "https://fasalsetu.vercel.app"],
+    origin: ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8081", "http://127.0.0.1:8081", "https://fasalsetu.vercel.app"],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization','X-Requested-With',
