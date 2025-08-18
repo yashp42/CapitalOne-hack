@@ -72,7 +72,29 @@ const cropSchema = new mongoose.Schema({
             min: 0
         },
         last_irrigation_at: { type: Date },
-        last_fertilization_at: { type: Date }
+        last_fertilization_at: { type: Date },
+        last_pest_check_at: { type: Date },
+        
+        // NEW: Maturity fields
+        duration_days: { 
+            type: Number, 
+            min: 1, 
+            default: 110 
+        }, // set per crop/variety
+        expected_harvest_date: { type: Date },
+        
+        // NEW: Next Event Restriction System
+        next_event: {
+            type: String,
+            enum: ["irrigation", "fertilization", "pest_check", "harvesting", "none"],
+            default: "irrigation"
+        },
+        next_event_due_date: { type: Date },
+        next_event_days_until: { type: Number, min: 0 }, // Days until next event
+        next_event_description: { type: String, trim: true },
+        event_restriction_active: { type: Boolean, default: false },
+        event_restriction_until: { type: Date },
+        event_restriction_message: { type: String, trim: true }
     },
 
     status: {
@@ -100,6 +122,21 @@ cropSchema.virtual('calculated_days_after_sowing').get(function() {
     const sowingDate = new Date(this.sowing_date);
     const diffTime = Math.abs(now - sowingDate);
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+});
+
+// Helper function to compute expected harvest date
+function computeExpectedHarvestDate(sowingDate, durationDays) {
+    if (!sowingDate || !durationDays || durationDays < 1) return undefined;
+    return new Date(new Date(sowingDate).getTime() + durationDays * 86400000);
+}
+
+// Pre-validate hook to compute expected harvest date
+cropSchema.pre("validate", function(next) {
+    if (this.isModified("sowing_date") || this.isModified("derived.duration_days")) {
+        const d = this.derived?.duration_days ?? 110;
+        this.derived.expected_harvest_date = computeExpectedHarvestDate(this.sowing_date, d);
+    }
+    next();
 });
 
 // Pre-save middleware to update derived fields

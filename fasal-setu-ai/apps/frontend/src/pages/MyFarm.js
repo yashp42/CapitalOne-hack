@@ -765,6 +765,14 @@ const MyFarm = () => {
                       <span className="text-gray-600">Irrigation:</span>
                       <span className="font-medium text-gray-800">{crop.irrigation_source}</span>
                     </div>
+                    {crop.derived?.expected_harvest_date && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Expected Harvest:</span>
+                        <span className="font-medium text-green-700">
+                          {new Date(crop.derived.expected_harvest_date).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Growth Progress */}
