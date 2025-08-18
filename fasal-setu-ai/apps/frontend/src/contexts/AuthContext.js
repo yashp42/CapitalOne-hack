@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth';
 import { authAPI, tokenManager } from '../services/api';
 
+
 const AuthContext = createContext();
 
 export const useAuth = () => {
