@@ -1,14 +1,2 @@
-{
-  "state": null,
-  "district": null,
-  "market": null,
-  "arrival_date": null,
-  "commodity": null,
-  "variety": null,
-  "min_price_rs_per_qtl": null,
-  "max_price_rs_per_qtl": null,
-  "modal_price_rs_per_qtl": null,
-  "arrival_qty": null,
-  "source_url": null,
-  "last_checked": null
-}
+// TODO: define schema
+{}

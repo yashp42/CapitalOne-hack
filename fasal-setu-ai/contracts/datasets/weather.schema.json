@@ -1,21 +1,2 @@
-{
-  "lat": null,
-  "lon": null,
-  "elevation": null,
-  "tz": null,
-  "run_at": null,
-  "time": [],
-  "tmin_c": [],
-  "tmax_c": [],
-  "rain_mm": [],
-  "et0_mm": [],
-  "wind_speed_10m_ms": null,
-  "rh_mean_pct": null,
-  "shortwave_radiation_mj_m2": null,
-  "time_hourly": [],
-  "temp_2m_c": [],
-  "precip_mm": [],
-  "et0_hourly_mm": [],
-  "wind_speed_hourly_10m_ms": [],
-  "rh_2m_pct": []
-}
+// TODO: define schema
+{}
