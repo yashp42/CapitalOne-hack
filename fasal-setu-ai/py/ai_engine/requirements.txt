@@ -30,3 +30,4 @@ duckduckgo-search>=3.9.3
 # Development/Jupyter tools
 jupyter>=1.0.0
 nbimporter>=0.3.1
+openpyxl

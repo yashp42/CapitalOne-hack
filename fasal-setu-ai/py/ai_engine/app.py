@@ -78,8 +78,8 @@ if __name__ == "__main__":  # Allow running via: python -m py.ai_engine.app
     import os
     
     # Get port from environment variable or use default
-    port = int(os.getenv("PORT", 8080))
-    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", 8000))
+    host = os.getenv("HOST", "127.0.0.1")
     
     # When this package is on PYTHONPATH, module path is 'ai_engine.app:app'
     # Fallback: if executed via python path/to/app.py, direct app object is used
