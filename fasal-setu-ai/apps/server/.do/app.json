@@ -1,0 +1,45 @@
+{
+  "name": "fasal-setu-backend",
+  "services": [
+    {
+      "name": "fs-server",
+      "github": {
+        "repo": "yashp42/fasal-setu-ai",
+        "branch": "main",
+        "deploy_on_push": true
+      },
+      "source_dir": "apps/server",
+      "dockerfile_path": "Dockerfile",
+      "http_port": 8080,
+      "instance_count": 1,
+      "instance_size_slug": "professional-xs",
+      "routes": [
+        {
+          "path": "/"
+        }
+      ],
+      "envs": [
+        {
+          "key": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "key": "PORT",
+          "value": "8080"
+        },
+        {
+          "key": "FRONTEND_URL",
+          "value": "https://fasalsetu.vercel.app"
+        },
+        {
+          "key": "ADDITIONAL_CORS_ORIGINS",
+          "value": ""
+        },
+        {
+          "key": "DEBUG_CORS",
+          "value": "true"
+        }
+      ]
+    }
+  ]
+}
