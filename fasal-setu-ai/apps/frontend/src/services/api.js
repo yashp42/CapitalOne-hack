@@ -405,10 +405,10 @@ export const conversationAPI = {
   },
 
   // Create a new conversation
-  createConversation: async (title, mode = 'public_advisor') => {
+  createConversation: async (title) => {
     return await apiRequest('/conversations', {
       method: 'POST',
-      body: JSON.stringify({ title, mode })
+      body: JSON.stringify({ title })
     });
   },
 

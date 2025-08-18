@@ -18,8 +18,7 @@ const ConversationSidebar = ({
   onClose, 
   currentConversationId, 
   onConversationSelect, 
-  onNewConversation,
-  chatMode 
+  onNewConversation
 }) => {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -72,7 +71,8 @@ const ConversationSidebar = ({
   // Handle new conversation
   const handleNewConversation = async () => {
     try {
-      const response = await conversationAPI.createConversation('New Conversation', chatMode);
+      // Create a new conversation - mode will be determined by server based on authentication
+      const response = await conversationAPI.createConversation('New Conversation');
       if (response.success) {
         onNewConversation(response.data);
         loadConversations(); // Refresh the list

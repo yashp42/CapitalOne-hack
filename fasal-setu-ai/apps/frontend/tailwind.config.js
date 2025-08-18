@@ -13,6 +13,9 @@ module.exports = {
       '2xl': '1536px',
     },
     extend: {
+      fontSize: {
+        '2xs': '0.625rem', // 10px
+      },
       fontFamily: {
         'sans': ['Poppins', 'sans-serif'],
       },

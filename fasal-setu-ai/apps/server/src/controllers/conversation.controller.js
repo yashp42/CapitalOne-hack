@@ -182,7 +182,15 @@ export const saveConversation = async (userId, messages, mode = "public_advisor"
         const existingMessageCount = conversation.messages.length;
         const newMessages = messages.slice(existingMessageCount);
         
-        conversation.messages.push(...newMessages);
+        // Transform new messages to match schema requirements
+        const transformedNewMessages = newMessages.map(msg => ({
+          role: msg.type === 'user' ? 'user' : 'assistant', // Convert 'bot' to 'assistant'
+          content: msg.content,
+          timestamp: msg.timestamp || new Date(),
+          metadata: msg.metadata || {}
+        }));
+        
+        conversation.messages.push(...transformedNewMessages);
         await conversation.save();
         return conversation;
       }
@@ -190,7 +198,7 @@ export const saveConversation = async (userId, messages, mode = "public_advisor"
 
     // Create new conversation
     const conversationMessages = messages.map(msg => ({
-      role: msg.type === 'user' ? 'user' : 'assistant',
+      role: msg.type === 'user' ? 'user' : 'assistant', // Convert 'bot' to 'assistant'
       content: msg.content,
       timestamp: msg.timestamp || new Date(),
       metadata: msg.metadata || {}

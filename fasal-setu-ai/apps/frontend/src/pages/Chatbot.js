@@ -40,7 +40,7 @@ const Chatbot = () => {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [showQuickQuestions, setShowQuickQuestions] = useState(true);
   const [userProfile, setUserProfile] = useState(null);
-  const [chatMode, setChatMode] = useState('public_advisor');
+  const [chatMode, setChatMode] = useState('public_advisor'); // UI display only - server determines actual mode
   const [connectionStatus, setConnectionStatus] = useState('connecting'); // connecting, connected, disconnected
   const [errorMessage, setErrorMessage] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
@@ -60,11 +60,15 @@ const Chatbot = () => {
             const profileResponse = await authAPI.getProfile();
             if (profileResponse.success && profileResponse.data) {
               setUserProfile(profileResponse.data);
+              // Set display mode to my_farm for personalized UI elements
+              // (actual API mode is determined server-side based on authentication)
               setChatMode('my_farm');
-              console.log('User profile loaded, switching to my_farm mode');
+              console.log('User profile loaded:', profileResponse.data);
+              // Log specific fields we need to ensure they're available
+              console.log('User ID in profile:', profileResponse.data.id);
             }
           } catch (error) {
-            console.log('Profile not available, using public advisor mode');
+            console.log('Profile not available, using standard UI');
           }
 
           // Load existing conversation if conversationId is provided
@@ -180,20 +184,32 @@ const Chatbot = () => {
         // Prepare request payload
         const requestPayload = {
           message: currentInput,
-          mode: chatMode,
           conversation: conversationHistory,
           conversationId: currentConversationId // Include current conversation ID
         };
 
-        // Add profile data for my_farm mode
-        if (chatMode === 'my_farm' && userProfile) {
+        // Add profile data when available
+        if (userProfile) {
+          // Provide profile in a simple, LLM-friendly format - just flat key-value pairs
           requestPayload.profile = {
-            location: userProfile.location ? `${userProfile.state}, ${userProfile.district}` : null,
-            farm_size: userProfile.farmSize,
-            soil_type: userProfile.soilType,
-            crops: userProfile.preferredCrops || [],
-            irrigation: userProfile.irrigationType
+            user_id: userProfile.id, // CRITICAL: Using 'id' not '_id' as returned by API
+            state: userProfile.state || userProfile.location?.state,
+            district: userProfile.district || userProfile.location?.district,
+            lat: userProfile.lat || userProfile.latitude || userProfile.location?.lat,
+            lon: userProfile.lon || userProfile.lng || userProfile.longitude || userProfile.location?.lon,
+            farm_size: userProfile.farmSize || userProfile.land_area_acres,
+            soil_type: userProfile.soilType || userProfile.soil_type,
+            irrigation: userProfile.irrigationType || userProfile.irrigation
           };
+          
+          // Remove undefined/null values for cleaner object
+          Object.keys(requestPayload.profile).forEach(key => {
+            if (requestPayload.profile[key] === undefined || requestPayload.profile[key] === null) {
+              delete requestPayload.profile[key];
+            }
+          });
+          
+          console.log("Sending simplified profile to AI engine:", requestPayload.profile);
         }
 
         console.log('Sending chat request:', requestPayload);
@@ -270,7 +286,7 @@ const Chatbot = () => {
     } else if (connectionStatus === 'disconnected') {
       setErrorMessage('AI services are currently unavailable. Please try again later.');
     }
-  }, [inputMessage, messages, chatMode, userProfile, connectionStatus, currentConversationId, conversationId, navigate]);
+  }, [inputMessage, messages, userProfile, connectionStatus, currentConversationId, conversationId, navigate]);
 
   const handleKeyPress = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -294,7 +310,8 @@ const Chatbot = () => {
 
   // Memoized quick questions to prevent re-renders
   const quickQuestions = useMemo(() => {
-    if (chatMode === 'my_farm' && userProfile) {
+    // Show personalized questions if user profile is available
+    if (userProfile) {
       return [
         "What crops should I plant this season?",
         "How to manage pests in my crops?",
@@ -302,6 +319,7 @@ const Chatbot = () => {
         "Market prices for my crops"
       ];
     } else {
+      // Default questions for unauthenticated users
       return [
         "What crops grow best in Karnataka?",
         "How to control white fly in cotton?", 
@@ -309,7 +327,7 @@ const Chatbot = () => {
         "Organic farming techniques"
       ];
     }
-  }, [chatMode, userProfile]);
+  }, [userProfile]);
 
   // Utility function to render text with bold formatting
   const renderFormattedText = (text) => {
@@ -380,35 +398,37 @@ const Chatbot = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
-          className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 p-3 md:p-4 mb-4 md:mb-6 shadow-xl flex-shrink-0"
+          className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 p-2 sm:p-3 md:p-4 mb-3 sm:mb-4 md:mb-6 shadow-xl flex-shrink-0"
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3 md:space-x-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4">
               {/* Sidebar Toggle Button */}
               {authAPI.isAuthenticated() && (
                 <button
                   onClick={() => setShowSidebar(true)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
                   title="Conversation History"
                 >
-                  <FaHistory className="text-gray-600" />
+                  <FaHistory className="text-gray-600 text-sm sm:text-base" />
                 </button>
               )}
               
-              <div className="relative">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center">
-                  <FaRobot className="text-white text-lg md:text-xl" />
+              <div className="relative flex-shrink-0">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center">
+                  <FaRobot className="text-white text-sm sm:text-lg md:text-xl" />
                 </div>
-                <div className={`absolute -top-1 -right-1 w-3 h-3 md:w-4 md:h-4 rounded-full border-2 border-white ${
+                <div className={`absolute -top-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 rounded-full border-2 border-white ${
                   connectionStatus === 'connected' ? 'bg-green-500 animate-pulse' :
                   connectionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
                   'bg-red-500'
                 }`}></div>
               </div>
-              <div className="flex-1">
-                <h1 className="text-gray-800 text-lg md:text-xl font-bold">AI Agricultural Assistant</h1>
-                <div className="flex items-center space-x-2">
-                  <p className={`text-xs md:text-sm ${
+              
+              <div className="flex flex-col sm:flex-row sm:items-center flex-1 min-w-0">
+                <h1 className="text-gray-800 text-base sm:text-lg md:text-xl font-bold truncate">AI Agricultural Assistant</h1>
+                
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5 sm:mt-0 sm:ml-3">
+                  <p className={`text-2xs sm:text-xs md:text-sm whitespace-nowrap ${
                     connectionStatus === 'connected' ? 'text-emerald-600' :
                     connectionStatus === 'connecting' ? 'text-yellow-600' :
                     'text-red-600'
@@ -418,24 +438,13 @@ const Chatbot = () => {
                      'Offline • Limited features'}
                   </p>
                   {chatMode === 'my_farm' && (
-                    <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                    <span className="text-2xs sm:text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                       Personalized
                     </span>
                   )}
                 </div>
               </div>
             </div>
-            
-            {/* Mode toggle button */}
-            {userProfile && (
-              <button
-                onClick={() => setChatMode(chatMode === 'my_farm' ? 'public_advisor' : 'my_farm')}
-                className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg transition-colors duration-200"
-                title={`Switch to ${chatMode === 'my_farm' ? 'public advisor' : 'personalized'} mode`}
-              >
-                {chatMode === 'my_farm' ? 'Public Mode' : 'My Farm'}
-              </button>
-            )}
           </div>
           
           {/* Error message display */}
@@ -444,15 +453,15 @@ const Chatbot = () => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mt-3 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2"
+              className="mt-2 sm:mt-3 p-1.5 sm:p-2 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2"
             >
-              <FaExclamationTriangle className="text-red-500 text-sm flex-shrink-0" />
-              <p className="text-red-700 text-xs">{errorMessage}</p>
+              <FaExclamationTriangle className="text-red-500 text-xs sm:text-sm flex-shrink-0" />
+              <p className="text-red-700 text-2xs sm:text-xs flex-1">{errorMessage}</p>
               <button
                 onClick={() => setErrorMessage(null)}
-                className="text-red-500 hover:text-red-700 ml-auto"
+                className="text-red-500 hover:text-red-700 flex-shrink-0"
               >
-                <FaTimes className="text-xs" />
+                <FaTimes className="text-2xs sm:text-xs" />
               </button>
             </motion.div>
           )}
@@ -696,7 +705,6 @@ const Chatbot = () => {
         currentConversationId={currentConversationId}
         onConversationSelect={handleConversationSelect}
         onNewConversation={handleNewConversation}
-        chatMode={chatMode}
       />
     </div>
   );

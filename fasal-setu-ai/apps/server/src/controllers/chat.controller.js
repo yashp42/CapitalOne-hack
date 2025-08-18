@@ -4,11 +4,14 @@ import asyncErrorHandler from "../util/asyncErrorHandler.js";
 import fetch from "node-fetch";
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 // Import the service clients
 import { callAIEngine } from "../services/aiEngine.client.js";
 import { callDecision } from "../services/decision.client.js";
 import { saveConversation } from "./conversation.controller.js";
+import User from "../models/user.model.js";
+import Crop from "../models/crop.model.js";
 
 // Gemini API configuration
 const GEMINI_API_KEY = process.env.GEMINI_API_SECRET || process.env.GEMINI_API_KEY;
@@ -64,14 +67,30 @@ const callAIEngineEnhanced = async (payload, requestId) => {
   
   console.log(`[${requestId}] Calling LLM1 at ${AI_ENGINE_URL}/act`);
   
+  // Log payload structure according to ActRequest schema
+  console.log(`[${requestId}] ActRequest payload structure verification:`);
+  console.log(`[${requestId}] - mode: ${payload.mode}`);
+  console.log(`[${requestId}] - profile present: ${payload.profile ? 'Yes' : 'No'}`);
+  if (payload.profile) {
+    console.log(`[${requestId}] - profile keys: ${Object.keys(payload.profile).join(', ')}`);
+    if (payload.profile.crops) {
+      console.log(`[${requestId}] - crops data: ${JSON.stringify(payload.profile.crops)}`);
+    } else {
+      console.log(`[${requestId}] - crops data: Not included in profile`);
+    }
+  }
+  
   const aiEngineCall = async () => {
+    const payloadJson = JSON.stringify(payload);
+    console.log(`[${requestId}] Raw payload being sent to AI Engine: ${payloadJson}`);
+    
     const response = await fetch(`${AI_ENGINE_URL}/act`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-Request-ID': requestId
       },
-      body: JSON.stringify(payload)
+      body: payloadJson
     });
 
     if (!response.ok) {
@@ -123,12 +142,17 @@ const callDecisionEngineEnhanced = async (payload, requestId) => {
 };
 
 // Gemini LLM2 client with enhanced error handling
-const callGeminiLLM2 = async (conversation, llm1Response, decisionOutput, requestId) => {
+const callGeminiLLM2 = async (conversation, llm1Response, decisionOutput, profile, requestId) => {
   if (!GEMINI_API_KEY || GEMINI_API_KEY === 'your-gemini-api-key') {
     throw new Error('Gemini API key not configured');
   }
 
-  console.log(`[${requestId}] Calling Gemini LLM2 (1.5 Pro)`);
+  console.log(`[${requestId}] Calling Gemini LLM2 (2.0 Flash)`);
+  
+  // Log profile information if available
+  if (profile) {
+    console.log(`[${requestId}] Including profile data in LLM2 request: ${JSON.stringify(profile)}`);
+  }
 
   // Extract useful information even from error responses
   const extractUsefulData = (data) => {
@@ -183,6 +207,9 @@ const callGeminiLLM2 = async (conversation, llm1Response, decisionOutput, reques
 
 **User Conversation:**
 ${conversationText}
+
+**User Profile:**
+${profile ? JSON.stringify(profile, null, 2) : 'No profile information available (public mode)'}
 
 **Available Context:**
 - Intent: ${llm1Data.intent || 'unknown'}
@@ -282,19 +309,26 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
   console.log(`[${requestId}] Chatbot flow started`);
 
   try {
-    // Validate input
-    const { message, mode = "public_advisor", profile = null, conversation = [] } = req.body;
+    // Extract base input
+    const { message, profile: requestProfile = null, conversation = [] } = req.body;
 
     if (!message || typeof message !== 'string') {
       throw new ApiError(400, "Message is required and must be a string");
     }
 
-    if (!["public_advisor", "my_farm"].includes(mode)) {
-      throw new ApiError(400, "Mode must be 'public_advisor' or 'my_farm'");
-    }
-
     if (!Array.isArray(conversation)) {
       throw new ApiError(400, "Conversation must be an array");
+    }
+    
+    // Always determine mode based on authentication status - this ensures consistent behavior
+    const isAuthenticated = getUserIdFromRequest(req) !== null;
+    const mode = isAuthenticated ? "my_farm" : "public_advisor";
+    
+    console.log(`[${requestId}] Using mode: ${mode} based on authentication status: ${isAuthenticated}`);
+    
+    // Validate mode value
+    if (!["public_advisor", "my_farm"].includes(mode)) {
+      throw new ApiError(400, "Mode must be 'public_advisor' or 'my_farm'");
     }
 
     console.log(`[${requestId}] Input - Mode: ${mode}, Message: ${message.substring(0, 50)}...`);
@@ -302,11 +336,172 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
     // Step 1: Build payload for LLM1
     const fullConversation = [...conversation, { role: "user", content: message }];
     
+    // Process profile data to create a simplified structure for the LLM
+    let simplifiedProfile = null;
+    if (mode === "my_farm") {
+        try {
+            let profileData = requestProfile;
+            // Extract userId from multiple possible sources
+            let userId = null;
+            
+            // 1. Try to get userId from requestProfile if available
+            if (profileData && profileData.user_id) {
+                userId = profileData.user_id;
+                console.log(`[${requestId}] Using userId from request profile: ${userId}`);
+            }
+            
+            // 2. Fallback to auth token if no userId in profile
+            if (!userId) {
+                userId = getUserIdFromRequest(req);
+                console.log(`[${requestId}] Using userId from auth token: ${userId}`);
+            }
+            
+            if (!profileData && isAuthenticated) {
+            if (userId) {
+                const user = await User.findById(userId).select('_id firstName lastName location land_area_acres preferred_language').lean();
+                if (user) {
+                // Build query similar to getUserCrops method
+                // Try different query approaches to ensure we get the crops
+                console.log(`[${requestId}] Attempting to find crops for user ID: ${userId}`);
+                
+                // Try with string ID
+                const queryString = { 
+                    owner_id: String(userId),
+                    status: "active"
+                };
+                
+                // Try with ObjectId
+                const queryObjectId = { 
+                    owner_id: new mongoose.Types.ObjectId(userId),
+                    status: "active"
+                };
+                
+                // Try both with $or
+                const queryOr = {
+                    $and: [
+                        { status: "active" },
+                        { $or: [
+                            { owner_id: String(userId) },
+                            { owner_id: new mongoose.Types.ObjectId(userId) }
+                        ]}
+                    ]
+                };
+                
+                // Attempt all query approaches
+                const cropsByString = await Crop.find(queryString).select('crop_name').lean();
+                const cropsByObjectId = await Crop.find(queryObjectId).select('crop_name').lean();
+                const cropsByOr = await Crop.find(queryOr).select('crop_name').lean();
+                
+                console.log(`[${requestId}] Crop query results - String ID: ${cropsByString.length}, ObjectId: ${cropsByObjectId.length}, OR query: ${cropsByOr.length}`);
+                
+                // Use the query that returns results, preferring the OR approach which is most robust
+                let userCrops = cropsByOr.length > 0 ? cropsByOr : 
+                               (cropsByObjectId.length > 0 ? cropsByObjectId : cropsByString);
+                               
+                console.log(`[${requestId}] Found ${userCrops.length} active crops for user ${userId}`);
+                
+                const cropNames = userCrops.map(c => c.crop_name).filter(Boolean);
+
+                profileData = {
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    location: user.location,
+                    state: user.location?.state,
+                    district: user.location?.district,
+                    lat: user.location?.lat,
+                    lon: user.location?.lon,
+                    farmSize: user.land_area_acres,
+                    preferredLanguage: user.preferred_language,
+                    crops: cropNames,
+                };
+                }
+            }
+            }
+
+            // If we have profile data but no crops, fetch them
+            if (profileData && !profileData.crops && userId) {
+                console.log(`[${requestId}] Profile data exists but without crops. Fetching crops using userId: ${userId}`);
+                
+                try {
+                    // Attempt to fetch crops with all possible ID formats
+                    const queryOr = {
+                        $and: [
+                            { status: "active" },
+                            { $or: [
+                                { owner_id: String(userId) },
+                                { owner_id: new mongoose.Types.ObjectId(userId) }
+                            ]}
+                        ]
+                    };
+                    
+                    const userCrops = await Crop.find(queryOr).select('crop_name').lean();
+                    console.log(`[${requestId}] Found ${userCrops.length} active crops for user ${userId}`);
+                    
+                    // Add crops to profile data
+                    profileData.crops = userCrops.map(c => c.crop_name).filter(Boolean);
+                }
+                catch (err) {
+                    console.error(`[${requestId}] Error fetching crops for profile: ${err.message}`);
+                }
+            }
+            
+            if (profileData) {
+            simplifiedProfile = {
+                state: profileData.state ?? profileData.location?.state ?? null,
+                district: profileData.district ?? profileData.location?.district ?? null,
+                lat: profileData.lat ?? profileData.latitude ?? profileData.location?.lat ?? null,
+                lon: profileData.lon ?? profileData.longitude ?? profileData.location?.lon ?? null,
+                farm_size: profileData.farmSize ?? profileData.land_area_acres ?? profileData.farm_size ?? null,
+                soil_type: profileData.soilType ?? profileData.soil_type ?? null,
+                crops: Array.isArray(profileData.crops) ? profileData.crops.filter(Boolean) : undefined,
+                irrigation: profileData.irrigationType ?? profileData.irrigation ?? null,
+            };
+
+            Object.keys(simplifiedProfile).forEach(k => simplifiedProfile[k] == null && delete simplifiedProfile[k]);
+            if (Array.isArray(simplifiedProfile.crops) && simplifiedProfile.crops.length === 0) delete simplifiedProfile.crops;
+
+            console.log(`[${requestId}] Using simplified profile for LLM: ${JSON.stringify(simplifiedProfile)}`);
+            } else {
+            console.log(`[${requestId}] No profile data available for my_farm mode`);
+            }
+        } catch (err) {
+            console.error(`[${requestId}] Error processing user profile:`, err);
+        }
+        }
+
+    
+    // Ensure crops are explicitly set if they exist
+    if (simplifiedProfile && Array.isArray(simplifiedProfile.crops) && simplifiedProfile.crops.length > 0) {
+      console.log(`[${requestId}] Found ${simplifiedProfile.crops.length} crops to include in payload: ${JSON.stringify(simplifiedProfile.crops)}`);
+    } else if (simplifiedProfile) {
+      console.log(`[${requestId}] No crops data found in profile. Setting default crop.`);
+      // Set at least one default crop if none were found to ensure we have crop data
+      simplifiedProfile.crops = ["rice"];
+      console.log(`[${requestId}] Default crop set: ${JSON.stringify(simplifiedProfile.crops)}`);
+    }
+    
     const llm1Payload = {
       query: fullConversation,
-      profile: mode === "public_advisor" ? null : profile,
+      profile: simplifiedProfile,
       mode: mode
     };
+
+    // Detailed logging of the payload being sent to AI Engine
+    console.log(`[${requestId}] Complete LLM1 payload being sent to AI Engine:`, JSON.stringify({
+      mode: llm1Payload.mode,
+      profile: llm1Payload.profile ? {
+        ...llm1Payload.profile,
+        crops: llm1Payload.profile.crops || []
+      } : null,
+      query_length: llm1Payload.query.length
+    }));
+    
+    // Specifically log the crops if they exist
+    if (simplifiedProfile && simplifiedProfile.crops) {
+      console.log(`[${requestId}] Crops in LLM1 payload:`, JSON.stringify(simplifiedProfile.crops));
+    } else {
+      console.log(`[${requestId}] No crops data in LLM1 payload - this should not happen after our fix`);
+    }
 
     let llm1StartTime = Date.now();
     
@@ -375,7 +570,7 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
     let finalAnswer;
     
     try {
-      finalAnswer = await callGeminiLLM2(fullConversation, llm1Response, decisionOutput, requestId);
+      finalAnswer = await callGeminiLLM2(fullConversation, llm1Response, decisionOutput, simplifiedProfile, requestId);
     } catch (error) {
       console.error(`[${requestId}] LLM2 (Gemini) call failed:`, error);
       
@@ -442,7 +637,7 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
         // Build complete conversation with the new messages
         const conversationToSave = [
           ...conversation.map(msg => ({
-            type: msg.role === 'user' ? 'user' : 'bot',
+            type: msg.role === 'user' ? 'user' : 'assistant',
             content: msg.content,
             timestamp: new Date(msg.timestamp || Date.now())
           })),
@@ -452,7 +647,7 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
             timestamp: new Date()
           },
           {
-            type: 'bot',
+            type: 'assistant',
             content: finalAnswer,
             timestamp: new Date(),
             metadata: {
