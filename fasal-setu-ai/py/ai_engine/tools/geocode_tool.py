@@ -5,8 +5,10 @@ Looks up centroid lat/lon for (state, district) from:
   data/static_json/geo/district_centroids.json
 
 Input args (must use one of these formats):
-  - {"state": "...", "district": "..."}  # Both state and district are required
-  - {"query": "District, State"}         # Will parse "district, state" in either order
+    - {"state": "...", "district": "..."}  # Preferred: explicit pair
+    - {"query": "District, State"}         # Will parse "district, state" in either order
+
+Fallback (low confidence) supported ONLY for district-only when LLM omitted state (state inferred).
 
 Returns (common envelope):
 {
@@ -16,8 +18,7 @@ Returns (common envelope):
   "source_stamp": { "type":"local_dataset", "path":"data/static_json/geo/district_centroids.json" }
 }
 
-Note: When only a district name is known, the LLM should determine the appropriate
-state for that district before calling this tool.
+Note: Planner SHOULD still provide both district + state. Do NOT rely on state-only calls; choose a district (e.g. capital) instead.
 """
 from __future__ import annotations
 
@@ -140,29 +141,62 @@ def run(args: Dict[str, Any]) -> Dict[str, Any]:
     district = args.get("district")
     query = args.get("query")
 
+    parsed_variant_tried = False
     if (not state or not district) and query:
-        # try to parse a freeform "District, State"
+        # try to parse a freeform "District, State" (or "State, District")
         a, b = _parse_query(query)
-        # try both interpretations
         if a and b:
-            # (district=a, state=b) first
-            district = district or a
-            state = state or b
+            # attempt interpretation 1: district=a, state=b
+            if not district:
+                district = a
+            if not state:
+                state = b
+            parsed_variant_tried = True
 
-    record = None
-    confidence = 0.0
+    record: Optional[Dict[str, Any]] = None
+    confidence: float = 0.0
 
+    # Try exact with current ordering
     if state and district:
         record = _find_exact(state, district)
-        confidence = 0.95 if record else 0.0
-        
-    # Removed district-only inference - LLM should determine state
+        if record:
+            confidence = 0.95
+    
+    # If not found and we parsed a freeform query, try swapped order (user may have given State,District)
+    if not record and parsed_variant_tried and state and district:
+        record = _find_exact(district, state)  # swap
+        if record:
+            # swap semantics since we mis-assigned earlier
+            state, district = district, state
+            confidence = 0.92
+
+    # OPTIONAL: district-only fuzzy fallback (provide lower confidence) when LLM failed to supply state
+    if not record and district and not state:
+        dist_res = _best_by_district_only(district)
+        if dist_res:
+            record, confidence = dist_res
+            state = record.get("state")
+            # downgrade confidence because state inferred
+            confidence = min(confidence, 0.75)
+
 
     if not record:
-        if district and not state:
-            raise ValueError("District provided without state. Both 'state' and 'district' are required for geocoding.")
-        else:
-            raise ValueError("Could not geocode location. Provide 'state' and 'district', or 'query'='District, State'.")
+        # Build informative error
+        missing_parts = []
+        if not state:
+            missing_parts.append("state")
+        if not district:
+            missing_parts.append("district")
+        if missing_parts:
+            raise ValueError(
+                "Missing required location component(s): " + ", ".join(missing_parts) + ". "
+                "Provide both 'state' and 'district' or a free-text 'query' like 'District, State'. "
+                "State-only and district-only fallbacks failed to resolve a centroid."
+            )
+        raise ValueError(
+            f"Could not geocode combination (state='{state}', district='{district}'). "
+            "Check spelling or specify as 'District, State'."
+        )
 
     lat = record.get("lat")
     lon = record.get("lon")
