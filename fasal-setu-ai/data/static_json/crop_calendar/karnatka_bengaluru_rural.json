@@ -1,0 +1,69 @@
+{
+  "state": "Karnataka",
+  "district": "Bengaluru Rural",
+  "agro_climatic_zone": "Eastern Dry Zone",
+  "source_type": "CRIDA_contingency",
+  "source_url": null,
+  "doc_date": "2011-01-31",
+  "last_checked": "2025-08-13",
+  "normal_annual_rain_mm": 859.0,
+  "rainfall_pattern_notes": "Bimodal rainfall pattern with pre-monsoon showers in April-May and main rains from June to October",
+  "dominant_soils": ["red sandy loam", "lateritic"],
+  "crops": [
+    {
+      "crop_name": "finger millet",
+      "season": "Kharif",
+      "planting_window": { "start": "06-01", "end": "07-15" },
+      "stages": ["sowing", "vegetative", "flowering", "grain filling", "maturity"],
+      "stage_lengths_days": [10, 40, 15, 20, 15],
+      "ideal_temp_c": { "range_day": [25, 30], "notes": "Warm and moist conditions preferred" },
+      "soil_ideal": { "text": "Well-drained red sandy loam soils", "ph_range": [6.0, 7.5] },
+      "irrigation_ideal": { "critical_stages": ["flowering", "grain filling"], "seasonal_requirement_mm": 350, "notes": "Protective irrigation needed during dry spells" },
+      "weather_ideal": { "notes": ["Avoid waterlogging", "Good sunlight during vegetative stage"] },
+      "contingencies": [
+        {
+          "hazard": "delayed_onset",
+          "stage_window": "sowing",
+          "measures": ["Select short-duration varieties", "Adopt dry seeding"],
+          "alt_crops": ["cowpea", "horse gram"],
+          "inputs_support_notes": null
+        }
+      ],
+      "market_mapping": { "commodity_names": ["finger millet", "ragi"] },
+      "data_gaps": [],
+      "sources": ["src1"]
+    },
+    {
+      "crop_name": "pigeonpea",
+      "season": "Kharif",
+      "planting_window": { "start": "06-15", "end": "07-15" },
+      "stages": ["sowing", "vegetative", "flowering", "pod development", "maturity"],
+      "stage_lengths_days": [15, 60, 20, 30, 20],
+      "ideal_temp_c": { "range_day": [25, 30], "notes": "Requires warm climate with moderate rainfall" },
+      "soil_ideal": { "text": "Deep red sandy loam soils with good drainage", "ph_range": [6.5, 7.5] },
+      "irrigation_ideal": { "critical_stages": ["flowering", "pod development"], "seasonal_requirement_mm": 400, "notes": "Supplementary irrigation during dry spells improves yield" },
+      "weather_ideal": { "notes": ["Avoid prolonged waterlogging", "Dry weather at maturity"] },
+      "contingencies": [
+        {
+          "hazard": "mid_season_drought",
+          "stage_window": "flowering to pod development",
+          "measures": ["Provide one irrigation", "Mulching to conserve moisture"],
+          "alt_crops": ["cowpea"],
+          "inputs_support_notes": null
+        }
+      ],
+      "market_mapping": { "commodity_names": ["pigeonpea", "tur"] },
+      "data_gaps": [],
+      "sources": ["src1"]
+    }
+  ],
+  "dataset_sources": [
+    {
+      "key": "src1",
+      "title": "District Agricultural Contingency Plan - Bengaluru Rural",
+      "url": "file-T65vdDoBGrUU3a4Zb2UyWG",
+      "tier": "primary",
+      "last_checked": "2025-08-13"
+    }
+  ]
+}

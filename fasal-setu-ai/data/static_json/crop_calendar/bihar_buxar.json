@@ -1,0 +1,76 @@
+{
+  "state": "Bihar",
+  "district": "Buxar",
+  "agro_climatic_zone": "North West Alluvial Plain Zone",
+  "source_type": "CRIDA_contingency",
+  "source_url": null,
+  "doc_date": "2013-12-28",
+  "last_checked": "2025-08-13",
+  "normal_annual_rain_mm": 1054,
+  "rainfall_pattern_notes": "Monsoon rainfall concentrated from late June to September",
+  "dominant_soils": ["alluvial", "sandy loam", "loam"],
+  "crops": [
+    {
+      "crop_name": "rice",
+      "season": "Kharif",
+      "planting_window": { "start": "06-20", "end": "07-15" },
+      "stages": ["nursery", "transplanting", "tillering", "flowering", "grain filling", "maturity"],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": [25, 35], "notes": "Warm, humid climate preferred" },
+      "soil_ideal": { "text": "Fertile alluvial soils with good water retention", "ph_range": [5.5, 7.5] },
+      "irrigation_ideal": { "critical_stages": ["transplanting", "tillering", "flowering", "grain filling"], "seasonal_requirement_mm": 1200, "notes": "Avoid water stress during critical growth stages" },
+      "weather_ideal": { "notes": ["High humidity during growth", "Low temperature during maturity preferred"] },
+      "contingencies": [
+        {
+          "hazard": "delayed_onset",
+          "stage_window": "nursery",
+          "measures": ["Use short duration varieties", "Raise nursery with limited irrigation"],
+          "alt_crops": ["maize", "pigeonpea"],
+          "inputs_support_notes": null
+        },
+        {
+          "hazard": "mid_season_drought",
+          "stage_window": "tillering to flowering",
+          "measures": ["Life-saving irrigation", "Mulching to conserve soil moisture"],
+          "alt_crops": null,
+          "inputs_support_notes": null
+        }
+      ],
+      "market_mapping": { "commodity_names": ["paddy", "rice"] },
+      "data_gaps": [],
+      "sources": ["src1"]
+    },
+    {
+      "crop_name": "wheat",
+      "season": "Rabi",
+      "planting_window": { "start": "11-15", "end": "12-10" },
+      "stages": ["germination", "crown root initiation", "tillering", "flowering", "grain filling", "maturity"],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": [20, 25], "notes": "Cool climate preferred during growth, warmer during maturity" },
+      "soil_ideal": { "text": "Well-drained loam to clay loam soils", "ph_range": [6.0, 7.5] },
+      "irrigation_ideal": { "critical_stages": ["crown root initiation", "tillering", "flowering", "grain filling"], "seasonal_requirement_mm": 450, "notes": "Avoid stress during reproductive stages" },
+      "weather_ideal": { "notes": ["Cool, dry weather for optimal yield"] },
+      "contingencies": [
+        {
+          "hazard": "early_season_drought",
+          "stage_window": "germination",
+          "measures": ["Use drought-tolerant varieties", "Irrigation if available"],
+          "alt_crops": ["chickpea", "lentil"],
+          "inputs_support_notes": null
+        }
+      ],
+      "market_mapping": { "commodity_names": ["wheat"] },
+      "data_gaps": [],
+      "sources": ["src1"]
+    }
+  ],
+  "dataset_sources": [
+    {
+      "key": "src1",
+      "title": "District Agriculture Contingency Plan - Buxar, Bihar",
+      "url": "file-3Yb7y6exWaeqnS3sy8xA8p",
+      "tier": "primary",
+      "last_checked": "2025-08-13"
+    }
+  ]
+}

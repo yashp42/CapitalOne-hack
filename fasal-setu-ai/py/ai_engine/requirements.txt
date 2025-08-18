@@ -1,3 +1,32 @@
-fastapi==0.115.0
-uvicorn[standard]==0.30.6
-pydantic==2.8.2
+# Core FastAPI requirements
+fastapi>=0.104.0
+uvicorn>=0.23.0
+pydantic>=2.4.0
+
+# LangChain and LLM dependencies
+langchain>=0.0.312
+langchain-core>=0.1.5
+langchain-community>=0.0.10
+langchain-text-splitters>=0.0.1
+langchain-openai>=0.0.2
+langchain-google-genai>=0.0.3
+
+# Vector database
+pinecone-client>=2.2.4
+
+# Other utilities
+python-dotenv>=1.0.0
+requests>=2.31.0
+tqdm>=4.65.0
+pandas>=2.1.1
+numpy>=1.24.0
+python-dateutil>=2.8.2
+
+# Web utilities
+beautifulsoup4>=4.12.2
+lxml>=4.9.3
+duckduckgo-search>=3.9.3
+
+# Development/Jupyter tools
+jupyter>=1.0.0
+nbimporter>=0.3.1

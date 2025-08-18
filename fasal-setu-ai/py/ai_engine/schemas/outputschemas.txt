@@ -1,0 +1,447 @@
+# AI Engine Tool Output Schemas
+# ===============================
+# This document defines the standardized output format for each tool in the AI Engine.
+# All tools return a consistent envelope structure with "data" and "source_stamp" fields.
+
+## Common Envelope Structure
+```json
+{
+  "data": {}, // Tool-specific data structure
+  "source_stamp": {}, // Source metadata
+  "error": "string", // Optional error message if tool fails
+  "_meta": {} // Optional metadata
+}
+```
+
+## Tool-Specific Schemas
+
+### 1. geocode_tool
+**Function**: `run(args)` 
+**Purpose**: Convert state/district to lat/lon coordinates
+
+**Output**:
+```json
+{
+  "data": {
+    "lat": 25.61,
+    "lon": 85.14,
+    "matched_state": "Bihar",
+    "matched_district": "Patna",
+    "confidence": 0.95,
+    "method": "static_centroid"
+  },
+  "source_stamp": {
+    "type": "local_dataset",
+    "path": "data/static_json/geo/district_centroids.json"
+  }
+}
+```
+
+### 2. weather_outlook (weather_api.py)
+**Function**: `weather_lookup(args)`
+**Purpose**: Get weather forecast data for location
+
+**Output**:
+```json
+{
+  "data": {
+    "lat": 25.61,
+    "lon": 85.14,
+    "elevation": 53.0,
+    "tz": "Asia/Kolkata",
+    "run_at": "2025-08-18T10:30:00Z",
+    "time": ["2025-08-18", "2025-08-19", "2025-08-20"],
+    "tmax_c": [32.5, 33.1, 31.8],
+    "tmin_c": [24.2, 25.0, 23.8],
+    "rain_mm": [0.0, 5.2, 12.5],
+    "et0_mm": [4.2, 3.8, 3.1],
+    "time_hourly": ["2025-08-18T00:00", "2025-08-18T01:00", "..."],
+    "temp_2m_c": [26.5, 26.1, 25.8],
+    "precip_mm": [0.0, 0.0, 0.2],
+    "et0_hourly_mm": [0.15, 0.12, 0.08],
+    "wind_speed_hourly_10m_ms": [2.1, 1.8, 2.3],
+    "rh_2m_pct": [78, 82, 85]
+  },
+  "source_stamp": {
+    "provider": "open-meteo",
+    "url": "https://api.open-meteo.com/v1/forecast?...",
+    "window": {"start_date": "2025-08-18", "end_date": "2025-08-20"},
+    "issued_utc": "2025-08-18T10:30:00Z"
+  }
+}
+```
+
+### 3. soil_api
+**Function**: `soil_api(args)`
+**Purpose**: Get soil properties and conditions
+
+**Output (SoilGrids)**:
+```json
+{
+  "data": {
+    "lat": 25.61,
+    "lon": 85.14,
+    "ph_0_5cm": 6.8,
+    "ph_15_30cm": 7.1,
+    "clay_0_5cm": 25,
+    "sand_0_5cm": 45,
+    "silt_0_5cm": 30,
+    "cec_0_5cm": 18.5,
+    "soc_0_5cm": 1.2,
+    "bulk_density_0_5cm": 1.35
+  },
+  "source_stamp": {
+    "type": "soil",
+    "provider": "soilgrids",
+    "executed_at": "2025-08-18T10:30:00Z",
+    "api_url": "https://rest.isric.org/soilgrids/v2.0/properties"
+  }
+}
+```
+
+**Output (OpenMeteo)**:
+```json
+{
+  "data": {
+    "lat": 25.61,
+    "lon": 85.14,
+    "soil_moisture_0_to_10cm": [0.25, 0.23, 0.28],
+    "soil_temperature_0cm": [28.5, 29.1, 27.8],
+    "time": ["2025-08-18T00:00", "2025-08-18T06:00", "2025-08-18T12:00"]
+  },
+  "source_stamp": {
+    "type": "soil",
+    "provider": "openmeteo", 
+    "executed_at": "2025-08-18T10:30:00Z"
+  }
+}
+```
+
+### 4. regional_crop_info
+**Function**: `get_regional_crop_info(args)`
+**Purpose**: Get comprehensive crop calendar and regional information
+
+**Output**:
+```json
+{
+  "data": {
+    "state": "Bihar",
+    "district": "Patna",
+    "agro_climatic_zone": "Middle Gangetic Plains",
+    "source_type": "government",
+    "source_url": "https://...",
+    "doc_date": "2024-01-15",
+    "last_checked": "2025-08-18",
+    "normal_annual_rain_mm": 1200,
+    "rainfall_pattern_notes": "Monsoon dependent",
+    "dominant_soils": ["alluvial", "clay loam"],
+    "crops": [
+      {
+        "crop_name": "rice",
+        "season": "kharif",
+        "planting_window": {"start": "June 15", "end": "July 15"},
+        "stages": ["nursery", "transplanting", "tillering", "flowering", "maturity"],
+        "stage_lengths_days": [20, 15, 45, 30, 30],
+        "ideal_temp_c": {"range_day": "25-35", "notes": "Heat sensitive during flowering"},
+        "soil_ideal": {"text": "Clay loam, well drained", "ph_range": "6.0-7.5"},
+        "irrigation_ideal": {
+          "critical_stages": ["transplanting", "flowering"],
+          "seasonal_requirement_mm": 1200,
+          "notes": "Maintain 2-5cm standing water"
+        },
+        "weather_ideal": {"notes": ["Avoid drought during flowering", "Good drainage during harvest"]},
+        "contingencies": [
+          {
+            "hazard": "drought",
+            "stage_window": "flowering",
+            "measures": ["emergency irrigation", "foliar spray"],
+            "alt_crops": "maize",
+            "inputs_support_notes": "Government subsidy available"
+          }
+        ],
+        "market_mapping": {"commodity_names": ["paddy", "rice"]},
+        "data_gaps": [],
+        "sources": ["ICAR", "State Agriculture Dept"]
+      }
+    ],
+    "dataset_sources": [
+      {
+        "key": "icar_2024",
+        "title": "ICAR Crop Calendar",
+        "url": "https://icar.org.in/...",
+        "tier": "primary",
+        "last_checked": "2025-08-18"
+      }
+    ]
+  },
+  "source_stamp": {
+    "type": "static_pack",
+    "path": "data/static_json/crop_calendar",
+    "files": ["bihar_patna.json"]
+  },
+  "matched": {
+    "state": "Bihar",
+    "district": "Patna", 
+    "crop": "rice",
+    "match_method": "exact",
+    "confidence": 0.95
+  },
+  "available": {
+    "crops": ["rice", "wheat", "maize", "sugarcane"],
+    "states": ["Bihar"],
+    "districts": ["Patna"]
+  },
+  "_meta": {
+    "fields": ["region_info", "crop_info"],
+    "route": "static_exact"
+  }
+}
+```
+
+### 5. prices_fetch (mandi_api.py)
+**Function**: `prices_fetch(args)`
+**Purpose**: Get mandi/market prices for commodities
+
+**Output**:
+```json
+{
+  "data": {
+    "rows": [
+      {
+        "state": "Bihar",
+        "district": "Patna",
+        "market": "Patna Mandi",
+        "arrival_date": "2025-08-17",
+        "commodity": "paddy",
+        "variety": "Common",
+        "min_price_rs_per_qtl": 2100,
+        "max_price_rs_per_qtl": 2350,
+        "modal_price_rs_per_qtl": 2225,
+        "arrival_qty": 150.5
+      }
+    ],
+    "summary": {
+      "total_records": 15,
+      "avg_modal_price": 2225,
+      "price_range": {"min": 2100, "max": 2350},
+      "latest_date": "2025-08-17"
+    }
+  },
+  "source_stamp": {
+    "type": "api",
+    "provider": "data.gov.in",
+    "url": "https://api.data.gov.in/resource/...",
+    "executed_at": "2025-08-18T10:30:00Z",
+    "query_params": {
+      "state": "Bihar",
+      "commodity": "paddy"
+    }
+  }
+}
+```
+
+### 6. rag_search
+**Function**: `rag_search(args)`
+**Purpose**: Search relevant passages from knowledge base
+
+**Output**:
+```json
+{
+  "data": {
+    "passages": [
+      {
+        "text": "Rice irrigation should be done during flowering stage...",
+        "score": 0.85,
+        "metadata": {
+          "source": "crop_calendar/bihar_patna.json",
+          "crop": "rice",
+          "section": "irrigation_ideal"
+        }
+      },
+      {
+        "text": "Optimal soil moisture for rice is 80-90%...",
+        "score": 0.78,
+        "metadata": {
+          "source": "soil_management.pdf",
+          "page": 15
+        }
+      }
+    ],
+    "query": "rice irrigation timing",
+    "total_found": 25,
+    "returned": 2
+  },
+  "source_stamp": {
+    "type": "vector_search",
+    "provider": "rag",
+    "index_path": "data/vectors/rag.index",
+    "executed_at": "2025-08-18T10:30:00Z"
+  }
+}
+```
+
+### 7. web_search
+**Function**: `web_search(args)`
+**Purpose**: Search current web information
+
+**Output**:
+```json
+{
+  "data": {
+    "results": [
+      {
+        "title": "Rice Market Prices Today | Latest Rates",
+        "url": "https://example.com/rice-prices",
+        "snippet": "Current rice prices in Bihar markets show upward trend...",
+        "source": "ddg"
+      }
+    ],
+    "answer_box": {
+      "title": "Rice Price Today",
+      "snippet": "Average rice price: ₹2,225 per quintal",
+      "source": "market_website"
+    }
+  },
+  "source_stamp": {
+    "type": "search",
+    "providers": ["ddg"],
+    "executed_at": "2025-08-18T10:30:00Z",
+    "args_used": {
+      "k": 5,
+      "recency_days": 7,
+      "region": "in-en",
+      "safesearch": "moderate"
+    }
+  }
+}
+```
+
+### 8. storage_find
+**Function**: `storage_find(args)`
+**Purpose**: Find storage/warehouse facilities
+
+**Output**:
+```json
+{
+  "data": {
+    "wdra": [
+      {
+        "warehouse_name": "Central Warehouse Corporation",
+        "location": "Patna, Bihar",
+        "capacity_mt": 5000,
+        "storage_type": "covered",
+        "commodities": ["rice", "wheat", "maize"],
+        "contact": {
+          "phone": "+91-xxx-xxx-xxxx",
+          "address": "NH-31, Patna - 800001"
+        },
+        "distance_km": 5.2,
+        "lat": 25.62,
+        "lon": 85.15
+      }
+    ]
+  },
+  "source_stamp": {
+    "type": "static_pack",
+    "provider": "wdra",
+    "path": "data/static_json/storage/wdra",
+    "executed_at": "2025-08-18T10:30:00Z"
+  }
+}
+```
+
+### 9. pesticide_lookup
+**Function**: `pesticide_lookup(args)`
+**Purpose**: Find approved pesticides for crop/pest combinations
+
+**Output**:
+```json
+{
+  "data": {
+    "recommendations": [
+      {
+        "active_ingredient": "Chlorpyrifos",
+        "trade_names": ["Dursban", "Lorsban"],
+        "formulation": "20% EC",
+        "dosage": "2.5-3.0 ml/L",
+        "target_pest": "Brown Plant Hopper",
+        "target_crop": "rice",
+        "preharvest_interval_days": 21,
+        "toxicity_class": "Class II",
+        "mode_of_action": "Organophosphate",
+        "application_method": "foliar spray",
+        "max_applications": 2,
+        "notes": "Apply during evening hours"
+      }
+    ],
+    "safety_notes": [
+      "Use protective equipment",
+      "Do not spray during flowering"
+    ]
+  },
+  "source_stamp": {
+    "type": "static_pack",
+    "provider": "pesticides_db",
+    "path": "data/static_json/pesticides",
+    "executed_at": "2025-08-18T10:30:00Z"
+  }
+}
+```
+
+### 10. policy_match
+**Function**: `policy_match(args)`
+**Purpose**: Find relevant government schemes and policies
+
+**Output**:
+```json
+{
+  "data": {
+    "schemes": [
+      {
+        "scheme": "PM-KISAN",
+        "description": "Direct income support to farmers",
+        "benefit": "₹6,000 per year in 3 installments",
+        "eligibility": "All farmer families with cultivable land",
+        "category": "income_support",
+        "level": "central",
+        "state": "All States",
+        "link": "https://pmkisan.gov.in",
+        "tags": ["direct_benefit", "income_support"],
+        "last_updated": "2025-01-15"
+      }
+    ],
+    "query_matched": {
+      "category": "income_support",
+      "state": "Bihar",
+      "keywords": ["farmer", "subsidy"]
+    }
+  },
+  "source_stamp": {
+    "type": "static_pack",
+    "provider": "policy_db",
+    "path": "data/static_json/policy",
+    "executed_at": "2025-08-18T10:30:00Z"
+  }
+}
+```
+
+## Error Responses
+When any tool fails, it returns:
+```json
+{
+  "data": null,
+  "error": "error_description",
+  "source_stamp": {
+    "type": "tool_name",
+    "provider": "provider_name",
+    "executed_at": "2025-08-18T10:30:00Z"
+  }
+}
+```
+
+## Metadata Fields
+- `_meta`: Additional processing information
+- `matched`: Information about what was matched in the query
+- `available`: Available options for further queries
+- `confidence`: Confidence score for matches (0.0 to 1.0)
+- `method`: Method used for processing/matching
