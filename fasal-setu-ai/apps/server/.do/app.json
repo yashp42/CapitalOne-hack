@@ -33,7 +33,11 @@
         },
         {
           "key": "ADDITIONAL_CORS_ORIGINS",
-          "value": ""
+          "value": "http://localhost:3000,https://*.vercel.app"
+        },
+        {
+          "key": "ALLOW_ALL_ORIGINS",
+          "value": "true"
         },
         {
           "key": "DEBUG_CORS",

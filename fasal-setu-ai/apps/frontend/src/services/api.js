@@ -1,4 +1,8 @@
+// API URL configuration with fallbacks
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+
+// Log the API URL to help with debugging
+console.log(`API configured with base URL: ${API_BASE_URL}`);
 
 // Enhanced token management using both localStorage and cookies as fallback
 const tokenManager = {

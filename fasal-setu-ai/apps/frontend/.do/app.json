@@ -1,0 +1,33 @@
+{
+  "name": "fasal-setu-frontend",
+  "static_sites": [
+    {
+      "name": "fs-frontend",
+      "github": {
+        "repo": "yashp42/fasal-setu-ai",
+        "branch": "main",
+        "deploy_on_push": true
+      },
+      "source_dir": "apps/frontend",
+      "output_dir": "build",
+      "build_command": "npm install && npm run build",
+      "routes": [
+        {
+          "path": "/"
+        }
+      ],
+      "envs": [
+        {
+          "key": "REACT_APP_API_URL",
+          "value": "https://fasal-setu-ai-server.ondigitalocean.app/api"
+        }
+      ],
+      "cors": {
+        "allow_origins": ["*"],
+        "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["*"],
+        "allow_credentials": true
+      }
+    }
+  ]
+}
