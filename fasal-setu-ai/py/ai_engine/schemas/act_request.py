@@ -2,7 +2,10 @@ from typing import Any, Dict, List, Literal, Union
 
 from pydantic import BaseModel
 
-from py.ai_engine.graph.state import Message
+try:  # package import
+    from ..graph.state import Message  # type: ignore
+except Exception:  # fallback when run as script
+    from graph.state import Message  # type: ignore
 
 
 class ActRequest(BaseModel):

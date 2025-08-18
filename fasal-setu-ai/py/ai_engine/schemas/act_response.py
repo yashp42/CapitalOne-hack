@@ -2,7 +2,10 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
 
-from py.ai_engine.graph.state import ToolCall
+try:  # package context
+    from ..graph.state import ToolCall  # type: ignore
+except Exception:  # script context
+    from graph.state import ToolCall  # type: ignore
 
 
 class ActResponse(BaseModel):

@@ -89,11 +89,15 @@ BATCH_SIZE            = int(os.getenv("BATCH_SIZE", "64"))
 # --------------------------------------------------------------------------------------
 # Pinecone client + Hosted Embeddings
 # --------------------------------------------------------------------------------------
+_RAG_DISABLED_REASON: Optional[str] = None
 if not PINECONE_API_KEY:
-    print("ERROR: PINECONE_API_KEY missing. Add it to your .env.", file=sys.stderr)
-    sys.exit(1)
-
-pc = Pinecone(api_key=PINECONE_API_KEY)
+    _RAG_DISABLED_REASON = "missing_api_key"
+    print("[rag_search] WARNING: PINECONE_API_KEY missing. RAG search disabled (stub mode).", file=sys.stderr)
+try:
+    pc = Pinecone(api_key=PINECONE_API_KEY) if PINECONE_API_KEY else None  # type: ignore
+except Exception as e:  # network / auth / lib issues
+    _RAG_DISABLED_REASON = f"pinecone_init_failed:{e.__class__.__name__}"
+    pc = None  # type: ignore
 
 def _as_vectors(embed_out) -> List[List[float]]:
     """
@@ -123,6 +127,9 @@ def _as_vectors(embed_out) -> List[List[float]]:
 def embed_texts(texts: List[str]) -> List[List[float]]:
     if not texts:
         return []
+    if pc is None or _RAG_DISABLED_REASON:
+        # return zero-vectors (length 0) to keep downstream logic simple
+        return [[0.0] * (EMBED_DIM or 1) for _ in texts]
     out = pc.inference.embed(
         model=EMBED_MODEL,
         inputs=texts,
@@ -131,30 +138,36 @@ def embed_texts(texts: List[str]) -> List[List[float]]:
     return _as_vectors(out)
 
 # Probe dimension
-try:
-    _probe_vec = embed_texts(["__probe__"])[0]
-    EMBED_DIM = len(_probe_vec)
-except Exception as e:
-    print("ERROR: Failed to get embedding dimension. Check model access & env.")
-    raise
+if pc is not None and _RAG_DISABLED_REASON is None:
+    try:
+        _probe_vec = embed_texts(["__probe__"])[0]
+        EMBED_DIM = len(_probe_vec)
+    except Exception as e:
+        _RAG_DISABLED_REASON = f"embed_probe_failed:{e.__class__.__name__}"
+        pc = None  # disable
+else:
+    EMBED_DIM = 0
 
 # Ensure index exists
-def _ensure_index() -> None:
-    existing = {ix["name"] for ix in pc.list_indexes()}
-    if PINECONE_INDEX not in existing:
-        print(f"Creating index '{PINECONE_INDEX}' (dim={EMBED_DIM}, cosine) on {PINECONE_CLOUD}/{PINECONE_REGION} ...")
-        pc.create_index(
-            name=PINECONE_INDEX,
-            dimension=EMBED_DIM,
-            metric="cosine",
-            spec=ServerlessSpec(cloud=PINECONE_CLOUD, region=PINECONE_REGION),
-        )
-    else:
-        # optional: could print existing info
-        pass
-
-_ensure_index()
-index = pc.Index(PINECONE_INDEX)
+if pc is not None and _RAG_DISABLED_REASON is None:
+    def _ensure_index() -> None:  # type: ignore[func-returns-value]
+        existing = {ix["name"] for ix in pc.list_indexes()}  # type: ignore[union-attr]
+        if PINECONE_INDEX not in existing:
+            print(f"[rag_search] Creating index '{PINECONE_INDEX}' (dim={EMBED_DIM}, cosine) on {PINECONE_CLOUD}/{PINECONE_REGION} ...")
+            pc.create_index(  # type: ignore[union-attr]
+                name=PINECONE_INDEX,
+                dimension=EMBED_DIM,
+                metric="cosine",
+                spec=ServerlessSpec(cloud=PINECONE_CLOUD, region=PINECONE_REGION),
+            )
+    try:
+        _ensure_index()
+        index = pc.Index(PINECONE_INDEX)  # type: ignore[union-attr]
+    except Exception as e:
+        _RAG_DISABLED_REASON = f"index_init_failed:{e.__class__.__name__}"
+        pc = None  # disable
+else:
+    index = None  # type: ignore
 
 # --------------------------------------------------------------------------------------
 # Loaders (.txt/.json) + chunking
@@ -315,6 +328,9 @@ def upsert_chunks(chunks: List[Dict[str, Any]],
                   namespace: Optional[str] = None,
                   batch_size: int = BATCH_SIZE,
                   max_retries: int = 5) -> int:
+    if pc is None or _RAG_DISABLED_REASON:
+        print(f"[rag_search] upsert skipped (disabled: {_RAG_DISABLED_REASON})")
+        return 0
     ns = namespace or PINECONE_NS
     total = 0
     for batch in _batched(chunks, batch_size):
@@ -338,6 +354,8 @@ def upsert_chunks(chunks: List[Dict[str, Any]],
 def build_index(data_dir: pathlib.Path = DATA_DIR,
                 namespace: Optional[str] = None,
                 batch_size: int = BATCH_SIZE) -> Dict[str, Any]:
+    if pc is None or _RAG_DISABLED_REASON:
+        return {"error": f"rag_disabled:{_RAG_DISABLED_REASON}"}
     ns = namespace or PINECONE_NS
     print(f"Building index '{PINECONE_INDEX}' namespace='{ns}' from: {data_dir}")
     raw = load_corpus(data_dir)
@@ -358,7 +376,10 @@ def build_index(data_dir: pathlib.Path = DATA_DIR,
 def wipe_namespace(namespace: Optional[str] = None) -> None:
     ns = namespace or PINECONE_NS
     print(f"⚠️ Deleting all vectors in index='{PINECONE_INDEX}', namespace='{ns}' ...")
-    index.delete(delete_all=True, namespace=ns)
+    if pc is None or _RAG_DISABLED_REASON:
+        print(f"[rag_search] wipe skipped (disabled: {_RAG_DISABLED_REASON})")
+        return
+    cast(Any, index).delete(delete_all=True, namespace=ns)  # type: ignore[attr-defined]
     print("✅ Namespace wiped.")
 
 # --------------------------------------------------------------------------------------
@@ -389,9 +410,11 @@ def semantic_search(query: str,
                     metadata_filter: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
     if not query or not query.strip():
         return []
+    if pc is None or _RAG_DISABLED_REASON:
+        return []
     ns = namespace or PINECONE_NS
     q_vec = embed_texts([query])[0]
-    res = index.query(
+    res = cast(Any, index).query(  # type: ignore[attr-defined]
         namespace=ns,
         vector=q_vec,
         top_k=top_k,
@@ -466,7 +489,9 @@ def semantic_search_reranked(query: str,
     fetch_k = fetch_k or max(top_k * 3, top_k)
 
     q_vec = embed_texts([query])[0]
-    res = index.query(
+    if pc is None or _RAG_DISABLED_REASON:
+        return []
+    res = cast(Any, index).query(  # type: ignore[attr-defined]
         namespace=ns,
         vector=q_vec,
         top_k=fetch_k,

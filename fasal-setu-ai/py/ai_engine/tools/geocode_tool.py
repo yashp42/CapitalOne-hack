@@ -29,7 +29,16 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from difflib import get_close_matches
 
-DATA_PATH = Path(__file__).resolve().parents[3] / "data" / "static_json" / "geo" / "district_centroids.json"
+try:  # standard package-relative
+    from .paths import GEO_DIR  # type: ignore
+except Exception:  # fallback for script-mode execution
+    try:
+        from tools.paths import GEO_DIR  # type: ignore
+    except Exception:  # final fallback: compute relative to this file
+        GEO_DIR = Path(__file__).resolve().parent / ".." / "data" / "static_json" / "geo"
+        GEO_DIR = GEO_DIR.resolve()
+
+DATA_PATH = GEO_DIR / "district_centroids.json"
 
 # common aliases (extend as needed)
 _STATE_ALIASES = {
@@ -121,16 +130,23 @@ def _best_by_district_only(district: str) -> Optional[Tuple[Dict[str, Any], floa
 
 
 def _parse_query(q: str) -> Tuple[Optional[str], Optional[str]]:
+    """Parse a free-text query.
+
+    We intentionally DO NOT normalize punctuation before checking for a comma,
+    because the normalization step strips commas. Instead:
+      1. Check raw string for a comma split → interpret as two components
+      2. Normalize each side separately (so aliases still work)
+      3. If no comma, fall back to simple token split (ambiguous)
     """
-    Accepts 'District, State' or 'State, District' and tries both orders.
-    """
-    q = _norm(q)
-    if "," in q:
-        a, b = [x.strip() for x in q.split(",", 1)]
-        return a or None, b or None
-    parts = q.split()
+    raw = q.strip()
+    if "," in raw:
+        a_raw, b_raw = [x.strip() for x in raw.split(",", 1)]
+        a = _norm(a_raw)
+        b = _norm(b_raw)
+        return (a or None), (b or None)
+    norm = _norm(raw)
+    parts = norm.split()
     if len(parts) >= 2:
-        # unsure: return as district-only; caller will try fuzzy
         return " ".join(parts), None
     return None, None
 
@@ -212,9 +228,6 @@ def run(args: Dict[str, Any]) -> Dict[str, Any]:
             "confidence": round(confidence, 2),
             "method": "static_centroid",
         },
-        "source_stamp": {
-            "type": "local_dataset",
-            "path": str(DATA_PATH.relative_to(Path(__file__).resolve().parents[3])),
-        },
+    "source_stamp": {"type": "local_dataset", "path": "data/static_json/geo/district_centroids.json"},
     }
     return out

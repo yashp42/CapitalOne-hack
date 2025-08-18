@@ -38,13 +38,21 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-# path to .../data/static_json/crop_calendar
-DATA_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "../../..", "data", "static_json", "crop_calendar"
-))
+try:
+    from .paths import CROP_CALENDAR_DIR  # type: ignore
+except Exception:
+    try:
+        from tools.paths import CROP_CALENDAR_DIR  # type: ignore
+    except Exception:
+        CROP_CALENDAR_DIR = Path(__file__).resolve().parent / ".." / "data" / "static_json" / "crop_calendar"
+        CROP_CALENDAR_DIR = CROP_CALENDAR_DIR.resolve()
+
+# path to new internal data location
+DATA_DIR = str(CROP_CALENDAR_DIR)
 
 _WS = re.compile(r"\s+")
 _NONALNUM = re.compile(r"[^a-z0-9_]+")

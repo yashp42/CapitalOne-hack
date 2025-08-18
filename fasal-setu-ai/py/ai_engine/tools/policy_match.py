@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import os
 import re
+from pathlib import Path
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -30,9 +31,16 @@ try:
 except Exception:
     pd = None
 
-POLICY_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "../../..", "data", "static_json", "policy"
-))
+try:
+    from .paths import POLICY_DIR as POLICY_PATH  # type: ignore
+except Exception:
+    try:
+        from tools.paths import POLICY_DIR as POLICY_PATH  # type: ignore
+    except Exception:
+        POLICY_PATH = Path(__file__).resolve().parent / ".." / "data" / "static_json" / "policy"
+        POLICY_PATH = POLICY_PATH.resolve()
+
+POLICY_DIR = str(POLICY_PATH)
 
 _WS = re.compile(r"\s+")
 
@@ -492,7 +500,7 @@ def policy_match(args: Dict[str, Any]) -> Dict[str, Any]:
         "data": {"items": items, "count": len(items)},
         "source_stamp": {
             "type": "static_pack",
-            "path": os.path.relpath(POLICY_DIR, start=os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))),
+            "path": "data/static_json/policy",
             "files": files
         },
         "matched": {"filters": {
