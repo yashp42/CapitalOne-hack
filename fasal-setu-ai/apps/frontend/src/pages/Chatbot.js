@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaPaperPlane, FaMicrophone, FaRobot, FaUser, FaTimes, FaEyeSlash, FaEye, FaComments } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { FaPaperPlane, FaMicrophone, FaRobot, FaUser, FaTimes, FaEyeSlash, FaEye, FaComments, FaExclamationTriangle, FaCheckCircle, FaSpinner, FaHistory, FaBars } from 'react-icons/fa';
+import { useNavigate, useParams } from 'react-router-dom';
+import { chatbotAPI, authAPI, conversationAPI } from '../services/api';
+import ConversationSidebar from '../components/ConversationSidebar';
 
 // Memoized FloatingChatButton to prevent unnecessary re-renders
 const FloatingChatButton = React.memo(() => {
@@ -15,7 +17,7 @@ const FloatingChatButton = React.memo(() => {
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ delay: 0.5, duration: 0.2 }}
-      title="Chat with AI Assistant"
+      title="Start New Chat"
     >
       <FaComments className="text-xl" />
     </motion.button>
@@ -24,6 +26,7 @@ const FloatingChatButton = React.memo(() => {
 
 const Chatbot = () => {
   const navigate = useNavigate();
+  const { conversationId } = useParams();
   const [backgroundImageLoaded, setBackgroundImageLoaded] = useState(false);
   const [messages, setMessages] = useState([
     {
@@ -34,8 +37,88 @@ const Chatbot = () => {
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [showQuickQuestions, setShowQuickQuestions] = useState(true);
+  const [userProfile, setUserProfile] = useState(null);
+  const [chatMode, setChatMode] = useState('public_advisor');
+  const [connectionStatus, setConnectionStatus] = useState('connecting'); // connecting, connected, disconnected
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState(null);
   const messagesEndRef = useRef(null);
+
+  // Check user authentication and profile on component mount
+  useEffect(() => {
+    const initializeChat = async () => {
+      try {
+        // Check if user is authenticated
+        const isAuthenticated = authAPI.isAuthenticated();
+        
+        if (isAuthenticated) {
+          // Get user profile for personalized mode
+          try {
+            const profileResponse = await authAPI.getProfile();
+            if (profileResponse.success && profileResponse.data) {
+              setUserProfile(profileResponse.data);
+              setChatMode('my_farm');
+              console.log('User profile loaded, switching to my_farm mode');
+            }
+          } catch (error) {
+            console.log('Profile not available, using public advisor mode');
+          }
+
+          // Load existing conversation if conversationId is provided
+          if (conversationId) {
+            try {
+              const response = await conversationAPI.getConversation(conversationId);
+              if (response.success && response.data && response.data.messages) {
+                // Load existing messages
+                const formattedMessages = response.data.messages.map(msg => ({
+                  type: msg.role === 'user' ? 'user' : 'bot',
+                  content: msg.content,
+                  timestamp: new Date(msg.timestamp || Date.now())
+                }));
+                
+                setMessages(formattedMessages);
+                setCurrentConversationId(conversationId);
+                setShowQuickQuestions(false); // Hide quick questions for existing conversations
+                console.log('Loaded existing conversation:', conversationId);
+              }
+            } catch (error) {
+              console.error('Failed to load conversation:', error);
+              // If conversation doesn't exist or user doesn't have access, redirect to new chat
+              navigate('/chatbot', { replace: true });
+            }
+          } else {
+            // Reset to initial state for new conversation
+            setMessages([{
+              type: 'bot',
+              content: 'Hello! I\'m your AI agricultural assistant. How can I help you with farming today?',
+              timestamp: new Date()
+            }]);
+            setCurrentConversationId(null);
+            setShowQuickQuestions(true);
+          }
+        }
+
+        // Check chatbot service health
+        try {
+          await chatbotAPI.checkHealth();
+          setConnectionStatus('connected');
+          console.log('Chatbot service is healthy');
+        } catch (error) {
+          setConnectionStatus('disconnected');
+          setErrorMessage('AI services are currently unavailable. Some features may be limited.');
+          console.error('Chatbot health check failed:', error);
+        }
+      } catch (error) {
+        console.error('Chat initialization failed:', error);
+        setConnectionStatus('disconnected');
+      }
+    };
+
+    initializeChat();
+  }, [conversationId, navigate]);
 
   // Reduced animation variants for better mobile performance
   const reducedMotion = useMemo(() => ({
@@ -66,7 +149,7 @@ const Chatbot = () => {
   }, []);
 
   const handleSendMessage = useCallback(async () => {
-    if (inputMessage.trim()) {
+    if (inputMessage.trim() && connectionStatus !== 'disconnected') {
       // Add user message
       const userMessage = {
         type: 'user',
@@ -78,19 +161,116 @@ const Chatbot = () => {
       const currentInput = inputMessage;
       setInputMessage('');
       setIsTyping(true);
+      setLoadingMessage('Thinking...');
+      setErrorMessage(null);
 
-      // Reduced AI thinking delay for better UX
-      setTimeout(() => {
-        const botResponse = {
-          type: 'bot',
-          content: `Thank you for your question about "${currentInput}". I'm here to help with agricultural advice! In the full version, I would provide detailed insights based on real-time data.`,
-          timestamp: new Date()
+      try {
+        // Progressive loading messages with slower timing
+        setTimeout(() => setLoadingMessage('Analyzing your query...'), 1500);
+        setTimeout(() => setLoadingMessage('Calling datasets and tools...'), 3500);
+        setTimeout(() => setLoadingMessage('Decision engine optimizing...'), 6000);
+        setTimeout(() => setLoadingMessage('Generating response...'), 8500);
+
+        // Build conversation history for context
+        const conversationHistory = messages.map(msg => ({
+          role: msg.type === 'user' ? 'user' : 'assistant',
+          content: msg.content
+        }));
+
+        // Prepare request payload
+        const requestPayload = {
+          message: currentInput,
+          mode: chatMode,
+          conversation: conversationHistory,
+          conversationId: currentConversationId // Include current conversation ID
         };
-        setMessages(prev => [...prev, botResponse]);
+
+        // Add profile data for my_farm mode
+        if (chatMode === 'my_farm' && userProfile) {
+          requestPayload.profile = {
+            location: userProfile.location ? `${userProfile.state}, ${userProfile.district}` : null,
+            farm_size: userProfile.farmSize,
+            soil_type: userProfile.soilType,
+            crops: userProfile.preferredCrops || [],
+            irrigation: userProfile.irrigationType
+          };
+        }
+
+        console.log('Sending chat request:', requestPayload);
+
+        // Call the chatbot API
+        const response = await chatbotAPI.sendMessage(requestPayload);
+
+        if (response.success && response.data) {
+          const botResponse = {
+            type: 'bot',
+            content: response.data.answer,
+            timestamp: new Date(),
+            metadata: {
+              intent: response.data.llm1?.intent,
+              requestId: response.data._meta?.requestId,
+              timings: response.data._meta?.timings
+            }
+          };
+          
+          setMessages(prev => [...prev, botResponse]);
+          
+          // Update conversation ID if a new one was created
+          if (response.data.conversationId && !currentConversationId) {
+            setCurrentConversationId(response.data.conversationId);
+            // Redirect to conversation URL if we're on the base /chatbot route
+            if (!conversationId) {
+              navigate(`/chatbot/${response.data.conversationId}`, { replace: true });
+            }
+          }
+          
+          console.log('Chat response received:', {
+            intent: response.data.llm1?.intent,
+            responseTime: response.data._meta?.timings?.total_ms,
+            requestId: response.data._meta?.requestId,
+            conversationId: response.data.conversationId
+          });
+        } else {
+          throw new Error(response.message || 'Failed to get response from AI');
+        }
+      } catch (error) {
+        console.error('Chat request failed:', error);
+        
+        // Create user-friendly error messages
+        let userFriendlyMessage = "I'm sorry, I'm having trouble processing your request right now.";
+        
+        const errorMessage = error.message || '';
+        
+        if (errorMessage.includes('timeout') || errorMessage.includes('LLM1_INVALID_RESPONSE')) {
+          userFriendlyMessage = "I'm taking longer than usual to respond. Please try asking your question again.";
+        } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+          userFriendlyMessage = "I'm having connectivity issues. Please check your internet connection and try again.";
+        } else if (errorMessage.includes('500') || errorMessage.includes('server')) {
+          userFriendlyMessage = "Our AI services are temporarily unavailable. Please try again in a few moments.";
+        } else if (errorMessage.includes('401') || errorMessage.includes('unauthorized')) {
+          userFriendlyMessage = "Your session has expired. Please refresh the page and try again.";
+        } else {
+          userFriendlyMessage = "Something went wrong. Please try again, and if the problem persists, contact our support team.";
+        }
+        
+        // Add error message to chat
+        const errorResponse = {
+          type: 'bot',
+          content: userFriendlyMessage,
+          timestamp: new Date(),
+          isError: true
+        };
+        
+        setMessages(prev => [...prev, errorResponse]);
+        setErrorMessage('Request failed'); // Keep technical details out of UI
+      } finally {
         setIsTyping(false);
-      }, 800); // Reduced from 1500ms
+        setLoadingMessage('');
+      }
+    } else if (connectionStatus === 'disconnected') {
+      setErrorMessage('AI services are currently unavailable. Please try again later.');
     }
-  }, [inputMessage]);
+  }, [inputMessage, messages, chatMode, userProfile, connectionStatus, currentConversationId, conversationId, navigate]);
 
   const handleKeyPress = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -99,13 +279,54 @@ const Chatbot = () => {
     }
   }, [handleSendMessage]);
 
+  // Conversation management functions
+  const handleConversationSelect = useCallback((conversation) => {
+    if (conversation && conversation._id) {
+      // Navigate to the conversation URL
+      navigate(`/chatbot/${conversation._id}`);
+    }
+  }, [navigate]);
+
+  const handleNewConversation = useCallback(() => {
+    // Navigate to base chatbot route for new conversation
+    navigate('/chatbot');
+  }, [navigate]);
+
   // Memoized quick questions to prevent re-renders
-  const quickQuestions = useMemo(() => [
-    "What crops grow best in my region?",
-    "Current weather forecast", 
-    "Market prices for wheat",
-    "Pest control advice"
-  ], []);
+  const quickQuestions = useMemo(() => {
+    if (chatMode === 'my_farm' && userProfile) {
+      return [
+        "What crops should I plant this season?",
+        "How to manage pests in my crops?",
+        "Current weather forecast for my farm",
+        "Market prices for my crops"
+      ];
+    } else {
+      return [
+        "What crops grow best in Karnataka?",
+        "How to control white fly in cotton?", 
+        "Best fertilizers for wheat crop",
+        "Organic farming techniques"
+      ];
+    }
+  }, [chatMode, userProfile]);
+
+  // Utility function to render text with bold formatting
+  const renderFormattedText = (text) => {
+    if (!text) return '';
+    
+    // Split text by **bold** markers and render accordingly
+    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        // Remove ** markers and render as bold
+        const boldText = part.slice(2, -2);
+        return <strong key={index} className="font-semibold text-green-700">{boldText}</strong>;
+      }
+      return part;
+    });
+  };
 
   return (
     <div className="h-screen bg-gray-50 relative overflow-hidden page-wrapper"
@@ -161,18 +382,80 @@ const Chatbot = () => {
           transition={{ duration: 0.3 }}
           className="bg-white/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 p-3 md:p-4 mb-4 md:mb-6 shadow-xl flex-shrink-0"
         >
-          <div className="flex items-center space-x-3 md:space-x-4">
-            <div className="relative">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center">
-                <FaRobot className="text-white text-lg md:text-xl" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3 md:space-x-4">
+              {/* Sidebar Toggle Button */}
+              {authAPI.isAuthenticated() && (
+                <button
+                  onClick={() => setShowSidebar(true)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  title="Conversation History"
+                >
+                  <FaHistory className="text-gray-600" />
+                </button>
+              )}
+              
+              <div className="relative">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center">
+                  <FaRobot className="text-white text-lg md:text-xl" />
+                </div>
+                <div className={`absolute -top-1 -right-1 w-3 h-3 md:w-4 md:h-4 rounded-full border-2 border-white ${
+                  connectionStatus === 'connected' ? 'bg-green-500 animate-pulse' :
+                  connectionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
+                  'bg-red-500'
+                }`}></div>
               </div>
-              <div className="absolute -top-1 -right-1 w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-full animate-pulse border-2 border-white"></div>
+              <div className="flex-1">
+                <h1 className="text-gray-800 text-lg md:text-xl font-bold">AI Agricultural Assistant</h1>
+                <div className="flex items-center space-x-2">
+                  <p className={`text-xs md:text-sm ${
+                    connectionStatus === 'connected' ? 'text-emerald-600' :
+                    connectionStatus === 'connecting' ? 'text-yellow-600' :
+                    'text-red-600'
+                  }`}>
+                    {connectionStatus === 'connected' ? 'Online • Ready to help' :
+                     connectionStatus === 'connecting' ? 'Connecting...' :
+                     'Offline • Limited features'}
+                  </p>
+                  {chatMode === 'my_farm' && (
+                    <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                      Personalized
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-            <div>
-              <h1 className="text-gray-800 text-lg md:text-xl font-bold">AI Agricultural Assistant</h1>
-              <p className="text-emerald-600 text-xs md:text-sm">Online • Ready to help</p>
-            </div>
+            
+            {/* Mode toggle button */}
+            {userProfile && (
+              <button
+                onClick={() => setChatMode(chatMode === 'my_farm' ? 'public_advisor' : 'my_farm')}
+                className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg transition-colors duration-200"
+                title={`Switch to ${chatMode === 'my_farm' ? 'public advisor' : 'personalized'} mode`}
+              >
+                {chatMode === 'my_farm' ? 'Public Mode' : 'My Farm'}
+              </button>
+            )}
           </div>
+          
+          {/* Error message display */}
+          {errorMessage && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-3 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2"
+            >
+              <FaExclamationTriangle className="text-red-500 text-sm flex-shrink-0" />
+              <p className="text-red-700 text-xs">{errorMessage}</p>
+              <button
+                onClick={() => setErrorMessage(null)}
+                className="text-red-500 hover:text-red-700 ml-auto"
+              >
+                <FaTimes className="text-xs" />
+              </button>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Chat Messages Area */}
@@ -214,11 +497,31 @@ const Chatbot = () => {
                     <div className={`px-3 md:px-4 py-2 md:py-3 rounded-2xl backdrop-blur-sm border transition-opacity duration-200 ${
                       message.type === 'user' 
                         ? 'bg-gradient-to-br from-blue-500/90 to-purple-600/90 text-white border-blue-400/50 rounded-br-md' 
-                        : 'bg-white/80 text-gray-800 border-gray-200/50 rounded-bl-md'
+                        : message.isError
+                          ? 'bg-gradient-to-br from-red-50/90 to-red-100/90 text-red-800 border-red-200/50 rounded-bl-md'
+                          : 'bg-white/80 text-gray-800 border-gray-200/50 rounded-bl-md'
                     } shadow-lg`}>
-                      <p className="text-xs md:text-sm leading-relaxed">{message.content}</p>
+                      <div className="text-xs md:text-sm leading-relaxed">
+                        {renderFormattedText(message.content)}
+                      </div>
+                      
+                      {/* Metadata for bot messages */}
+                      {message.type === 'bot' && message.metadata && (
+                        <div className="mt-2 pt-2 border-t border-gray-200/50">
+                          <div className="flex items-center space-x-3 text-xs text-gray-500">
+                            {message.metadata.timings?.total_ms && (
+                              <span className="flex items-center space-x-1">
+                                <FaCheckCircle className="text-green-500" />
+                                <span>{message.metadata.timings.total_ms}ms</span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
                       <p className={`text-xs mt-1 md:mt-2 ${
-                        message.type === 'user' ? 'text-blue-100' : 'text-gray-500'
+                        message.type === 'user' ? 'text-blue-100' : 
+                        message.isError ? 'text-red-600' : 'text-gray-500'
                       }`}>
                         {message.timestamp.toLocaleTimeString()}
                       </p>
@@ -243,10 +546,20 @@ const Chatbot = () => {
                       <FaRobot className="text-white text-xs" />
                     </div>
                     <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-2xl rounded-bl-md px-3 md:px-4 py-2 md:py-3">
-                      <div className="flex space-x-1">
-                        <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full animate-bounce"></div>
-                        <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                        <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      <div className="flex items-center space-x-2">
+                        <div className="flex space-x-1">
+                          <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full animate-bounce"></div>
+                          <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                          <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                        </div>
+                        {loadingMessage && (
+                          <span 
+                            key={loadingMessage}
+                            className="text-sm text-gray-600 ml-2 animate-text-fade"
+                          >
+                            {loadingMessage}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -330,26 +643,61 @@ const Chatbot = () => {
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Ask me about crops, weather, farming techniques..."
-                className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-400/50 transition-all duration-200 resize-none h-10 md:h-12 overflow-hidden text-sm md:text-base"
+                placeholder={connectionStatus === 'connected' 
+                  ? "Ask me about crops, weather, farming techniques..." 
+                  : "AI services are currently unavailable..."}
+                disabled={connectionStatus === 'disconnected' || isTyping}
+                className={`w-full px-3 md:px-4 py-2 md:py-3 bg-white/80 backdrop-blur-sm border rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none transition-all duration-200 resize-none h-10 md:h-12 overflow-hidden text-sm md:text-base ${
+                  connectionStatus === 'disconnected' 
+                    ? 'border-red-200/50 bg-red-50/50 cursor-not-allowed' 
+                    : 'border-gray-200/50 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-400/50'
+                }`}
                 rows="1"
               />
             </div>
             
             <button
               onClick={handleSendMessage}
-              disabled={!inputMessage.trim() || isTyping}
-              className="px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-400 hover:to-emerald-500 transition-all duration-200 flex items-center space-x-1 md:space-x-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-emerald-500/25"
+              disabled={!inputMessage.trim() || isTyping || connectionStatus === 'disconnected'}
+              className={`px-4 md:px-6 py-2 md:py-3 text-white rounded-xl transition-all duration-200 flex items-center space-x-1 md:space-x-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg ${
+                connectionStatus === 'disconnected'
+                  ? 'bg-gray-400'
+                  : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 hover:shadow-emerald-500/25'
+              }`}
             >
-              <FaPaperPlane className="text-xs md:text-sm" />
+              {isTyping ? (
+                <FaSpinner className="text-xs md:text-sm animate-spin" />
+              ) : (
+                <FaPaperPlane className="text-xs md:text-sm" />
+              )}
             </button>
             
-            <button className="px-3 md:px-4 py-2 md:py-3 bg-gray-200/80 backdrop-blur-sm text-gray-600 rounded-xl hover:bg-gray-300/80 transition-all duration-200 border border-gray-200/50">
+            <button 
+              className={`px-3 md:px-4 py-2 md:py-3 rounded-xl transition-all duration-200 border ${
+                connectionStatus === 'disconnected'
+                  ? 'bg-gray-200/50 text-gray-400 border-gray-200/50 cursor-not-allowed'
+                  : 'bg-gray-200/80 backdrop-blur-sm text-gray-600 border-gray-200/50 hover:bg-gray-300/80'
+              }`}
+              disabled={connectionStatus === 'disconnected'}
+              title="Voice input (coming soon)"
+            >
               <FaMicrophone className="text-xs md:text-sm" />
             </button>
           </div>
+          
+          {/* Connection status indicator */}
         </motion.div>
       </div>
+
+      {/* Conversation Sidebar */}
+      <ConversationSidebar
+        isOpen={showSidebar}
+        onClose={() => setShowSidebar(false)}
+        currentConversationId={currentConversationId}
+        onConversationSelect={handleConversationSelect}
+        onNewConversation={handleNewConversation}
+        chatMode={chatMode}
+      />
     </div>
   );
 };

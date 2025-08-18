@@ -31,7 +31,7 @@ const LoadingFallback = () => (
 function AppContent() {
   const location = useLocation();
   const hiddenNavbarRoutes = ['/chatbot'];
-  const shouldShowNavbar = !hiddenNavbarRoutes.includes(location.pathname);
+  const shouldShowNavbar = !hiddenNavbarRoutes.some(route => location.pathname.startsWith(route));
 
   return (
     <div className='max-w-[100vw]'>
@@ -41,6 +41,7 @@ function AppContent() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/chatbot" element={<Chatbot />} />
+          <Route path="/chatbot/:conversationId" element={<Chatbot />} />
           <Route path="/crop-simulation/:cropId" element={<CropSimulation />} />
           <Route path="/my-farm" element={<MyFarm />} />
           <Route path="/profile" element={<Profile />} />

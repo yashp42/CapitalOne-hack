@@ -7,6 +7,8 @@ import userRoutes from "./routes/user.routes.js";
 import queryRoutes from "./routes/query.js";
 import voiceRoutes from "./routes/voice.js";
 import cropRoutes from "./routes/crop.routes.js";
+import chatRoutes from "./routes/chat.routes.js";
+import conversationRoutes from "./routes/conversation.routes.js";
 
 // Import middleware
 import errorHandler from "./middleware/errorHandler.middleware.js";
@@ -126,6 +128,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/query", queryRoutes);
 app.use("/api/voice", voiceRoutes);
 app.use("/api/crops", cropRoutes);
+app.use("/api", chatRoutes);
+app.use("/api", conversationRoutes);
 
 // Extended health check with CORS info
 app.get("/health", (req, res) => {

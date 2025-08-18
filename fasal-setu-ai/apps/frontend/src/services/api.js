@@ -373,5 +373,60 @@ export const cropAPI = {
   }
 };
 
+// Chatbot API calls
+export const chatbotAPI = {
+  // Send message to chatbot with extended timeout
+  sendMessage: async (messageData) => {
+    return apiRequest('/chat', {
+      method: 'POST',
+      body: JSON.stringify(messageData),
+      signal: AbortSignal.timeout(90000), // 90 second timeout for chatbot
+    });
+  },
+
+  // Check chatbot service health
+  checkHealth: async () => {
+    return apiRequest('/chat/health', {
+      signal: AbortSignal.timeout(10000), // 10 second timeout for health check
+    });
+  }
+};
+
+// Conversation API
+export const conversationAPI = {
+  // Get all conversations for the authenticated user
+  getConversations: async () => {
+    return await apiRequest('/conversations');
+  },
+
+  // Get a specific conversation
+  getConversation: async (conversationId) => {
+    return await apiRequest(`/conversations/${conversationId}`);
+  },
+
+  // Create a new conversation
+  createConversation: async (title, mode = 'public_advisor') => {
+    return await apiRequest('/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ title, mode })
+    });
+  },
+
+  // Update conversation title
+  updateConversationTitle: async (conversationId, title) => {
+    return await apiRequest(`/conversations/${conversationId}/title`, {
+      method: 'PATCH',
+      body: JSON.stringify({ title })
+    });
+  },
+
+  // Delete conversation
+  deleteConversation: async (conversationId) => {
+    return await apiRequest(`/conversations/${conversationId}`, {
+      method: 'DELETE'
+    });
+  }
+};
+
 export { tokenManager };
 export default apiRequest;
