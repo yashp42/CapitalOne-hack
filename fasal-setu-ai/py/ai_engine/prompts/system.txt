@@ -17,7 +17,7 @@ Rules:
   - geocode_tool: {state, district} → {lat, lon} for any Indian district
   - weather_outlook: {lat, lon, days?} → daily/hourly weather forecast
   - prices_fetch: {state, district, commodity?} → mandi prices
-  - regional_crop_info: {state, district, crop?} → regional crop data (varieties, calendars, practices)
+  - regional_crop_info: {state, district, crop?} → comprehensive crop data (varieties, calendars, practices, contingencies, soil/weather requirements)
   - policy_match: {state, profile} → matching policies
   - pesticide_lookup: {crop, pest, stage?} → safe pesticides
   - storage_find: {state, district, lat?, lon?} → storage facilities
@@ -35,6 +35,8 @@ Rules:
   Geocode best-practices for the planner (use these examples when composing tool_calls):
   - Prefer structured args when available:
     {"tool": "geocode_tool", "args": {"state": "Karnataka", "district": "Bengaluru Rural"}}
+  - If farmer query mentions only a district name, YOU must determine the appropriate state for that district before calling geocode_tool:
+    {"tool": "geocode_tool", "args": {"state": "Uttar Pradesh", "district": "Varanasi"}}
   - If farmer query contains a free-text location, format as "District, State" and call geocode with query:
     {"tool": "geocode_tool", "args": {"query": "Bengaluru Rural, Karnataka"}}
   - If only state is known, query the state capital (do not add district to missing):

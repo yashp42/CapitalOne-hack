@@ -68,14 +68,90 @@ def _read_json(path: str) -> Dict[str, Any]:
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
-def _extract_region_info(doc: Dict[str, Any]) -> Dict[str, Any]:
+def _normalize_crop_info(crop_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Normalize crop info to always include all expected fields with null values if missing."""
+    return {
+        "crop_name": crop_data.get("crop_name"),
+        "season": crop_data.get("season"),
+        "planting_window": {
+            "start": crop_data.get("planting_window", {}).get("start"),
+            "end": crop_data.get("planting_window", {}).get("end")
+        },
+        "stages": crop_data.get("stages", []),
+        "stage_lengths_days": crop_data.get("stage_lengths_days"),
+        "ideal_temp_c": {
+            "range_day": crop_data.get("ideal_temp_c", {}).get("range_day"),
+            "notes": crop_data.get("ideal_temp_c", {}).get("notes")
+        },
+        "soil_ideal": {
+            "text": crop_data.get("soil_ideal", {}).get("text"),
+            "ph_range": crop_data.get("soil_ideal", {}).get("ph_range")
+        },
+        "irrigation_ideal": {
+            "critical_stages": crop_data.get("irrigation_ideal", {}).get("critical_stages", []),
+            "seasonal_requirement_mm": crop_data.get("irrigation_ideal", {}).get("seasonal_requirement_mm"),
+            "notes": crop_data.get("irrigation_ideal", {}).get("notes")
+        },
+        "weather_ideal": {
+            "notes": crop_data.get("weather_ideal", {}).get("notes", [])
+        },
+        "contingencies": [
+            {
+                "hazard": cont.get("hazard"),
+                "stage_window": cont.get("stage_window"),
+                "measures": cont.get("measures", []),
+                "alt_crops": cont.get("alt_crops"),
+                "inputs_support_notes": cont.get("inputs_support_notes")
+            }
+            for cont in crop_data.get("contingencies", [])
+        ] if crop_data.get("contingencies") else [
+            {
+                "hazard": None,
+                "stage_window": None,
+                "measures": [],
+                "alt_crops": None,
+                "inputs_support_notes": None
+            }
+        ],
+        "market_mapping": {
+            "commodity_names": crop_data.get("market_mapping", {}).get("commodity_names", [])
+        },
+        "data_gaps": crop_data.get("data_gaps", []),
+        "sources": crop_data.get("sources", [])
+    }
+
+def _normalize_region_info(doc: Dict[str, Any]) -> Dict[str, Any]:
+    """Normalize region info to always include all expected fields with null values if missing."""
     return {
         "state": doc.get("state"),
         "district": doc.get("district"),
         "agro_climatic_zone": doc.get("agro_climatic_zone"),
-        "dominant_soils": doc.get("dominant_soils") or [],
+        "source_type": doc.get("source_type"),
+        "source_url": doc.get("source_url"),
+        "doc_date": doc.get("doc_date"),
+        "last_checked": doc.get("last_checked"),
         "normal_annual_rain_mm": doc.get("normal_annual_rain_mm"),
         "rainfall_pattern_notes": doc.get("rainfall_pattern_notes"),
+        "dominant_soils": doc.get("dominant_soils", []),
+        "crops": [_normalize_crop_info(crop) for crop in doc.get("crops", [])],
+        "dataset_sources": [
+            {
+                "key": src.get("key"),
+                "title": src.get("title"),
+                "url": src.get("url"),
+                "tier": src.get("tier"),
+                "last_checked": src.get("last_checked")
+            }
+            for src in doc.get("dataset_sources", [])
+        ] if doc.get("dataset_sources") else [
+            {
+                "key": None,
+                "title": None,
+                "url": None,
+                "tier": None,
+                "last_checked": None
+            }
+        ]
     }
 
 def _available_crops(doc: Dict[str, Any]) -> List[str]:
@@ -102,6 +178,20 @@ def _find_crop_info(doc: Dict[str, Any], crop: Optional[str]) -> Optional[Dict[s
             return c
     return None
 
+def _normalize_state_spelling(state: str) -> str:
+    """Handle common misspellings in state names to match file names."""
+    if not state:
+        return state
+    
+    # Common misspellings in the data files
+    spelling_map = {
+        "maharashtra": "maharastra",  # Files use maharastra (missing h)
+        # Add other common misspellings here as needed
+    }
+    
+    canonical = _canon(state)
+    return spelling_map.get(canonical, canonical)
+
 def _try_static_data(args: Dict[str, Any]) -> Dict[str, Any]:
     """Try to get data from static JSON files first."""
     state = args.get("state")
@@ -110,13 +200,17 @@ def _try_static_data(args: Dict[str, Any]) -> Dict[str, Any]:
     fields = args.get("fields") or ["region_info", "crop_info"]
     strict_region = bool(args.get("strict_region", False))
 
+    # Normalize state spelling to match actual file names
+    if state:
+        state = _normalize_state_spelling(state)
+
     try:
         # List all JSON files in the crop calendar directory
         matched_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".json")]
 
         # If strict_region requested and both state+district present, require exact file
         if strict_region and state and district:
-            file_stem = _canon(f"{state}_{district}")
+            file_stem = f"{state}_{_canon(district)}"
             target_file = next((f for f in matched_files if f.startswith(file_stem)), None)
             if not target_file:
                 return {
@@ -142,7 +236,7 @@ def _try_static_data(args: Dict[str, Any]) -> Dict[str, Any]:
 
         # If both state+district provided, prefer exact matches (but still allow other files for crop search)
         if state and district:
-            stem = _canon(f"{state}_{district}")
+            stem = f"{state}_{_canon(district)}"
             for f in matched_files:
                 if f.startswith(stem):
                     aggregated_matches.append(_load_doc(f))
@@ -159,10 +253,16 @@ def _try_static_data(args: Dict[str, Any]) -> Dict[str, Any]:
 
         # If only state provided (no district), collect all files for that state
         if state and not district:
-            state_prefix = _canon(state) + "_"
-            for f in matched_files:
-                if f.startswith(state_prefix):
-                    aggregated_matches.append(_load_doc(f))
+            # First check for a direct state file without district
+            state_file = f"{state}.json"
+            if state_file in matched_files:
+                aggregated_matches.append(_load_doc(state_file))
+            else:
+                # Otherwise collect all district files for this state
+                state_prefix = state + "_"
+                for f in matched_files:
+                    if f.startswith(state_prefix):
+                        aggregated_matches.append(_load_doc(f))
 
         # Deduplicate aggregated_matches by source file
         seen_files = set()
@@ -174,50 +274,106 @@ def _try_static_data(args: Dict[str, Any]) -> Dict[str, Any]:
                 aggr_unique.append(d)
 
         if aggr_unique:
-            # Build combined response: list all region_info and crop occurrences
-            regions = [
-                {
-                    "state": d.get("state") or d.get("region_info", {}).get("state"),
-                    "district": d.get("district") or d.get("region_info", {}).get("district"),
-                    "source_file": d.get("_source_file")
+            # Always return the complete normalized schema format
+            # For multiple files, merge them into a comprehensive structure
+            if len(aggr_unique) == 1:
+                # Single file - return complete normalized structure
+                doc = aggr_unique[0]
+                normalized_doc = _normalize_region_info(doc)
+                
+                # If a specific crop was requested, filter to just that crop
+                if crop:
+                    matching_crops = [c for c in normalized_doc["crops"] if (c.get("crop_name") or "").lower() == crop.lower()]
+                    if matching_crops:
+                        normalized_doc["crops"] = matching_crops
+                
+                return {
+                    "data": normalized_doc,
+                    "source_stamp": {
+                        "type": "static_pack",
+                        "path": DATA_DIR,
+                        "files": [doc.get("_source_file")]
+                    },
+                    "matched": {
+                        "state": state,
+                        "district": district,
+                        "crop": crop,
+                        "match_method": "exact",
+                        "confidence": 0.95
+                    },
+                    "available": {"crops": [c["crop_name"] for c in normalized_doc["crops"] if c.get("crop_name")]},
+                    "_meta": {"fields": fields, "route": "static_exact"}
                 }
-                for d in aggr_unique
-            ]
-
-            crops_found = {}
-            for d in aggr_unique:
-                for c in d.get("crops", []) or []:
-                    name = (c.get("crop_name") or "").strip()
-                    if not name:
-                        continue
-                    key = name.lower()
-                    crops_found.setdefault(key, {"name": name, "regions": []})
-                    crops_found[key]["regions"].append({
-                        "state": d.get("state") or d.get("region_info", {}).get("state"),
-                        "district": d.get("district") or d.get("region_info", {}).get("district"),
-                        "source_file": d.get("_source_file")
-                    })
-
-            return {
-                "data": {
-                    "regions": regions if "region_info" in fields else None,
-                    "crops_index": list(crops_found.values()) if "crop_info" in fields else None
-                },
-                "source_stamp": {
-                    "type": "static_pack",
-                    "path": DATA_DIR,
-                    "files": list(seen_files)
-                },
-                "matched": {
-                    "state": state,
-                    "district": district,
-                    "crop": crop,
-                    "match_method": "aggregate",
-                    "confidence": 0.8
-                },
-                "available": {"crops": [v["name"] for v in crops_found.values()]},
-                "_meta": {"fields": fields, "route": "static_aggregate"}
-            }
+            else:
+                # Multiple files - merge into single comprehensive schema
+                # Use the first doc as base structure
+                base_doc = aggr_unique[0]
+                merged_doc = _normalize_region_info(base_doc)
+                
+                # Collect all crops from all documents
+                all_crops = []
+                crops_seen = set()
+                
+                for d in aggr_unique:
+                    for c in d.get("crops", []) or []:
+                        crop_name = (c.get("crop_name") or "").strip().lower()
+                        if not crop_name:
+                            continue
+                        
+                        # If specific crop requested, only include that crop
+                        if crop and crop_name != crop.lower():
+                            continue
+                            
+                        # Avoid duplicates
+                        crop_key = f"{crop_name}_{d.get('state', '')}_{d.get('district', '')}"
+                        if crop_key not in crops_seen:
+                            crops_seen.add(crop_key)
+                            normalized_crop = _normalize_crop_info(c)
+                            # Add region context to crop
+                            normalized_crop["_region_context"] = {
+                                "state": d.get("state"),
+                                "district": d.get("district"),
+                                "source_file": d.get("_source_file")
+                            }
+                            all_crops.append(normalized_crop)
+                
+                # Update merged document
+                merged_doc["crops"] = all_crops
+                
+                # If multiple states, set state to None and list available states in meta
+                states_found = list({d.get("state") for d in aggr_unique if d.get("state")})
+                districts_found = list({d.get("district") for d in aggr_unique if d.get("district")})
+                
+                if len(states_found) > 1:
+                    merged_doc["state"] = None
+                    merged_doc["district"] = None
+                elif len(districts_found) > 1 and len(states_found) == 1:
+                    merged_doc["district"] = None
+                
+                # Collect all available crop names
+                available_crops = list({c["crop_name"] for c in all_crops if c.get("crop_name")})
+                
+                return {
+                    "data": merged_doc,
+                    "source_stamp": {
+                        "type": "static_pack",
+                        "path": DATA_DIR,
+                        "files": list(seen_files)
+                    },
+                    "matched": {
+                        "state": state,
+                        "district": district,
+                        "crop": crop,
+                        "match_method": "aggregate",
+                        "confidence": 0.8
+                    },
+                    "available": {
+                        "crops": available_crops,
+                        "states": states_found,
+                        "districts": districts_found
+                    },
+                    "_meta": {"fields": fields, "route": "static_aggregate"}
+                }
 
         # Nothing matched in static files
         return {
@@ -318,6 +474,10 @@ def get_regional_crop_info(args: Dict[str, Any]) -> Dict[str, Any]:
             "error": "unsupported_kind",
             "source_stamp": {"type": "static_pack", "path": DATA_DIR}
         }
+        
+    # Set default fields if not provided
+    if "fields" not in args or not args["fields"]:
+        args["fields"] = ["region_info", "crop_info"]
 
     # Query mode - try RAG first
     query = (args.get("query") or "").strip()
