@@ -36,6 +36,13 @@ Rules:
 
 // Timeout utilities
 const withTimeout = (promise, timeoutMs, operation) => {
+  // For LLM1 call, bypass timeout completely
+  if (operation === 'LLM1 call') {
+    console.log(`[LLM1] No timeout will be applied - bypassing timeout mechanism completely`);
+    return promise; // Return the promise directly without any timeout
+  }
+  
+  // For other operations, use the standard timeout mechanism
   return Promise.race([
     promise,
     new Promise((_, reject) => 
@@ -102,9 +109,10 @@ const callAIEngineEnhanced = async (payload, requestId) => {
     return data;
   };
 
+  console.log(`[${requestId}] Calling LLM1 with no timeout - will wait indefinitely for response`);
   return await withTimeout(
     withRetry(aiEngineCall, 2), 
-    30000, 
+    null, // Timeout value is ignored for LLM1 calls
     'LLM1 call'
   );
 };
@@ -339,6 +347,18 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
     // Process profile data to create a simplified structure for the LLM
     let simplifiedProfile = null;
     if (mode === "my_farm") {
+        // Debug the incoming profile data
+        if (requestProfile) {
+          console.log(`[${requestId}] DEBUG: Received request profile:`, JSON.stringify(requestProfile));
+          if (requestProfile.user_id) {
+            console.log(`[${requestId}] DEBUG: Request profile contains user_id: ${requestProfile.user_id}`);
+          }
+          if (requestProfile.crops) {
+            console.log(`[${requestId}] DEBUG: Request profile contains crops:`, JSON.stringify(requestProfile.crops));
+          }
+        } else {
+          console.log(`[${requestId}] DEBUG: No request profile received`);
+        }
         try {
             let profileData = requestProfile;
             // Extract userId from multiple possible sources
@@ -356,6 +376,13 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
                 console.log(`[${requestId}] Using userId from auth token: ${userId}`);
             }
             
+            // 3. Ensure userId is properly formatted as a string
+            if (userId) {
+                // Always convert to string to ensure consistency
+                userId = String(userId);
+                console.log(`[${requestId}] Normalized userId to string: ${userId}`);
+            }
+            
             if (!profileData && isAuthenticated) {
             if (userId) {
                 const user = await User.findById(userId).select('_id firstName lastName location land_area_acres preferred_language').lean();
@@ -364,39 +391,48 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
                 // Try different query approaches to ensure we get the crops
                 console.log(`[${requestId}] Attempting to find crops for user ID: ${userId}`);
                 
-                // Try with string ID
-                const queryString = { 
-                    owner_id: String(userId),
-                    status: "active"
-                };
+                console.log(`[${requestId}] Attempting to find crops with multiple query strategies`);
                 
-                // Try with ObjectId
-                const queryObjectId = { 
-                    owner_id: new mongoose.Types.ObjectId(userId),
-                    status: "active"
-                };
-                
-                // Try both with $or
+                // Try all formats in a single efficient query
                 const queryOr = {
                     $and: [
                         { status: "active" },
                         { $or: [
-                            { owner_id: String(userId) },
-                            { owner_id: new mongoose.Types.ObjectId(userId) }
+                            { owner_id: userId.toString() },
+                            // Try with ObjectId if it can be converted
+                            ...((() => {
+                                try {
+                                    return [{ owner_id: new mongoose.Types.ObjectId(userId) }];
+                                } catch (e) {
+                                    console.log(`[${requestId}] Could not convert userId to ObjectId, skipping this format`);
+                                    return [];
+                                }
+                            })()),
+                            // Try other possible formats
+                            { 'owner_id.toString()': userId.toString() },
+                            { owner_id: userId }
                         ]}
                     ]
                 };
                 
-                // Attempt all query approaches
-                const cropsByString = await Crop.find(queryString).select('crop_name').lean();
-                const cropsByObjectId = await Crop.find(queryObjectId).select('crop_name').lean();
-                const cropsByOr = await Crop.find(queryOr).select('crop_name').lean();
+                console.log(`[${requestId}] Executing comprehensive query: ${JSON.stringify(queryOr)}`);
                 
-                console.log(`[${requestId}] Crop query results - String ID: ${cropsByString.length}, ObjectId: ${cropsByObjectId.length}, OR query: ${cropsByOr.length}`);
-                
-                // Use the query that returns results, preferring the OR approach which is most robust
-                let userCrops = cropsByOr.length > 0 ? cropsByOr : 
-                               (cropsByObjectId.length > 0 ? cropsByObjectId : cropsByString);
+                // Execute the query
+                let userCrops = [];
+                try {
+                    userCrops = await Crop.find(queryOr).select('crop_name').lean();
+                    console.log(`[${requestId}] Comprehensive crop query returned ${userCrops.length} crops`);
+                } catch (err) {
+                    console.error(`[${requestId}] Error in comprehensive crop query: ${err.message}`);
+                    
+                    // Fallback to simpler queries if the complex one fails
+                    try {
+                        userCrops = await Crop.find({ owner_id: userId.toString(), status: "active" }).select('crop_name').lean();
+                        console.log(`[${requestId}] Fallback string query returned ${userCrops.length} crops`);
+                    } catch (e) {
+                        console.error(`[${requestId}] Even simple string query failed: ${e.message}`);
+                    }
+                }
                                
                 console.log(`[${requestId}] Found ${userCrops.length} active crops for user ${userId}`);
                 
@@ -419,29 +455,61 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
             }
 
             // If we have profile data but no crops, fetch them
-            if (profileData && !profileData.crops && userId) {
+            if (profileData && (!profileData.crops || !profileData.crops.length) && userId) {
                 console.log(`[${requestId}] Profile data exists but without crops. Fetching crops using userId: ${userId}`);
                 
                 try {
-                    // Attempt to fetch crops with all possible ID formats
+                    // Try all formats in a single efficient query
                     const queryOr = {
                         $and: [
                             { status: "active" },
                             { $or: [
-                                { owner_id: String(userId) },
-                                { owner_id: new mongoose.Types.ObjectId(userId) }
+                                { owner_id: userId.toString() },
+                                // Try with ObjectId if it can be converted
+                                ...((() => {
+                                    try {
+                                        return [{ owner_id: new mongoose.Types.ObjectId(userId) }];
+                                    } catch (e) {
+                                        console.log(`[${requestId}] Could not convert userId to ObjectId for profile crops, skipping this format`);
+                                        return [];
+                                    }
+                                })()),
+                                // Try other possible formats
+                                { 'owner_id.toString()': userId.toString() },
+                                { owner_id: userId }
                             ]}
                         ]
                     };
+                    
+                    // Print all existing crop entries to debug
+                    console.log(`[${requestId}] Debugging crop issues - Looking for any crops that might match user ${userId}`);
+                    const allUserCrops = await Crop.find({ status: "active" }).select('owner_id crop_name').lean();
+                    console.log(`[${requestId}] Found ${allUserCrops.length} total active crops in system`);
+                    allUserCrops.forEach(crop => {
+                        if (typeof crop.owner_id === 'string' || crop.owner_id instanceof String) {
+                            console.log(`[${requestId}] Crop ${crop.crop_name} has string owner_id: ${crop.owner_id}`);
+                        } else if (crop.owner_id && crop.owner_id.toString) {
+                            console.log(`[${requestId}] Crop ${crop.crop_name} has ObjectId owner_id: ${crop.owner_id.toString()}`);
+                        } else {
+                            console.log(`[${requestId}] Crop ${crop.crop_name} has owner_id of type: ${typeof crop.owner_id}`);
+                        }
+                    });
                     
                     const userCrops = await Crop.find(queryOr).select('crop_name').lean();
                     console.log(`[${requestId}] Found ${userCrops.length} active crops for user ${userId}`);
                     
                     // Add crops to profile data
                     profileData.crops = userCrops.map(c => c.crop_name).filter(Boolean);
+                    
+                    if (!profileData.crops.length) {
+                        console.log(`[${requestId}] Could not find any crops for user ${userId}. Setting default.`);
+                        profileData.crops = ["rice"];
+                    }
                 }
                 catch (err) {
                     console.error(`[${requestId}] Error fetching crops for profile: ${err.message}`);
+                    // Set a default crop if we fail to fetch
+                    profileData.crops = ["rice"];
                 }
             }
             
@@ -474,10 +542,51 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
     if (simplifiedProfile && Array.isArray(simplifiedProfile.crops) && simplifiedProfile.crops.length > 0) {
       console.log(`[${requestId}] Found ${simplifiedProfile.crops.length} crops to include in payload: ${JSON.stringify(simplifiedProfile.crops)}`);
     } else if (simplifiedProfile) {
-      console.log(`[${requestId}] No crops data found in profile. Setting default crop.`);
-      // Set at least one default crop if none were found to ensure we have crop data
-      simplifiedProfile.crops = ["rice"];
-      console.log(`[${requestId}] Default crop set: ${JSON.stringify(simplifiedProfile.crops)}`);
+      console.log(`[${requestId}] No crops data found in profile. Try fetching again with the user ID.`);
+      
+      // Try one more time to fetch crops directly
+      try {
+        const userId = requestProfile?.user_id || getUserIdFromRequest(req);
+        if (userId) {
+          console.log(`[${requestId}] Performing last attempt to fetch crops with userId: ${userId}`);
+          
+          // Try multiple formats for the ID
+          const possibleIds = [
+            userId.toString(),
+            new mongoose.Types.ObjectId(userId.toString()),
+            userId
+          ];
+          
+          let fetchedCrops = [];
+          for (const id of possibleIds) {
+            try {
+              const crops = await Crop.find({ owner_id: id, status: "active" }).select('crop_name').lean();
+              if (crops && crops.length > 0) {
+                console.log(`[${requestId}] Found ${crops.length} crops with ID format: ${id}`);
+                fetchedCrops = crops;
+                break;
+              }
+            } catch (err) {
+              console.error(`[${requestId}] Error with ID format ${id}: ${err.message}`);
+            }
+          }
+          
+          if (fetchedCrops.length > 0) {
+            const cropNames = fetchedCrops.map(c => c.crop_name).filter(Boolean);
+            simplifiedProfile.crops = cropNames;
+            console.log(`[${requestId}] Successfully set crops: ${JSON.stringify(cropNames)}`);
+          } else {
+            // Set default crop if all attempts fail
+            simplifiedProfile.crops = ["rice"];
+            console.log(`[${requestId}] Default crop set: ${JSON.stringify(simplifiedProfile.crops)}`);
+          }
+        }
+      } catch (err) {
+        console.error(`[${requestId}] Final crop fetch attempt failed: ${err.message}`);
+        // Set default crop as fallback
+        simplifiedProfile.crops = ["rice"];
+        console.log(`[${requestId}] Default crop set after error: ${JSON.stringify(simplifiedProfile.crops)}`);
+      }
     }
     
     const llm1Payload = {
@@ -513,9 +622,8 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
       console.error(`[${requestId}] LLM1 call failed:`, error);
       
       // Return user-friendly error message
-      if (error.message.includes('timeout')) {
-        throw new ApiError(500, "Our AI is taking longer than usual to respond. Please try again.");
-      } else if (error.message.includes('network') || error.message.includes('ECONNREFUSED')) {
+      // Note: timeout errors should never happen for LLM1 now
+      if (error.message.includes('network') || error.message.includes('ECONNREFUSED')) {
         throw new ApiError(500, "AI services are temporarily unavailable. Please try again in a moment.");
       } else {
         throw new ApiError(500, "Unable to process your request right now. Please try again.");
