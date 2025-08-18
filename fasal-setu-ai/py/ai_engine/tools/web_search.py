@@ -317,15 +317,15 @@ def web_search(args: Dict[str, Any]) -> Dict[str, Any]:
     answer_box: Optional[Dict[str, Any]] = None
     all_results: List[Dict[str, Any]] = []
 
-    # Run providers in order: DDG → Brave → Serper → Bing
-    # (Brave/Serper/Bing only fire if their API keys are present)
+    # Run providers in order: Serper → Brave → DuckDuckGo → Bing
+    # (Serper/Brave/Bing only fire if their API keys are present)
     # We stop early if we have >= k results.
     session = requests.Session() if requests is not None else None
 
-    # 1) DuckDuckGo
-    rr, ab = _search_ddg(query_aug, k, recency_days, region, safesearch, news_only)
+    # 1) Serper (Google)
+    rr, ab = _search_serper(query_aug, k, news_only, session)
     if rr:
-        providers_used.append("ddg")
+        providers_used.append("serper")
         all_results.extend(rr)
         answer_box = answer_box or ab
 
@@ -337,11 +337,11 @@ def web_search(args: Dict[str, Any]) -> Dict[str, Any]:
             all_results.extend(rr)
             answer_box = answer_box or ab
 
-    # 3) Serper (if key)
+    # 3) DuckDuckGo (keyless)
     if len(all_results) < k:
-        rr, ab = _search_serper(query_aug, k - len(all_results), news_only, session)
+        rr, ab = _search_ddg(query_aug, k - len(all_results), recency_days, region, safesearch, news_only)
         if rr:
-            providers_used.append("serper")
+            providers_used.append("ddg")
             all_results.extend(rr)
             answer_box = answer_box or ab
 
