@@ -1,0 +1,30 @@
+ORGANIC FARMING – DETAILED REFERENCE NOTES (India & FAO/NCOF context)
+
+Composting and Vermicomposting
+Composting is the backbone of organic farming. Aerobic composting using heaps or pits requires maintaining a C:N ratio of 25–30:1, adequate moisture (50–60%), and frequent turning to maintain oxygen levels. A good compost is ready in 2–3 months, dark brown in colour and with earthy smell. Vermicomposting uses species such as Eisenia fetida and Eudrilus eugeniae. It is faster (6–8 weeks) and results in finer, nutrient-rich compost containing plant growth regulators. Vermicompost is applied at 2–5 t/ha, improving soil microbial activity and nutrient availability. Farmers are advised to maintain shade, moisture, and avoid direct sunlight or chemical contamination in vermibeds. [Source: NCOF Training Manual]
+
+Green Manures and Cover Crops
+Incorporating green manure crops is a sustainable way to add nitrogen and organic matter. Common species in India include sunnhemp, dhaincha, cowpea, and sesbania. These crops add 40–60 kg N/ha when incorporated at 45–50 days after sowing. Cover crops such as cowpea, horse gram, or mustard suppress weeds, prevent erosion, and enhance soil biodiversity. Perennial cover crops in orchards conserve soil moisture and improve organic carbon levels. Rotations with legumes restore fertility and reduce disease cycles. [Source: ICAR Handbook of Agriculture]
+
+Biofertilisers and Bio-inputs
+Biofertilisers include Rhizobium (for pulses), Azotobacter and Azospirillum (for cereals), PSB (for phosphorus solubilisation), and Blue Green Algae and Azolla (for rice paddies). They are living microbes and must be stored in cool, shaded conditions. Inoculation methods include seed treatment, root dipping, and soil application. Organic farmers also use formulations such as Panchagavya, Jeevamrutha, Amrit Pani, and Beejamrutha, made from cow dung, urine, jaggery, flour, and plant extracts. These enhance microbial activity, induce systemic resistance in plants, and act as foliar sprays. [Source: NCOF & FAO manuals]
+
+Case Studies in Organic Pest Management
+Rice stem borer in organic rice: managed by synchronized planting, light traps, pheromone traps, release of Trichogramma japonicum, and spraying neem seed kernel extract (5%). Cotton bollworm: managed by intercropping with sorghum/maize as trap crops, installation of pheromone traps, and application of NPV formulations. Vegetables such as tomato and chilli: damping-off managed by seed treatment with Trichoderma harzianum and soil solarisation with polythene sheets before planting. These integrated approaches reduce reliance on chemicals while sustaining yields. [Source: ICAR-NCIPM IPM packages]
+
+Organic Livestock Management
+Organic livestock systems emphasise health, welfare, and feeding. Animals must be fed organic fodder and concentrates. Preventive healthcare is based on good nutrition, hygiene, and herbal/ayurvedic treatments rather than synthetic drugs. Vaccinations are allowed, but hormones and antibiotics are prohibited unless essential to save life (then withdrawal periods apply). Housing must provide adequate space, shade, and access to pasture. Cattle dung and urine are recycled into compost and bio-formulations, completing the nutrient loop on the farm. [Source: NPOP Guidelines]
+
+Soil and Water Conservation in Organic Systems
+Organic farmers rely on conservation measures such as contour bunding, terracing, cover crops, and agroforestry. Agroforestry systems (e.g., alley cropping with Gliricidia or Leucaena) supply fodder, fuel, and green leaf manure while stabilising soils. Farm ponds, check dams, and rainwater harvesting pits supplement irrigation. Mulching reduces soil temperature fluctuations and evaporation. Integrated farming systems combining crops, livestock, fish, and trees create resilience and diverse income streams. [Source: CRIDA & ICAR manuals]
+
+Processing and Value Addition
+Organic produce must be processed separately from conventional produce. Facilities must avoid contamination and use only approved cleaning agents and additives. Common value-added products include organic jaggery, spices, pickles, cold-pressed oils, and dairy products. Packaging must use safe materials and labelling must include certification marks and traceability codes. Value addition enhances profitability and consumer trust in organic products. [Source: APEDA Organic Standards]
+
+Marketing Channels and Export Potential
+Domestic demand for organic produce in India is growing in metro cities through organic bazaars, supermarkets, and e-commerce platforms. Export markets in the EU, US, and Middle East require NPOP certification, strict pesticide residue limits, and transaction certificates for each consignment. Crops like basmati rice, spices, tea, coffee, and cotton dominate India’s organic exports. Farmer Producer Organisations (FPOs) are encouraged to aggregate produce, reduce certification costs, and improve bargaining power. [Source: APEDA Export Statistics]
+
+Future of Organic Farming
+Organic farming contributes to soil health restoration, reduced dependency on synthetic fertilisers, and premium prices for farmers. It faces challenges of yield gaps, pest outbreaks, certification costs, and market access. Integrating organic principles with modern science—biofertiliser innovations, precision irrigation, improved resistant varieties—can make organic systems more productive and resilient. [Source: FAO & ICAR discussions]
+
+[Sources: NCOF Comprehensive Training Manual; APEDA Organic Guidelines; FAO Organic Training Manuals; ICAR Handbook; NCIPM IPM Packages]

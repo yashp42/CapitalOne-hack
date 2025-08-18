@@ -121,16 +121,25 @@ def _best_by_district_only(district: str) -> Optional[Tuple[Dict[str, Any], floa
 
 
 def _parse_query(q: str) -> Tuple[Optional[str], Optional[str]]:
+    """Parse a free‑text location query.
+
+    We must preserve the comma BEFORE aggressive normalization so that
+    patterns like "Kolhapur, Maharashtra" are correctly split into two
+    tokens. Previous logic normalized first (removing punctuation) which
+    collapsed the comma and caused both parts to be treated as one long
+    district string, leading to missing state & failure.
+
+    Returns (part1, part2) without assuming which is district vs state.
+    Caller logic will attempt (district=a,state=b) then swapped variant.
     """
-    Accepts 'District, State' or 'State, District' and tries both orders.
-    """
-    q = _norm(q)
-    if "," in q:
-        a, b = [x.strip() for x in q.split(",", 1)]
+    raw = q.strip()
+    if "," in raw:
+        a, b = [x.strip() for x in raw.split(",", 1)]
         return a or None, b or None
-    parts = q.split()
+    # Fallback: run normalization and treat entire string as a single district token
+    normed = _norm(raw)
+    parts = normed.split()
     if len(parts) >= 2:
-        # unsure: return as district-only; caller will try fuzzy
         return " ".join(parts), None
     return None, None
 

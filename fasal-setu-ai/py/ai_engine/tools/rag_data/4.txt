@@ -1,0 +1,27 @@
+GENERAL CROP PRODUCTION PRACTICES – EXPANDED ICAR NOTES
+
+Land Preparation Variations
+Different crops require different seedbeds. Rice often requires puddled soil for transplanting, while wheat performs best in well-drained loamy soils with fine tilth. Sugarcane requires deep ploughing and ridges, while potato benefits from raised beds. Conservation tillage systems like zero tillage in wheat reduce costs, maintain soil organic matter, and allow timely sowing. Deep summer ploughing helps in controlling weeds and soil-borne pests by exposing them to heat and predators. [Source: ICAR Handbook]
+
+Sowing Machinery and Precision Planting
+Seed drills, planters, and seed-cum-fertiliser drills ensure uniform depth and spacing, critical for even germination. For small seeds like millets, seed drills with small seed metering plates are used. Precision planters for maize and soybean increase uniformity and reduce thinning costs. Drum seeders in rice allow direct seeding under puddled conditions, saving labour and water compared to transplanting. Proper calibration of sowing machinery prevents seed wastage and optimises plant stands. [Source: ICAR Extension Bulletins]
+
+Integrated Nutrient Management (INM)
+INM combines chemical fertilisers, organic manures, and biofertilisers. For cereals, 50% NPK through fertilisers and 50% through organic sources is a common strategy in resource-rich farms. In resource-poor areas, farmers may rely heavily on FYM and green manures supplemented with small amounts of fertiliser. Site-specific nutrient management (SSNM) uses soil tests, crop demand, and yield targets to fine-tune nutrient doses. Foliar sprays of micronutrients correct acute deficiencies. Excessive use of nitrogen is discouraged, as it leads to lodging and pest outbreaks. [Source: ICAR Fertiliser Recommendations]
+
+Irrigation Schedules
+Each crop has critical irrigation stages. Wheat: crown root initiation (20–25 DAS), tillering, booting, and grain filling. Rice: transplanting, tillering, panicle initiation, and flowering. Maize: tasselling, silking, and grain filling. Pulses: flowering and pod filling. Cotton: squaring, flowering, and boll development. Oilseeds: flowering and pod/seed filling. Missing irrigation at these stages causes irreversible yield loss. Efficient irrigation methods include furrows, alternate wetting and drying in rice, and drip irrigation in cotton, sugarcane, and vegetables. [Source: ICAR Irrigation Schedules]
+
+Weed Control Techniques
+Mechanical weeders like cono-weeder in rice, rotary hoes, and bullock-drawn weeders reduce drudgery. Mulching with straw or plastic films suppresses weeds and conserves moisture. Allelopathic crops like sorghum reduce weed seed germination. Herbicides, where used, must be applied at the right dose and stage (pre-emergence, post-emergence). Integrated systems combine preventive (clean seed, timely sowing), cultural (rotation, spacing), mechanical, and chemical methods. [Source: ICAR Weed Management Notes]
+
+Pest and Disease Examples
+Wheat rusts (yellow, brown, black) are managed by resistant varieties, timely sowing, and rogueing of infected plants. Rice blast is suppressed by resistant varieties, balanced nitrogen use, and seed treatment. Maize stem borer is reduced by trash mulching, intercropping with cowpea, and timely sowing. Cotton whitefly and bollworms are managed by resistant hybrids, trap crops, pheromone traps, and natural enemies like Chrysoperla. Vegetable pests (fruit borers, aphids, mites) are controlled through IPM modules combining biologicals and safe insecticides. [Source: ICAR Plant Protection Packages]
+
+Harvest and Post-Harvest Practices
+Grain crops should be harvested at physiological maturity to avoid losses. Rice: 20–25% grain moisture; wheat: 20–25% moisture; pulses: when 80% pods mature; oilseeds: when siliquae/capsules turn brown. Delays lead to shattering and quality loss. Produce must be dried to safe moisture and stored in ventilated, pest-proof structures. Modern storage technologies include hermetic bags, Pusa bins, and cold storage for perishables. Regular monitoring for insects, rodents, and fungi is necessary. [Source: ICAR Post-Harvest Manuals]
+
+Farm Mechanisation and Safety
+Mechanisation reduces labour and improves timeliness. Power tillers, mini harvesters, and threshers are widely adopted. Combine harvesters reduce harvest losses but require skilled operation. Safety precautions include using guards on machinery, PPE when handling pesticides and fertilisers, and safe storage of chemicals. Farmers are advised to maintain first aid kits and follow re-entry intervals after spraying pesticides. [Source: ICAR Extension Bulletins]
+
+[Source Stamp: ICAR Handbook of Agriculture (6th Edition) + Extension Bulletins, Fertiliser Recommendations, Weed Management Notes]

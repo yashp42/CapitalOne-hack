@@ -1,0 +1,30 @@
+GENERAL CROP PRODUCTION PRACTICES – ICAR HANDBOOK (Fallback Knowledge)
+
+Land Preparation
+Proper land preparation creates a fine tilth for seed germination and good root development. In rainfed regions, conservation tillage and contour bunding are recommended to reduce runoff and conserve soil moisture. In irrigated areas, ploughing, harrowing, and planking help achieve an even seedbed. Deep tillage once in three years breaks hardpans and improves infiltration. Incorporating organic manures and crop residues during land preparation enhances soil structure and fertility.
+
+Seed Selection and Treatment
+The choice of seed is a major determinant of crop success. Farmers are advised to select high-yielding, disease-resistant, and climate-suited varieties recommended by ICAR and SAUs. Certified seed ensures genetic purity and germination capacity. Seed treatment is crucial for protecting against seed-borne diseases and pests. Common treatments include biofertilisers such as Rhizobium and PSB for legumes, and Trichoderma for fungal protection. Seed hardening with solutions of salts or plant extracts is used in some crops to improve drought tolerance. [Source: ICAR Handbook]
+
+Sowing Practices
+Sowing must be carried out within the recommended agro-climatic window for each crop. Delayed sowing often exposes crops to terminal droughts, pest outbreaks, or temperature stress. Correct plant population is achieved by calibrating seed drills and following recommended row and plant spacing. For example, maize requires 60–75 cm row spacing, while wheat is generally sown at 20–22.5 cm rows. Zero tillage is promoted in rice-wheat systems to save costs and conserve soil.
+
+Nutrient Management
+Balanced fertilisation is critical for sustained yields. Organic sources such as FYM, compost, and green manure should be applied along with mineral fertilisers as per soil test recommendations. Nitrogen is usually applied in splits: basal at sowing, top-dressings at vegetative stages, and sometimes at reproductive stages. Phosphorus is best placed in bands near the seed, while potassium is applied according to crop requirement and soil status. Micronutrients like zinc, boron, sulphur, and molybdenum are essential in deficient soils. Integrated Nutrient Management (INM) combining organic, inorganic, and biological sources is recommended to enhance nutrient-use efficiency.
+
+Irrigation Management
+Water requirements vary widely by crop and stage. Critical irrigation stages include crown root initiation in wheat, tasselling and silking in maize, flowering and pod filling in pulses, and panicle initiation in rice. Water stress during these stages can cause significant yield losses. Methods like furrow irrigation, border strips, drip, and sprinklers are advised depending on crop and resource availability. Mulching, intercrops, and cover crops help conserve soil moisture and improve irrigation efficiency.
+
+Weed Management
+Weeds compete for water, nutrients, and light, reducing crop yields. The first 30–45 days after sowing are most critical for weed control. Methods include manual weeding, interculture with hoes or weeders, mulching, and use of competitive crop varieties. Cultural practices such as crop rotation and adjusting sowing dates also suppress weed populations. Integrated Weed Management (IWM) combines cultural, mechanical, and where permitted, safe chemical measures to manage weeds sustainably. [Source: ICAR Handbook]
+
+Pest and Disease Management
+Adopting Integrated Pest Management (IPM) is key. Preventive measures include using resistant varieties, crop rotation, field sanitation, and balanced fertilisation. Monitoring and scouting are essential for early detection. Biological control agents such as Trichogramma, Chrysoperla, and Bacillus thuringiensis can be deployed where available. Need-based chemical control is used only as a last resort, following economic threshold levels and label directions. The emphasis is on reducing pesticide residues, delaying resistance, and protecting natural enemies.
+
+Harvest and Post-Harvest Handling
+Harvesting should be done at physiological maturity to obtain maximum yield and quality. Delayed harvest can lead to shattering, lodging, or pest damage, while premature harvest reduces yield and storability. Grains should be dried to safe moisture levels (12–14% for cereals, 8–10% for pulses) before storage. Clean and grade produce before storage to reduce insect infestation. Use gunny bags, metal bins, or improved storage structures such as Pusa bins to prevent moisture ingress and pest attack. Fumigation with approved chemicals may be undertaken when necessary, observing safety intervals.
+
+Farm Records and Safety
+Maintaining farm records on seed lots, fertiliser use, irrigation dates, pest and disease observations, and harvest outcomes helps in monitoring farm performance and meeting certification or subsidy requirements. Farmers should use protective equipment while handling fertilisers and pesticides, and observe re-entry and pre-harvest intervals for safety. [Source: ICAR Handbook]
+
+[Source Stamp: ICAR Handbook of Agriculture, 6th Edition – https://icar.org.in/en/node/2811]

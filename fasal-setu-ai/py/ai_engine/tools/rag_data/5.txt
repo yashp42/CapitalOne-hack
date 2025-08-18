@@ -1,0 +1,56 @@
+INTEGRATED PEST MANAGEMENT (IPM) – DETAILED REFERENCE
+
+Principles of IPM
+Integrated Pest Management is an ecosystem-based strategy that focuses on long-term prevention of pests and their damage. The approach combines biological, cultural, mechanical, physical, and chemical tools in a coordinated manner. The goal is not eradication of pests but maintaining populations below economic threshold levels (ETL). IPM reduces pesticide residues, delays resistance, and preserves ecological balance. [Source: ICAR-NCIPM, FAO IPM Manual]
+
+Core Components of IPM
+1. Prevention – Use resistant varieties, clean seed, crop rotation, balanced fertilisation, and proper water management.  
+2. Monitoring – Regular scouting of fields, installing pheromone and sticky traps, maintaining pest incidence records.  
+3. Decision-making – Use Economic Threshold Levels (ETL) as benchmarks for interventions.  
+4. Intervention – Prefer biological and cultural methods; chemicals are last resort.  
+5. Evaluation – Assess effectiveness and adjust practices.
+
+Case Studies
+
+Rice IPM
+- Key pests: stem borer, leaf folder, gall midge, brown planthopper, blast disease.  
+- Cultural: synchronous planting, optimum spacing, maintaining field sanitation.  
+- Mechanical: light traps for stem borer moths, removal of infected tillers.  
+- Biological: release of Trichogramma japonicum against stem borers, use of fungal pathogens like Metarhizium.  
+- Botanical: neem seed kernel extract sprays at 5%.  
+- ETL: 10% deadhearts or 2 egg masses per m² for stem borer.  
+[Source: NCIPM Rice IPM Package]
+
+Wheat IPM
+- Key pests: aphids, termites; diseases: rusts (yellow, brown, black).  
+- Cultural: early sowing to escape rusts, balanced NPK, removal of volunteer plants.  
+- Mechanical: seed treatment with Trichoderma; deep ploughing to kill termites.  
+- Biological: release of Chrysoperla larvae to control aphids.  
+- ETL: 15–20 aphids per tiller in early growth stages.  
+[Source: NCIPM Wheat IPM Package]
+
+Cotton IPM
+- Key pests: bollworms, jassids, whiteflies, mealybugs.  
+- Cultural: use of Bt cotton hybrids, intercropping with sorghum as trap crops, timely sowing.  
+- Mechanical: pheromone traps for bollworms, yellow sticky traps for whiteflies.  
+- Biological: Trichogramma, Chrysoperla, ladybird beetles.  
+- Botanical: neem-based sprays.  
+- ETL: 10% infested fruiting bodies for bollworms.  
+[Source: NCIPM Cotton IPM Package]
+
+Vegetable IPM (Tomato, Chilli, Brinjal)
+- Pests: fruit borers, aphids, mites, shoot borers.  
+- Cultural: crop rotation, staking tomatoes, resistant varieties.  
+- Biological: NPV for Helicoverpa, Trichogramma for eggs, predatory mites against spider mites.  
+- Mechanical: pheromone traps, removal of infested shoots.  
+- Botanical: neem oil sprays.  
+- Diseases: damping off controlled by Trichoderma seed treatment + soil solarisation.  
+[Source: ICAR-NCIPM]
+
+Benefits of IPM
+- Reduces cost of cultivation by lowering pesticide use.  
+- Minimises pesticide residues, improving food safety.  
+- Conserves natural enemies and biodiversity.  
+- Improves sustainability of production systems.  
+
+[Sources: ICAR-NCIPM IPM Packages; FAO IPM Manuals; KVK Extension Bulletins]

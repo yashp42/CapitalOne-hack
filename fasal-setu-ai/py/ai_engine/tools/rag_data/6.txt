@@ -1,0 +1,52 @@
+POST-HARVEST AND STORAGE MANAGEMENT – DETAILED REFERENCE
+
+Importance of Post-Harvest
+Up to 30% of agricultural produce in India is lost post-harvest due to poor handling, storage, and pests. Post-harvest management extends shelf life, maintains quality, and ensures farmer profitability. [Source: ICAR-CIPHET, FAO Post-Harvest Manuals]
+
+Grain Storage
+- Traditional methods: underground pits, mud bins, bamboo structures.  
+- Improved methods: Pusa bin, metal silos, hermetic bags.  
+- Scientific principles: dry grain to 12–14% moisture, clean before storage, protect from insects and rodents, maintain aeration.  
+- Insect control: fumigation with aluminium phosphide (strictly by trained operators), use of inert dusts (diatomaceous earth) in organic systems.  
+- Rodent control: traps, bait stations, sanitation.  
+[Source: ICAR-CIPHET Grain Storage Handbook]
+
+Horticultural Produce Storage
+- Fruits and vegetables are highly perishable; losses are 20–25% without cold chain.  
+- Precooling (forced-air or hydrocooling) immediately after harvest removes field heat.  
+- Cold storage: potatoes stored at 2–4°C, onions at 0–1°C with 65–70% RH, apples at 0–1°C with controlled atmosphere.  
+- Packaging: ventilated crates, corrugated fiberboard boxes, cushioning with paper/straw.  
+- Transportation: reefer vans, evaporative cool chambers for local markets.  
+[Source: NHB Post-Harvest Guidelines]
+
+Onion and Potato Storage
+- Onion: traditionally stored in naturally ventilated structures (bamboo/thatched roof). Improved storage structures (raised platforms, slatted walls) reduce rotting and sprouting by 20–30%.  
+- Potato: cold stores at 2–4°C and 90–95% RH prevent sprouting and shrinkage. For seed potatoes, 3–4°C storage with diffused light is recommended.  
+[Source: CIPHET Onion & Potato Storage Studies]
+
+Value Addition and Processing
+- Cereals: milling, parboiling, flaking.  
+- Pulses: dal milling, packaging in moisture-proof bags.  
+- Oilseeds: cold pressing, refining.  
+- Fruits: juice, jam, jelly, pickles, dehydration.  
+- Vegetables: dehydration, canning, freezing.  
+- Spices: cleaning, grading, grinding, essential oil extraction.  
+Processing increases farmer income, reduces wastage, and opens export markets.  
+[Source: ICAR-CIPHET Manuals]
+
+Warehouse Infrastructure in India
+- WDRA regulates registered warehouses eligible for negotiable warehouse receipts (eNWR).  
+- Farmers can deposit produce and access credit against eNWR.  
+- NABARD and AIF schemes support warehouse construction.  
+- Cold chain development by NHB and private players is expanding rapidly.  
+[Source: WDRA & NABARD Guidelines]
+
+Good Practices for Post-Harvest
+- Harvest at maturity indices (e.g., colour change, dry matter content).  
+- Use clean, sharp tools to avoid mechanical injury.  
+- Handle gently to avoid bruises and cuts.  
+- Maintain hygiene in storage and transport.  
+- Keep records of storage conditions, fumigation, and produce movement.  
+[Source: FAO Post-Harvest Management Guidelines]
+
+[Sources: ICAR-CIPHET Post-Harvest Manuals; NHB Guidelines; WDRA Publications; FAO Post-Harvest Compendium]
