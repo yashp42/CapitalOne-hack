@@ -153,7 +153,7 @@ CapitalOne-hack/
 ---
 
 ## Summary of Local Endpoints
-- Frontend: http://localhost:3000
+- Frontend: http://localhost:3000 (Run the main app for here)
 - Server (API): http://localhost:8080
 - AI Engine: http://127.0.0.1:8080
 - Decision Engine: http://127.0.0.1:5000
