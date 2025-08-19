@@ -3,7 +3,7 @@
 Fasal Setu AI is a rules-first, AI-assisted platform built during the **Capital One Hackathon**. It empowers farmers and agri-communities with localized decision support using LLMs, domain tools, and rule-based engines.
 
 # Demo Credentials for deployed link
-```Number: 9004246233, OTP: 123456```
+```Number: 9004246233 \n OTP: 123456```
 
 ---
 
