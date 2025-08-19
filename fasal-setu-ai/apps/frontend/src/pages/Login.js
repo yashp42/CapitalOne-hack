@@ -323,7 +323,7 @@ const Login = () => {
     otp: '',
     firstName: '',
     lastName: '',
-    preferred_language: 'en',
+    preferred_language: 'en-IN',
     location: {
       state: '',
       district: '',
@@ -653,7 +653,7 @@ const Login = () => {
       otp: '', 
       firstName: '', 
       lastName: '',
-      preferred_language: 'en',
+      preferred_language: 'en-IN',
       location: {
         state: '',
         district: '',
