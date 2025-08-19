@@ -186,17 +186,19 @@ const INDIAN_STATES_DISTRICTS = {
 };
 
 const LANGUAGES = [
-  { code: 'en', name: 'English' },
-  { code: 'hi', name: 'हिंदी (Hindi)' },
-  { code: 'pa', name: 'ਪੰਜਾਬੀ (Punjabi)' },
-  { code: 'ta', name: 'தமிழ் (Tamil)' },
-  { code: 'te', name: 'తెలుగు (Telugu)' },
-  { code: 'kn', name: 'ಕನ್ನಡ (Kannada)' },
-  { code: 'mr', name: 'मराठी (Marathi)' },
-  { code: 'gu', name: 'ગુજરાતી (Gujarati)' },
-  { code: 'bn', name: 'বাংলা (Bengali)' },
-  { code: 'ml', name: 'മലയാളം (Malayalam)' }
+  { code: 'en-IN', name: 'English (English)' },
+  { code: 'hi-IN', name: 'हिन्दी (Hindi)' },
+  { code: 'bn-IN', name: 'বাংলা (Bengali)' },
+  { code: 'ta-IN', name: 'தமிழ் (Tamil)' },
+  { code: 'te-IN', name: 'తెలుగు (Telugu)' },
+  { code: 'gu-IN', name: 'ગુજરાતી (Gujarati)' },
+  { code: 'kn-IN', name: 'ಕನ್ನಡ (Kannada)' },
+  { code: 'ml-IN', name: 'മലയാളം (Malayalam)' },
+  { code: 'mr-IN', name: 'मराठी (Marathi)' },
+  { code: 'pa-IN', name: 'ਪੰਜਾਬੀ (Punjabi)' },
+  { code: 'ur-IN', name: 'اردو (Urdu)' }
 ];
+
 
 const Login = () => {
   const [isSignup, setIsSignup] = useState(false);

@@ -40,10 +40,23 @@ const userSchema = new mongoose.Schema({
 
     // Language and Location Preferences
     preferred_language: {
-        type: String,
-        default: "en",
-        enum: ["en", "hi", "bn", "te", "ta", "gu", "kn", "ml", "mr", "pa", "or"]
+    type: String,
+    default: "en-IN",
+    enum: [
+        "en-IN", // English
+        "hi-IN", // Hindi
+        "bn-IN", // Bengali
+        "ta-IN", // Tamil
+        "te-IN", // Telugu
+        "gu-IN", // Gujarati
+        "kn-IN", // Kannada
+        "ml-IN", // Malayalam
+        "mr-IN", // Marathi
+        "pa-IN", // Punjabi
+        "ur-IN"  // Urdu
+    ]
     },
+
 
     location: {
         state: { type: String, trim: true },      // for prices_fetch, policy_match, calendar_lookup

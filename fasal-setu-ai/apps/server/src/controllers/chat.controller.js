@@ -35,6 +35,7 @@ Rules:
 - Be concise, farmer-friendly, ≤180 words. Do not output JSON. Plain text only.
 - Never invent numbers or weather. Only use facts provided. If data is insufficient, say what is missing.
 - Always output in the role of an advisor, not as a system log.
+- **IMPORTANT: Always respond in the same language as the user's query. If the user asks in Hindi, respond in Hindi. If in English, respond in English. If in any other language, match that language.**
 - Lastly if you could not figure out an answer, use your capabilities now but also acknowledge the limitations of the information available.`;
 
 // Timeout utilities

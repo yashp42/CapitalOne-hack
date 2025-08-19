@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { TextureLoader } from 'three';
 import { cropAPI, authAPI, cropSimChatAPI, chatbotAPI } from '../services/api'; // Import API service
 import { useAuth } from '../contexts/AuthContext'; // Import auth context
+import SpeechToText from '../components/SpeechToText';
 import { 
   FaTemperatureHigh, 
   FaCloudRain, 
@@ -1517,6 +1518,22 @@ const CropSimulation = () => {
               >
                 <FaPaperPlane className="text-xs sm:text-sm" />
               </button>
+              
+              {/* Speech-to-Text Component */}
+              <SpeechToText
+                onTranscript={(transcript, isInterim = false) => {
+                  if (isInterim) {
+                    // For interim results, replace only the voice input part
+                    setNewMessage(transcript);
+                  } else {
+                    // For final results, set the final text (interim is replaced, not appended)
+                    setNewMessage(transcript);
+                  }
+                }}
+                userPreferredLanguage={userProfile?.preferred_language || 'en'}
+                size="small"
+                className="flex-shrink-0"
+              />
             </div>
 
             {/* Quick Actions - Mobile-optimized */}

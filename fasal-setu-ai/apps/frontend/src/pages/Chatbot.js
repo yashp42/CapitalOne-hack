@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaPaperPlane, FaMicrophone, FaRobot, FaUser, FaTimes, FaEyeSlash, FaEye, FaComments, FaExclamationTriangle, FaCheckCircle, FaSpinner, FaHistory, FaBars, FaToggleOn, FaToggleOff, FaUserTie, FaGlobe } from 'react-icons/fa';
+import { FaPaperPlane, FaRobot, FaUser, FaTimes, FaEyeSlash, FaEye, FaComments, FaExclamationTriangle, FaCheckCircle, FaSpinner, FaHistory, FaBars, FaToggleOn, FaToggleOff, FaUserTie, FaGlobe } from 'react-icons/fa';
 import { useNavigate, useParams } from 'react-router-dom';
 import { chatbotAPI, authAPI, conversationAPI } from '../services/api';
 import ConversationSidebar from '../components/ConversationSidebar';
+import SpeechToText from '../components/SpeechToText';
 import { useAuth } from '../contexts/AuthContext';
 
 // Memoized FloatingChatButton to prevent unnecessary re-renders
@@ -740,17 +741,23 @@ const Chatbot = () => {
               )}
             </button>
             
-            <button 
-              className={`px-3 md:px-4 py-2 md:py-3 rounded-xl transition-all duration-200 border ${
-                connectionStatus === 'disconnected'
-                  ? 'bg-gray-200/50 text-gray-400 border-gray-200/50 cursor-not-allowed'
-                  : 'bg-gray-200/80 backdrop-blur-sm text-gray-600 border-gray-200/50 hover:bg-gray-300/80'
-              }`}
-              disabled={connectionStatus === 'disconnected'}
-              title="Voice input (coming soon)"
-            >
-              <FaMicrophone className="text-xs md:text-sm" />
-            </button>
+            {/* Speech-to-Text Component */}
+            <SpeechToText
+              onTranscript={(transcript, isInterim = false) => {
+                if (isInterim) {
+                  // For interim results, replace only the voice input part
+                  // We need to track what was there before voice input started
+                  setInputMessage(transcript);
+                } else {
+                  // For final results, set the final text (interim is replaced, not appended)
+                  setInputMessage(transcript);
+                }
+              }}
+              userPreferredLanguage={userProfile?.preferred_language || 'en'}
+              size="normal"
+              forceDirection="up"
+              className={connectionStatus === 'disconnected' ? 'opacity-50 pointer-events-none' : ''}
+            />
           </div>
           
           {/* Connection status indicator */}

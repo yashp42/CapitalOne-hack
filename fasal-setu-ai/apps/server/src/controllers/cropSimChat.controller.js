@@ -64,6 +64,7 @@ Communication style:
 - Format important points with **bold** text
 - Always reference the specific crop name and variety when available
 - Include growth percentage and stage in your assessments
+- **IMPORTANT: Always respond in the same language as the user's query. If the user asks in Hindi, respond in Hindi. If in English, respond in English. If in any other language, match that language.**
 
 Always respond as a knowledgeable farming expert who has analyzed the provided crop and user data to give personalized recommendations.`;
 
@@ -182,6 +183,7 @@ ${JSON.stringify(decisionEngineResponse, null, 2)}`;
 - If both AI and Decision Engine provided recommendations, synthesize them coherently
 - Make sure the response directly addresses the farmer's original query
 - **CRITICAL: Keep response under 180 words - be concise but informative**
+- **IMPORTANT: Always respond in the same language as the farmer's original query. If they asked in Hindi, respond in Hindi. If in English, respond in English. If in any other language, match that language.**
 
 Generate a well-formatted response that combines all the analysis above into helpful farming advice:`;
 
@@ -497,75 +499,68 @@ const calculateGrowthBoost = (crop, eventType) => {
     const maturityDays = crop.derived?.duration_days || getCropDuration(crop.crop_name) || 90;
     const currentAge = crop.derived?.days_after_sowing || 0;
     
-    // Calculate expected growth based on time progression
-    const expectedGrowthAtAge = Math.min(100, (currentAge / maturityDays) * 100);
+    // Calculate remaining days to harvest
+    const remainingDays = Math.max(1, maturityDays - currentAge); // At least 1 day to prevent division by zero
     
-    // Base daily growth rate (should reach 100% over maturity period)
-    const baseDailyGrowthRate = 100 / maturityDays; // % per day
+    // Calculate how much growth is needed to reach 100% at harvest
+    const remainingGrowthNeeded = Math.max(0, 100 - currentGrowth);
+    
+    // If already at 100% or crop is past maturity, minimal growth
+    if (currentGrowth >= 99.5 || currentAge >= maturityDays) {
+        console.log(`Growth calculation for ${eventType}: Crop at/near maturity, minimal boost`);
+        return Math.min(0.5, 100 - currentGrowth); // Maximum 0.5% boost
+    }
+    
+    // Base growth per day needed to reach 100% at harvest (inversely proportional to maturity time)
+    const baseGrowthPerDay = remainingGrowthNeeded / remainingDays;
     
     // Event multipliers (how many days worth of growth this event provides)
     const eventDaysEquivalent = {
-        irrigation: 1.5,      // 1.5 days worth of growth
-        fertilization: 3.0,   // 3 days worth of growth  
-        pest_check: 0.8,      // 0.8 days worth of growth
+        irrigation: 2.0,      // 2 days worth of growth
+        fertilization: 3.5,   // 3.5 days worth of growth  
+        pest_check: 1.0,      // 1 day worth of growth
         daily_care: 1.0       // 1 day worth of growth
     };
     
     const daysEquivalent = eventDaysEquivalent[eventType] || 0.5;
     
-    // Calculate base boost as days worth of natural growth
-    let baseBoost = baseDailyGrowthRate * daysEquivalent;
+    // Calculate base boost as days worth of natural growth needed to reach harvest on time
+    let baseBoost = baseGrowthPerDay * daysEquivalent;
     
-    // Growth efficiency decreases as plant matures (diminishing returns)
+    // Growth efficiency varies by stage (affects how effective the care is)
     let efficiencyMultiplier = 1.0;
-    if (currentGrowth < 20) {
-        efficiencyMultiplier = 1.3; // High efficiency in early stages
-    } else if (currentGrowth < 50) {
-        efficiencyMultiplier = 1.1; // Good efficiency in vegetative stage
-    } else if (currentGrowth < 80) {
-        efficiencyMultiplier = 0.9; // Reduced efficiency in reproductive stage
+    if (currentGrowth < 15) {
+        efficiencyMultiplier = 1.4; // Very high efficiency in germination/early stages
+    } else if (currentGrowth < 40) {
+        efficiencyMultiplier = 1.2; // High efficiency in vegetative stage
+    } else if (currentGrowth < 70) {
+        efficiencyMultiplier = 1.0; // Normal efficiency in reproductive stage
+    } else if (currentGrowth < 90) {
+        efficiencyMultiplier = 0.8; // Reduced efficiency in late reproductive stage
     } else {
         efficiencyMultiplier = 0.4; // Very low efficiency near maturity
     }
     
-    // Consider timing - better growth if plant is behind schedule
-    let timingMultiplier = 1.0;
-    const growthGap = currentGrowth - expectedGrowthAtAge;
+    // Apply efficiency multiplier
+    const adjustedBoost = baseBoost * efficiencyMultiplier;
     
-    if (growthGap < -15) {
-        // Plant is significantly behind schedule
-        timingMultiplier = 1.4;
-    } else if (growthGap < -5) {
-        // Plant is slightly behind schedule
-        timingMultiplier = 1.2;
-    } else if (growthGap > 15) {
-        // Plant is significantly ahead of schedule
-        timingMultiplier = 0.3;
-    } else if (growthGap > 5) {
-        // Plant is slightly ahead of schedule
-        timingMultiplier = 0.6;
-    }
-    
-    // Apply all multipliers
-    const finalBoost = baseBoost * efficiencyMultiplier * timingMultiplier;
-    
-    // Ensure we don't exceed 100% and growth is realistic
-    const maxPossibleGrowth = Math.min(100, expectedGrowthAtAge + 20); // Allow some advancement
-    const newGrowth = Math.min(maxPossibleGrowth, currentGrowth + finalBoost);
-    const actualBoost = Math.max(0, newGrowth - currentGrowth);
+    // Ensure we don't exceed 100% growth
+    const maxAllowedGrowth = Math.min(100, currentGrowth + adjustedBoost);
+    const actualBoost = Math.max(0, maxAllowedGrowth - currentGrowth);
     
     console.log(`Growth calculation for ${eventType}:`, {
         cropName: crop.crop_name,
         maturityDays,
         currentAge,
-        currentGrowth,
-        expectedGrowthAtAge,
-        baseDailyGrowthRate: baseDailyGrowthRate.toFixed(3),
+        remainingDays,
+        currentGrowth: currentGrowth.toFixed(1),
+        remainingGrowthNeeded: remainingGrowthNeeded.toFixed(1),
+        baseGrowthPerDay: baseGrowthPerDay.toFixed(3),
         daysEquivalent,
         baseBoost: baseBoost.toFixed(3),
         efficiencyMultiplier,
-        timingMultiplier,
-        finalBoost: actualBoost.toFixed(3)
+        finalBoost: actualBoost.toFixed(3),
+        projectedGrowthAtHarvest: ((currentGrowth + actualBoost) + (baseGrowthPerDay * (remainingDays - daysEquivalent))).toFixed(1)
     });
     
     return Math.round(actualBoost * 100) / 100; // Round to 2 decimals
