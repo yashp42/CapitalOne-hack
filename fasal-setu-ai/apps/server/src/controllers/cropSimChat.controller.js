@@ -213,11 +213,11 @@ Generate a well-formatted response that combines all the analysis above into hel
                     messages: [
                         {
                             role: "system",
-                            content: formattedSystemPrompt
+                            content: "You are an expert agricultural advisor. Format comprehensive responses for farmers."
                         },
                         {
                             role: "user",
-                            content: prompt
+                            content: contextPrompt
                         }
                     ],
                     max_tokens: 2048,
@@ -384,11 +384,11 @@ Respond to the farmer's query with the above context in mind. Use formatting to 
     }
 };
 
-// Gemini-based Event and Query Detection
+// Perplexity-based Event and Query Detection
 const detectEventAndQueryWithGemini = async (message) => {
     try {
-        if (!GEMINI_API_KEY) {
-            throw new Error('Gemini API key not configured');
+        if (!PERPLEXITY_API_KEY) {
+            throw new Error('Perplexity API key not configured');
         }
 
         const classificationPrompt = `You are an AI classifier for farming messages. Analyze the following user message and classify it for:
