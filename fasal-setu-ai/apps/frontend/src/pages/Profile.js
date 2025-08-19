@@ -12,7 +12,6 @@ import {
   FaSave, 
   FaTimes,
   FaUserCircle,
-  FaEnvelope,
   FaBuilding,
   FaHome,
   FaTractor,
@@ -182,21 +181,48 @@ const Profile = () => {
       setSuccess('');
 
       // Prepare data in the format expected by backend
-      const updateData = {
-        firstName: editForm.firstName,
-        lastName: editForm.lastName,
-        location: {
-          state: editForm.state,
-          district: editForm.district,
-          lat: profile.location?.lat,
-          lon: profile.location?.lon,
-        }
-      };
+      const updateData = {};
 
-      // Only include email if it's available and changed
-      if (editForm.email !== undefined) {
-        updateData.email = editForm.email;
+      // Only include fields that have valid values
+      if (editForm.firstName && editForm.firstName.trim()) {
+        updateData.firstName = editForm.firstName.trim();
       }
+      
+      if (editForm.lastName !== undefined) {
+        updateData.lastName = editForm.lastName && editForm.lastName.trim() 
+          ? editForm.lastName.trim() 
+          : null;
+      }
+
+      // Handle location data
+      const locationData = {};
+      if (editForm.state && editForm.state.trim()) {
+        locationData.state = editForm.state.trim();
+      }
+      if (editForm.district && editForm.district.trim()) {
+        locationData.district = editForm.district.trim();
+      }
+
+      // Only include coordinates if they exist and are valid numbers
+      if (profile.location?.lat && profile.location?.lon && 
+          !isNaN(profile.location.lat) && !isNaN(profile.location.lon)) {
+        locationData.lat = profile.location.lat;
+        locationData.lon = profile.location.lon;
+      }
+
+      // Only include location if there's actual location data
+      if (Object.keys(locationData).length > 0) {
+        updateData.location = locationData;
+      }
+
+      // Check if there's actually something to update
+      if (Object.keys(updateData).length === 0) {
+        setError('No changes to save');
+        setUpdating(false);
+        return;
+      }
+
+      console.log('Sending update data:', updateData); // Debug log
 
       const response = await authAPI.updateProfile(updateData);
       
@@ -434,39 +460,22 @@ const Profile = () => {
                   </div>
 
                   {/* Additional fields if available */}
-                  {(editForm.email !== undefined || editForm.phoneNumber) && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {editForm.email !== undefined && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Email (if available)
-                          </label>
-                          <input
-                            type="email"
-                            name="email"
-                            value={editForm.email || ''}
-                            onChange={handleInputChange}
-                            placeholder="Enter your email"
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                          />
-                        </div>
-                      )}
-                      {editForm.phoneNumber && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Phone Number
-                          </label>
-                          <input
-                            type="tel"
-                            name="phoneNumber"
-                            value={editForm.phoneNumber || ''}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-xl cursor-not-allowed"
-                            disabled
-                            title="Phone number cannot be changed"
-                          />
-                        </div>
-                      )}
+                  {editForm.phoneNumber && (
+                    <div className="grid grid-cols-1 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Phone Number
+                        </label>
+                        <input
+                          type="tel"
+                          name="phoneNumber"
+                          value={editForm.phoneNumber || ''}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-xl cursor-not-allowed"
+                          disabled
+                          title="Phone number cannot be changed"
+                        />
+                      </div>
                     </div>
                   )}
 
@@ -514,20 +523,6 @@ const Profile = () => {
                         </p>
                       </div>
                     </div>
-
-                    {profile.email && (
-                      <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">
-                        <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
-                          <FaEnvelope className="text-indigo-600 text-xl" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Email</p>
-                          <p className="text-lg font-semibold text-gray-800">
-                            {profile.email}
-                          </p>
-                        </div>
-                      </div>
-                    )}
 
                     <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">
                       <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">

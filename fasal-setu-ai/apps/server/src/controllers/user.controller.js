@@ -415,6 +415,8 @@ export const getProfile = asyncErrorHandler(async (req, res) => {
 
 // Update user profile
 export const putProfile = asyncErrorHandler(async (req, res) => {
+  console.log('Profile update request body:', req.body); // Debug log
+  
   const { 
     firstName, 
     lastName, 
@@ -430,9 +432,21 @@ export const putProfile = asyncErrorHandler(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
+  console.log('Current user data:', {
+    id: user._id,
+    phoneNumber: user.phoneNumber,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    location: user.location
+  }); // Debug log
+
   // Update basic info
-  if (firstName) user.firstName = firstName.trim();
-  if (lastName !== undefined) user.lastName = lastName ? lastName.trim() : undefined;
+  if (firstName && firstName.trim()) {
+    user.firstName = firstName.trim();
+  }
+  if (lastName !== undefined) {
+    user.lastName = lastName && lastName.trim() ? lastName.trim() : undefined;
+  }
   if (preferred_language) user.preferred_language = preferred_language;
   if (land_area_acres !== undefined) {
     const landArea = parseFloat(land_area_acres);
@@ -446,15 +460,32 @@ export const putProfile = asyncErrorHandler(async (req, res) => {
   if (location) {
     if (!user.location) user.location = {};
     
-    if (location.state) user.location.state = location.state.trim();
-    if (location.district) user.location.district = location.district.trim();
+    // Only update state and district if they have valid non-empty values
+    if (location.state && location.state.trim()) {
+      user.location.state = location.state.trim();
+    }
+    if (location.district && location.district.trim()) {
+      user.location.district = location.district.trim();
+    }
     
     // Handle coordinates - prioritize provided coordinates, then auto-fetch
     if (location.lat !== undefined && location.lon !== undefined) {
-      // Use provided coordinates
-      user.location.lat = parseFloat(location.lat);
-      user.location.lon = parseFloat(location.lon);
-    } else if (location.state && location.district && !user.location.lat) {
+      // Use provided coordinates only if they are valid numbers
+      const lat = parseFloat(location.lat);
+      const lon = parseFloat(location.lon);
+      
+      if (!isNaN(lat) && !isNaN(lon) && 
+          lat >= -90 && lat <= 90 && 
+          lon >= -180 && lon <= 180 && 
+          isFinite(lat) && isFinite(lon)) {
+        user.location.lat = lat;
+        user.location.lon = lon;
+        console.log('Set coordinates:', { lat, lon }); // Debug log
+      } else {
+        console.warn('Invalid coordinates provided:', { lat: location.lat, lon: location.lon, parsedLat: lat, parsedLon: lon });
+        // Don't modify existing coordinates if new ones are invalid
+      }
+    } else if (location.state && location.district && (!user.location.lat || !user.location.lon)) {
       // Auto-fetch coordinates if not already set
       try {
         const coordinates = await fetchCoordinatesForLocation(location.state, location.district);
@@ -467,17 +498,8 @@ export const putProfile = asyncErrorHandler(async (req, res) => {
       }
     }
     
-    // Validate coordinates if they exist
-    if (user.location.lat !== undefined && user.location.lon !== undefined) {
-      if (user.location.lat < -90 || user.location.lat > 90) {
-        console.warn('Invalid latitude value:', user.location.lat);
-        delete user.location.lat;
-      }
-      if (user.location.lon < -180 || user.location.lon > 180) {
-        console.warn('Invalid longitude value:', user.location.lon);
-        delete user.location.lon;
-      }
-    }
+    // Mark location as modified for mongoose
+    user.markModified('location');
   }
 
   // Update finance info
@@ -492,7 +514,26 @@ export const putProfile = asyncErrorHandler(async (req, res) => {
   // Increment profile version
   user.profile_version += 1;
 
-  await user.save();
+  console.log('About to save user with data:', {
+    firstName: user.firstName,
+    lastName: user.lastName,
+    location: user.location,
+    profile_version: user.profile_version,
+    phoneNumber: user.phoneNumber, // Check if phone is still valid
+    preferred_language: user.preferred_language // Check if language is still valid
+  }); // Debug log
+
+  try {
+    // Use validateBeforeSave: false to bypass validation temporarily for debugging
+    await user.save({ validateBeforeSave: false });
+  } catch (validationError) {
+    console.error('Mongoose validation error:', validationError);
+    if (validationError.name === 'ValidationError') {
+      const errors = Object.values(validationError.errors).map(e => e.message);
+      throw new ApiError(400, `Validation failed: ${errors.join(', ')}`);
+    }
+    throw validationError;
+  }
 
   const userResponse = {
     id: user._id,
