@@ -11,7 +11,6 @@ Fasal Setu AI is a rules-first, AI-assisted platform built during the **Capital 
 git clone https://github.com/yashp42/CapitalOne-hack
 cd CapitalOne-hack/fasal-setu-ai
 ```
-> Replace `https://github.com/yashp42/CapitalOne-hack` with your actual Git URL (HTTPS or SSH).
 
 ### 2) Create environment files
 Copy example env files and fill in secrets.
