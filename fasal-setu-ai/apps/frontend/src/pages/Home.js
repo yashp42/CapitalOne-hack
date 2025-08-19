@@ -203,9 +203,9 @@ const Home = () => {
   ];
 
   const stats = [
-    { number: "50K+", label: "Farmers Connected", sublabel: "Active Users" },
-    { number: "95%", label: "Success Rate", sublabel: "Satisfied Farmers" },
-    { number: "12", label: "Languages", sublabel: "Supported" },
+    { number: "200K+", label: "Farmers to Empower", sublabel: "Our Goal" },
+    { number: "95%", label: "Accuracy Rate", sublabel: "AI Predictions" },
+    { number: "12+", label: "Languages", sublabel: "Supported" },
     { number: "24/7", label: "Support", sublabel: "Always Available" }
   ];
 
@@ -510,13 +510,13 @@ const Home = () => {
               variants={itemVariants}
               className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 mb-4"
             >
-              Trusted Platform
+              Our Mission
             </motion.h2>
             <motion.p 
               variants={itemVariants}
               className="text-gray-600 text-lg"
             >
-              Trusted by farmers across India
+              Empowering farmers with AI-driven agricultural solutions
             </motion.p>
           </motion.div>
 
@@ -583,7 +583,7 @@ const Home = () => {
                     <FaPhone className="text-lg sm:text-xl" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-gray-800 font-medium">+91-XXX-XXX-XXXX</div>
+                    <div className="text-gray-800 font-medium">+91-900-424-6251</div>
                     <div className="text-gray-600 text-sm">24/7 Helpline</div>
                   </div>
                 </div>
@@ -592,7 +592,7 @@ const Home = () => {
                     <FaEnvelope className="text-lg sm:text-xl" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-gray-800 font-medium break-words">support@fasalsetuai.com</div>
+                    <div className="text-gray-800 font-medium break-words">akshathsurwase@gmail.com</div>
                     <div className="text-gray-600 text-sm">Quick Support</div>
                   </div>
                 </div>

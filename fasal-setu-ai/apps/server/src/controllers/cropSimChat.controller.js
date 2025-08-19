@@ -6,12 +6,12 @@ import User from "../models/user.model.js";
 import { getCropDuration } from "../util/cropDuration.js";
 import fetch from "node-fetch";
 
-// Gemini API configuration
-const GEMINI_API_KEY = process.env.GEMINI_API_SECRET || process.env.GEMINI_API_KEY;
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent";
+// Perplexity API configuration
+const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
+const PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions";
 
-// Retry function for Gemini API calls with exponential backoff
-const retryGeminiCall = async (callFn, maxRetries = 3, baseDelay = 1000) => {
+// Retry function for Perplexity API calls with exponential backoff
+const retryPerplexityCall = async (callFn, maxRetries = 3, baseDelay = 1000) => {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
             return await callFn();
@@ -26,7 +26,7 @@ const retryGeminiCall = async (callFn, maxRetries = 3, baseDelay = 1000) => {
             
             // Exponential backoff: 1s, 2s, 4s
             const delay = baseDelay * Math.pow(2, attempt);
-            console.log(`Gemini API call failed (attempt ${attempt + 1}/${maxRetries}), retrying in ${delay}ms...`);
+            console.log(`Perplexity API call failed (attempt ${attempt + 1}/${maxRetries}), retrying in ${delay}ms...`);
             await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
@@ -68,11 +68,11 @@ Communication style:
 
 Always respond as a knowledgeable farming expert who has analyzed the provided crop and user data to give personalized recommendations.`;
 
-// Call Gemini API for LLM2 responses
-const callGeminiLLM2 = async (messages, systemPrompt = CROP_SIM_LLM2_SYSTEM_PROMPT) => {
+// Call Perplexity API for LLM2 responses
+const callPerplexityLLM2 = async (messages, systemPrompt = CROP_SIM_LLM2_SYSTEM_PROMPT) => {
     try {
-        if (!GEMINI_API_KEY) {
-            throw new Error('Gemini API key not configured');
+        if (!PERPLEXITY_API_KEY) {
+            throw new Error('Perplexity API key not configured');
         }
 
         const prompt = `${systemPrompt}\n\nUser Query: ${messages[messages.length - 1].content}`;
@@ -84,39 +84,52 @@ const callGeminiLLM2 = async (messages, systemPrompt = CROP_SIM_LLM2_SYSTEM_PROM
                 }]
             }],
             generationConfig: {
-                temperature: 0.7,
+                temperature: 0.2,
                 topK: 40,
                 topP: 0.95,
                 maxOutputTokens: 1024,
             }
         };
 
-        console.log('Calling Gemini API for LLM2...');
-        const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+        console.log('Calling Perplexity API for LLM2...');
+        const response = await fetch(PERPLEXITY_API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
             },
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify({
+                model: "sonar",
+                messages: [
+                    {
+                        role: "system",
+                        content: systemPrompt
+                    },
+                    ...messages
+                ],
+                max_tokens: 2048,
+                temperature: 0.2,
+                top_p: 0.95
+            })
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('Gemini API error:', response.status, errorText);
-            throw new Error(`Gemini API error: ${response.status}`);
+            console.error('Perplexity API error:', response.status, errorText);
+            throw new Error(`Perplexity API error: ${response.status}`);
         }
 
         const result = await response.json();
-        console.log('Gemini API response received');
+        console.log('Perplexity API response received');
 
-        if (result.candidates && result.candidates[0] && result.candidates[0].content) {
-            return result.candidates[0].content.parts[0].text;
+        if (result.choices && result.choices[0] && result.choices[0].message) {
+            return result.choices[0].message.content;
         } else {
-            console.error('Unexpected Gemini response structure:', result);
-            throw new Error('Invalid response structure from Gemini');
+            console.error('Unexpected Perplexity response structure:', result);
+            throw new Error('Invalid response structure from Perplexity');
         }
     } catch (error) {
-        console.error('Gemini LLM2 error:', error);
+        console.error('Perplexity LLM2 error:', error);
         throw error;
     }
 };
@@ -182,39 +195,41 @@ ${JSON.stringify(decisionEngineResponse, null, 2)}`;
 - Reference the crop name and current status
 - If both AI and Decision Engine provided recommendations, synthesize them coherently
 - Make sure the response directly addresses the farmer's original query
-- **CRITICAL: Keep response under 180 words - be concise but informative**
+- **CRITICAL: Keep response under 300 words - be concise but informative**
 - **IMPORTANT: Always respond in the same language as the farmer's original query. If they asked in Hindi, respond in Hindi. If in English, respond in English. If in any other language, match that language.**
 
 Generate a well-formatted response that combines all the analysis above into helpful farming advice:`;
 
-        const requestBody = {
-            contents: [{
-                parts: [{
-                    text: contextPrompt
-                }]
-            }],
-            generationConfig: {
-                temperature: 0.7,
-                topK: 40,
-                topP: 0.95,
-                maxOutputTokens: 256, // Reduced to enforce shorter responses (~180 words)
-            }
-        };
-
-        console.log('Calling Gemini for final response formatting...');
-        const response = await retryGeminiCall(async () => {
-            const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+        console.log('Calling Perplexity for final response formatting...');
+        const response = await retryPerplexityCall(async () => {
+            const response = await fetch(PERPLEXITY_API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
                 },
-                body: JSON.stringify(requestBody)
+                body: JSON.stringify({
+                    model: "sonar",
+                    messages: [
+                        {
+                            role: "system",
+                            content: formattedSystemPrompt
+                        },
+                        {
+                            role: "user",
+                            content: prompt
+                        }
+                    ],
+                    max_tokens: 2048,
+                    temperature: 0.2,
+                    top_p: 0.95
+                })
             });
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('Gemini formatting error:', response.status, errorText);
-                throw new Error(`Gemini formatting error: ${response.status}`);
+                console.error('Perplexity formatting error:', response.status, errorText);
+                throw new Error(`Perplexity formatting error: ${response.status}`);
             }
             
             return response;
@@ -222,17 +237,17 @@ Generate a well-formatted response that combines all the analysis above into hel
 
         const result = await response.json();
         
-        if (result.candidates && result.candidates[0] && result.candidates[0].content) {
-            const formattedResponse = result.candidates[0].content.parts[0].text;
+        if (result.choices && result.choices[0] && result.choices[0].message) {
+            const formattedResponse = result.choices[0].message.content;
             console.log('Final formatted response generated successfully');
             return formattedResponse;
         } else {
-            throw new Error('Invalid Gemini response structure');
+            throw new Error('Invalid Perplexity response structure');
         }
     } catch (error) {
         console.error('Error formatting final response:', error);
         
-        // Fallback to basic response when Gemini formatting fails
+        // Fallback to basic response when Perplexity formatting fails
         let fallbackResponse = `**${cropContext.crop_name} Analysis**\n\n`;
         
         if (aiEngineResponse.general_answer) {
@@ -362,7 +377,7 @@ Respond to the farmer's query with the above context in mind. Use formatting to 
 
         const messages = [{ content: query }];
         
-        return await callGeminiLLM2(messages, formattedSystemPrompt);
+        return await callPerplexityLLM2(messages, formattedSystemPrompt);
     } catch (error) {
         console.error('Error generating Gemini response:', error);
         throw error;
@@ -411,34 +426,36 @@ Examples:
 - "What fertilizer should I use?" → {"hasEvent": false, "eventType": null, "eventConfidence": 0.0, "hasQuery": true, "query": "What fertilizer should I use?", "queryConfidence": 0.9}
 - "Just applied NPK fertilizer" → {"hasEvent": true, "eventType": "fertilization", "eventConfidence": 0.9, "hasQuery": false, "query": null, "queryConfidence": 0.0}`;
 
-        const requestBody = {
-            contents: [{
-                parts: [{
-                    text: classificationPrompt
-                }]
-            }],
-            generationConfig: {
-                temperature: 0.1, // Low temperature for consistent classification
-                topK: 1,
-                topP: 0.1,
-                maxOutputTokens: 256,
-            }
-        };
-
-        console.log('Calling Gemini for event/query classification...');
-        const response = await retryGeminiCall(async () => {
-            const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+        console.log('Calling Perplexity for event/query classification...');
+        const response = await retryPerplexityCall(async () => {
+            const response = await fetch(PERPLEXITY_API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
                 },
-                body: JSON.stringify(requestBody)
+                body: JSON.stringify({
+                    model: "sonar",
+                    messages: [
+                        {
+                            role: "system",
+                            content: "You are a classification system. Respond only with valid JSON."
+                        },
+                        {
+                            role: "user",
+                            content: classificationPrompt
+                        }
+                    ],
+                    max_tokens: 256,
+                    temperature: 0.1,
+                    top_p: 0.1
+                })
             });
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('Gemini classification error:', response.status, errorText);
-                throw new Error(`Gemini classification error: ${response.status}`);
+                console.error('Perplexity classification error:', response.status, errorText);
+                throw new Error(`Perplexity classification error: ${response.status}`);
             }
             
             return response;
@@ -446,9 +463,9 @@ Examples:
 
         const result = await response.json();
         
-        if (result.candidates && result.candidates[0] && result.candidates[0].content) {
-            const classificationText = result.candidates[0].content.parts[0].text;
-            console.log('Gemini classification response:', classificationText);
+        if (result.choices && result.choices[0] && result.choices[0].message) {
+            const classificationText = result.choices[0].message.content;
+            console.log('Perplexity classification response:', classificationText);
             
             // Parse JSON response - handle markdown code blocks
             try {
@@ -751,7 +768,7 @@ Next Recommended Activity:
 Generate a brief, encouraging response (≤100 words) acknowledging the completed farm activity, mentioning the growth increase, and providing the next recommendation. Use farmer-friendly language with appropriate emojis and **bold** text for emphasis.`;
 
         const messages = [{ content: contextPrompt }];
-        const response = await callGeminiLLM2(messages);
+        const response = await callPerplexityLLM2(messages);
         return response;
     } catch (error) {
         console.error('Error generating event response:', error);

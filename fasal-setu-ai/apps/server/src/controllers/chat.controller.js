@@ -13,9 +13,9 @@ import { saveConversation } from "./conversation.controller.js";
 import User from "../models/user.model.js";
 import Crop from "../models/crop.model.js";
 
-// Gemini API configuration
-const GEMINI_API_KEY = process.env.GEMINI_API_SECRET || process.env.GEMINI_API_KEY;
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent";
+// Perplexity API configuration
+const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
+const PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions";
 
 // LLM2 System Prompt
 const LLM2_SYSTEM_PROMPT = `You are LLM2, the final answerer for Fasal-Setu (agricultural advisory).
@@ -32,7 +32,7 @@ Rules:
 - If Decision Engine is missing/invalid: answer from LLM1 facts and user query, clearly state uncertainty, and give safe fallback advice.
 - In "my_farm" mode: Use personalized data and speak directly to the user's specific farm situation.
 - In "public_advisor" mode: Provide general advice without referencing personal farm data.
-- Be concise, farmer-friendly, ≤180 words. Do not output JSON. Plain text only.
+- Be concise, farmer-friendly, ≤300 words. Do not output JSON. Plain text only.
 - Never invent numbers or weather. Only use facts provided. If data is insufficient, say what is missing.
 - Always output in the role of an advisor, not as a system log.
 - **IMPORTANT: Always respond in the same language as the user's query. If the user asks in Hindi, respond in Hindi. If in English, respond in English. If in any other language, match that language.**
@@ -145,13 +145,13 @@ const callDecisionEngineEnhanced = async (payload, requestId) => {
   );
 };
 
-// Gemini LLM2 client with enhanced error handling
-const callGeminiLLM2 = async (conversation, llm1Response, decisionOutput, profile, mode, requestId) => {
-  if (!GEMINI_API_KEY || GEMINI_API_KEY === 'your-gemini-api-key') {
-    throw new Error('Gemini API key not configured');
+// Perplexity LLM2 client with enhanced error handling
+const callPerplexityLLM2 = async (conversation, llm1Response, decisionOutput, profile, mode, requestId) => {
+  if (!PERPLEXITY_API_KEY || PERPLEXITY_API_KEY === 'your-perplexity-api-key') {
+    throw new Error('Perplexity API key not configured');
   }
 
-  console.log(`[${requestId}] Calling Gemini LLM2 (2.0 Flash) in ${mode} mode`);
+  console.log(`[${requestId}] Calling Perplexity LLM2 (sonar) in ${mode} mode`);
   
   // Log profile information if available
   if (profile) {
@@ -236,47 +236,51 @@ Use your knowledge to fill gaps where services failed. Be practical and helpful.
 
 **Remember:** Use **bold** formatting for key terms and actions!`;
 
-  const geminiCall = async () => {
-    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+  const perplexityCall = async () => {
+    const response = await fetch(PERPLEXITY_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }],
-        generationConfig: {
-          maxOutputTokens: 500,
-          temperature: 0.7,
-          topP: 0.95,
-          topK: 40
-        }
+        model: "sonar",
+        messages: [
+          {
+            role: "system",
+            content: "You are a helpful agricultural assistant. Provide practical farming advice."
+          },
+          {
+            role: "user", 
+            content: prompt
+          }
+        ],
+        max_tokens: 1500,
+        temperature: 0.2,
+        top_p: 0.95
       })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Gemini API error ${response.status}: ${errorText}`);
+      throw new Error(`Perplexity API error ${response.status}: ${errorText}`);
     }
 
     const data = await response.json();
     
-    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-      throw new Error('Invalid Gemini response structure');
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Invalid Perplexity response structure');
     }
 
-    const text = data.candidates[0].content.parts[0].text;
-    console.log(`[${requestId}] Gemini response: ${text.substring(0, 100)}...`);
+    const text = data.choices[0].message.content;
+    console.log(`[${requestId}] Perplexity response: ${text.substring(0, 100)}...`);
     return text;
   };
 
   return await withTimeout(
-    withRetry(geminiCall, 3), // Increased retries to 3
+    withRetry(perplexityCall, 3), // Increased retries to 3
     30000, // Increased timeout to 30 seconds
-    'Gemini LLM2 call'
+    'Perplexity LLM2 call'
   );
 };
 
@@ -590,14 +594,14 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
       }
     }
 
-    // Step 4: Call LLM2 (Gemini) - Always called with enhanced fallback
+    // Step 4: Call LLM2 (Perplexity) - Always called with enhanced fallback
     const llm2StartTime = Date.now();
     let finalAnswer;
     
     try {
-      finalAnswer = await callGeminiLLM2(fullConversation, llm1Response, decisionOutput, simplifiedProfile, mode, requestId);
+      finalAnswer = await callPerplexityLLM2(fullConversation, llm1Response, decisionOutput, simplifiedProfile, mode, requestId);
     } catch (error) {
-      console.error(`[${requestId}] LLM2 (Gemini) call failed:`, error);
+      console.error(`[${requestId}] LLM2 (Perplexity) call failed:`, error);
       
       // Enhanced fallback response using available data
       const userQuery = fullConversation[fullConversation.length - 1]?.content || '';
@@ -741,7 +745,7 @@ export const chatHealth = asyncErrorHandler(async (req, res) => {
   const healthChecks = {
     ai_engine: null,
     decision_engine: null,
-    gemini: null
+    perplexity: null
   };
 
   // Check AI Engine
@@ -768,8 +772,8 @@ export const chatHealth = asyncErrorHandler(async (req, res) => {
     healthChecks.decision_engine = 'unreachable';
   }
 
-  // Check Gemini API key
-  healthChecks.gemini = (GEMINI_API_KEY && GEMINI_API_KEY !== 'your-gemini-api-key') ? 'configured' : 'not_configured';
+  // Check Perplexity API key
+  healthChecks.perplexity = (PERPLEXITY_API_KEY && PERPLEXITY_API_KEY !== 'your-perplexity-api-key') ? 'configured' : 'not_configured';
 
   const allHealthy = Object.values(healthChecks).every(status => 
     status === 'healthy' || status === 'configured'

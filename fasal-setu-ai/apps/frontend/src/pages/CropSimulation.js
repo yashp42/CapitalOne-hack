@@ -69,25 +69,79 @@ const LoadingScreen = () => (
 
 // 3D Crop Plant Component - Optimized for performance
 function CropPlant({ stage, farmData }) {
+  // Field dimensions constants - defined at component level
+  const fieldWidth = 40; // Reduced from 80
+  const fieldDepth = 30; // Reduced from 60
+  const maxGrassHeight = 2.0; // Slightly reduced
+  const maxGrassWidth = 0.12;
+
+  // Create stable positions for all random elements
+  const [stablePositions] = useState(() => {
+    const seededRandom = (seed) => {
+      const x = Math.sin(seed * 12.9898) * 43758.5453;
+      return x - Math.floor(x);
+    };
+
+    return {
+      seeds: Array.from({ length: 80 }, (_, i) => [
+        (seededRandom(i * 3.1) - 0.5) * fieldWidth * 0.8,
+        -0.05,
+        (seededRandom(i * 7.2) - 0.5) * fieldDepth * 0.8
+      ]),
+      sprouts: Array.from({ length: 120 }, (_, i) => [
+        (seededRandom(i * 5.4) - 0.5) * fieldWidth * 0.9,
+        0, // Will be calculated based on stage
+        (seededRandom(i * 9.7) - 0.5) * fieldDepth * 0.9
+      ]),
+      heatEffects: Array.from({ length: 8 }, (_, i) => [
+        (seededRandom(i * 11.3) - 0.5) * fieldWidth,
+        0, // Will be calculated based on maxGrassHeight
+        (seededRandom(i * 13.8) - 0.5) * fieldDepth
+      ]),
+      growthParticles: Array.from({ length: 12 }, (_, i) => [
+        (seededRandom(i * 17.2) - 0.5) * fieldWidth,
+        0, // Will be calculated based on maxGrassHeight
+        (seededRandom(i * 19.5) - 0.5) * fieldDepth
+      ])
+    };
+  });
   const grassFieldRef = useRef();
   const grassBlades = useRef([]);
   const [soilTextureReady, setSoilTextureReady] = useState(false);
   
+  // Stable seed positions - only generated once
+  const [seedPositions] = useState(() => {
+    return Array.from({ length: 80 }, (_, i) => ({
+      x: (Math.sin(i * 12.3456) * 0.5) * fieldWidth * 0.8,
+      z: (Math.cos(i * 23.4567) * 0.5) * fieldDepth * 0.8,
+      y: -0.05
+    }));
+  });
+
+  // Stable sprout positions - only generated once  
+  const [sproutPositions] = useState(() => {
+    return Array.from({ length: 120 }, (_, i) => ({ // Max sprouts for stage 15
+      x: (Math.sin(i * 34.5678) * 0.5) * fieldWidth * 0.9,
+      z: (Math.cos(i * 45.6789) * 0.5) * fieldDepth * 0.9,
+      y: 0.01
+    }));
+  });
+
   // Stable moisture particle positions - only generated once
   const [moistureParticlePositions] = useState(() => {
     return Array.from({ length: 15 }, (_, i) => ({
-      x: (Math.random() - 0.5) * 50, // fieldWidth
-      z: (Math.random() - 0.5) * 50, // fieldDepth
-      y: -0.05 + Math.random() * 0.1
+      x: (Math.sin(i * 56.7890) * 0.5) * 50, // fieldWidth
+      z: (Math.cos(i * 67.8901) * 0.5) * 50, // fieldDepth
+      y: -0.05 + (Math.sin(i * 78.9012) * 0.1)
     }));
   });
 
   // Stable fertilizer particle positions - only generated once
   const [fertilizerParticlePositions] = useState(() => {
     return Array.from({ length: 20 }, (_, i) => ({
-      x: (Math.random() - 0.5) * 50, // fieldWidth
-      z: (Math.random() - 0.5) * 50, // fieldDepth
-      y: 0.05 + Math.random() * 0.1
+      x: (Math.sin(i * 89.0123) * 0.5) * 50, // fieldWidth
+      z: (Math.cos(i * 90.1234) * 0.5) * 50, // fieldDepth
+      y: 0.05 + (Math.sin(i * 12.3456) * 0.1)
     }));
   });
 
@@ -137,13 +191,7 @@ function CropPlant({ stage, farmData }) {
     }
   });
 
-  // Reduced field size and grass count for better mobile performance
-  const fieldWidth = 40; // Reduced from 80
-  const fieldDepth = 30; // Reduced from 60
-  const maxGrassHeight = 2.0; // Slightly reduced
-  const maxGrassWidth = 0.12;
-
-  // Generate fewer grass positions for better performance
+  // Generate fewer grass positions for better performance - STABLE POSITIONS
   const grassPositions = useMemo(() => {
     const positions = [];
     const seededRandom = (seed) => {
@@ -161,7 +209,26 @@ function CropPlant({ stage, farmData }) {
       positions.push({ x, z, baseHeight, baseThickness, id: i });
     }
     return positions;
-  }, []);
+  }, []); // Empty dependency array ensures this only runs once
+
+  // Memoize grass colors to prevent recalculation on farmData changes
+  const stableGrassColors = useMemo(() => {
+    const colors = [];
+    for (let i = 0; i < 800; i++) {
+      // Use stable, default values for grass color calculation
+      const moistureValue = 60; // Fixed moisture value
+      const nitrogenValue = 70; // Fixed nitrogen value
+      
+      const grassColorOptions = [
+        `hsl(${85 + Math.sin(i) * 10}, ${50 + nitrogenValue / 3}%, ${25 + moistureValue / 8}%)`,
+        `hsl(${95 + Math.sin(i * 0.7) * 15}, ${55 + nitrogenValue / 4}%, ${30 + moistureValue / 6}%)`,
+        `hsl(${78 + Math.sin(i * 1.2) * 12}, ${45 + nitrogenValue / 5}%, ${22 + moistureValue / 10}%)`
+      ];
+      
+      colors.push(grassColorOptions[i % 3]);
+    }
+    return colors;
+  }, []); // Empty dependency array ensures this only runs once
 
   // Calculate current visible grass based on growth stage
   const visibleGrassCount = Math.floor((stage / 100) * 800); // Reduced from 1800
@@ -277,15 +344,8 @@ function CropPlant({ stage, farmData }) {
             const currentHeight = (stage / 100) * grass.baseHeight;
             const currentThickness = (stage / 100) * grass.baseThickness;
             
-            // Different grass colors for realism
-            const moistureValue = farmData.soilMoisture || 50; // Use default value of 50 if null
-            const grassColors = [
-              `hsl(${85 + Math.sin(grass.id) * 10}, ${50 + farmData.nutrients.nitrogen / 3}%, ${25 + moistureValue / 8}%)`,
-              `hsl(${95 + Math.sin(grass.id * 0.7) * 15}, ${55 + farmData.nutrients.nitrogen / 4}%, ${30 + moistureValue / 6}%)`,
-              `hsl(${78 + Math.sin(grass.id * 1.2) * 12}, ${45 + farmData.nutrients.nitrogen / 5}%, ${22 + moistureValue / 10}%)`
-            ];
-            
-            const grassColor = grassColors[grass.id % 3];
+            // Use stable grass color to prevent re-rendering on farmData changes
+            const grassColor = stableGrassColors[grass.id];
             
             return (
               <group key={`grass-${grass.id}`} position={[grass.x, 0, grass.z]}>
@@ -323,7 +383,7 @@ function CropPlant({ stage, farmData }) {
                     position={[0, currentHeight * 0.85, 0]}
                   >
                     <meshStandardMaterial 
-                      color={`hsl(${88 + Math.sin(grass.id) * 25}, 70%, 42%)`}
+                      color="hsl(88, 70%, 42%)"
                       transparent
                       opacity={0.85}
                       roughness={0.8}
@@ -449,15 +509,11 @@ function CropPlant({ stage, farmData }) {
       {/* Seed stage indicators - more seeds */}
       {stage <= 5 && stage > 0 && (
         <group>
-          {Array.from({ length: 80 }, (_, i) => ( // Increased from 60 to 80 seeds for massive field
+          {stablePositions.seeds.map((position, i) => ( // Use stable positions
             <Sphere 
               key={`seed-${i}`}
               args={[0.025]} // Slightly larger seeds
-              position={[
-                (Math.random() - 0.5) * fieldWidth * 0.8,
-                -0.05,
-                (Math.random() - 0.5) * fieldDepth * 0.8
-              ]}
+              position={position}
             >
               <meshStandardMaterial 
                 color="#8B4513" 
@@ -471,14 +527,14 @@ function CropPlant({ stage, farmData }) {
       {/* Early sprouts - increased density */}
       {stage > 5 && stage <= 15 && (
         <group>
-          {Array.from({ length: Math.floor(stage * 8) }, (_, i) => ( // Increased from stage * 6 to stage * 8 for massive field coverage
+          {stablePositions.sprouts.slice(0, Math.floor(stage * 8)).map((position, i) => ( // Use stable positions, slice based on stage
             <Box
               key={`sprout-${i}`}
               args={[0.02, stage * 0.02, 0.015]} // Made sprouts thicker
               position={[
-                (Math.random() - 0.5) * fieldWidth * 0.9,
-                stage * 0.01,
-                (Math.random() - 0.5) * fieldDepth * 0.9
+                position[0], // Use stable x position
+                stage * 0.01, // Only y position changes with stage
+                position[2]   // Use stable z position
               ]}
             >
               <meshStandardMaterial 
@@ -495,11 +551,11 @@ function CropPlant({ stage, farmData }) {
       {farmData.currentTemp > 35 && (
         <group>
           {/* Heat stress effect */}
-          {Array.from({ length: 8 }, (_, i) => (
+          {stablePositions.heatEffects.map((position, i) => (
             <Sphere key={`heat-${i}`} args={[0.02]} position={[
-              (Math.random() - 0.5) * fieldWidth,
-              maxGrassHeight + Math.random() * 0.5,
-              (Math.random() - 0.5) * fieldDepth
+              position[0], // Use stable x position
+              maxGrassHeight + 0.25, // Use fixed y position instead of random
+              position[2]  // Use stable z position
             ]}>
               <meshStandardMaterial 
                 color="#FF6B35" 
@@ -516,11 +572,11 @@ function CropPlant({ stage, farmData }) {
       {/* Growth particles during active growth */}
       {stage > 10 && stage < 95 && (
         <group>
-          {Array.from({ length: 12 }, (_, i) => (
+          {stablePositions.growthParticles.map((position, i) => (
             <Sphere key={`growth-${i}`} args={[0.015]} position={[
-              (Math.random() - 0.5) * fieldWidth,
-              Math.random() * maxGrassHeight + 0.5,
-              (Math.random() - 0.5) * fieldDepth
+              position[0], // Use stable x position
+              maxGrassHeight * 0.5 + 0.5, // Use fixed y position instead of random
+              position[2]  // Use stable z position
             ]}>
               <meshStandardMaterial 
                 color="#98FB98" 
@@ -1242,9 +1298,9 @@ const CropSimulation = () => {
             // Add activity to daily log if it was an event
             if (response.data.detection.eventType) {
               const activityNames = {
-                irrigation: 'Watered crops',
+                irrigation: 'Irrigated crops',
                 fertilization: 'Applied fertilizer',
-                pest_check: 'Pest inspection'
+                pest_check: 'Checked for pests'
               };
               
               setDailyActivities(prev => [...prev, {
@@ -1541,13 +1597,12 @@ const CropSimulation = () => {
               <p className="text-xs text-gray-500 mb-2">Farm Actions:</p>
               <div className="max-h-32 sm:max-h-40 overflow-y-auto space-y-1 sm:space-y-2">
                 {[
-                  "Water my crops",
-                  "Apply fertilizer", 
-                  "Check for pests",
+                  "Irrigated my crops",
+                  "Applied fertilizer", 
+                  "Checked for pests",
                   "How are my crops doing?",
                   "When will harvest be ready?",
-                  "Check weather forecast",
-                  "Give daily care"
+                  "Check weather forecast"
                 ].map((question, index) => (
                   <button
                     key={index}
