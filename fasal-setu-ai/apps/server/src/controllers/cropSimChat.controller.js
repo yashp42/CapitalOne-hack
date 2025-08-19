@@ -585,10 +585,13 @@ const getNextRecommendedEvent = (crop, completedEventType = null) => {
     
     const now = new Date();
     
-    // Calculate days since last activities
-    const daysSinceIrrigation = lastIrrigation ? Math.floor((now - lastIrrigation) / (1000 * 60 * 60 * 24)) : 999;
-    const daysSinceFertilization = lastFertilization ? Math.floor((now - lastFertilization) / (1000 * 60 * 60 * 24)) : 999;
-    const daysSincePestCheck = lastPestCheck ? Math.floor((now - lastPestCheck) / (1000 * 60 * 60 * 24)) : 999;
+    // Calculate days since last activities - for new crops, use crop age as baseline
+    const cropAge = crop.derived?.days_after_sowing || 0;
+    const defaultDaysSince = Math.min(cropAge, 7); // Use crop age but cap at 7 days for new crops
+    
+    const daysSinceIrrigation = lastIrrigation ? Math.floor((now - lastIrrigation) / (1000 * 60 * 60 * 24)) : defaultDaysSince;
+    const daysSinceFertilization = lastFertilization ? Math.floor((now - lastFertilization) / (1000 * 60 * 60 * 24)) : defaultDaysSince;
+    const daysSincePestCheck = lastPestCheck ? Math.floor((now - lastPestCheck) / (1000 * 60 * 60 * 24)) : defaultDaysSince;
     
     // Stage-specific recommendations
     const stageRecommendations = {
@@ -707,12 +710,18 @@ const getNextRecommendedEvent = (crop, completedEventType = null) => {
     
     if (eventPriorities.length > 0) {
         const mostUrgent = eventPriorities[0];
+        // Cap urgency at reasonable levels for display
+        const displayUrgency = Math.min(mostUrgent.urgency, 7);
+        const isReasonablyOverdue = mostUrgent.urgency <= 3;
+        
         return {
             nextEvent: mostUrgent.event,
-            daysUntilNext: 0, // Overdue
+            daysUntilNext: isReasonablyOverdue ? 0 : -Math.abs(displayUrgency), // Negative for overdue
             description: mostUrgent.description,
             restrictionDays: mostUrgent.restrictionDays,
-            restrictionMessage: `${mostUrgent.event} is overdue by ${mostUrgent.urgency} days`
+            restrictionMessage: isReasonablyOverdue ? 
+                `${mostUrgent.event} is due now` : 
+                `${mostUrgent.event} is overdue by ${displayUrgency} days`
         };
     }
     
@@ -1146,12 +1155,12 @@ const handleCropSimChat = asyncErrorHandler(async (req, res) => {
             restrictionUntil.setDate(restrictionUntil.getDate() + nextEventData.restrictionDays);
             
             const nextEventDue = new Date();
-            nextEventDue.setDate(nextEventDue.getDate() + nextEventData.daysUntilNext);
+            nextEventDue.setDate(nextEventDue.getDate() + Math.max(0, nextEventData.daysUntilNext));
             
             const eventUpdateData = {
                 'derived.next_event': nextEventData.nextEvent,
                 'derived.next_event_due_date': nextEventDue,
-                'derived.next_event_days_until': nextEventData.daysUntilNext,
+                'derived.next_event_days_until': Math.max(0, nextEventData.daysUntilNext), // Store positive days for database
                 'derived.next_event_description': nextEventData.description,
                 'derived.event_restriction_active': nextEventData.restrictionDays > 0,
                 'derived.event_restriction_until': nextEventData.restrictionDays > 0 ? restrictionUntil : null,
@@ -1175,8 +1184,14 @@ const handleCropSimChat = asyncErrorHandler(async (req, res) => {
                 
                 // Add next event information
                 let nextEventInfo = "";
-                if (nextEventData.daysUntilNext === 0) {
-                    nextEventInfo = `\n\n⚠️ **${nextEventData.nextEvent}** is **due now!** ${nextEventData.description}`;
+                if (nextEventData.daysUntilNext <= 0) {
+                    // Event is due now or overdue
+                    if (nextEventData.daysUntilNext === 0) {
+                        nextEventInfo = `\n\n⚠️ **${nextEventData.nextEvent}** is **due now!** ${nextEventData.description}`;
+                    } else {
+                        const overdueDays = Math.abs(nextEventData.daysUntilNext);
+                        nextEventInfo = `\n\n⚠️ **${nextEventData.nextEvent}** is **overdue by ${overdueDays} day${overdueDays !== 1 ? 's' : ''}!** ${nextEventData.description}`;
+                    }
                 } else if (nextEventData.daysUntilNext <= 3) {
                     nextEventInfo = `\n\n📅 **Next activity**: ${nextEventData.nextEvent} in **${nextEventData.daysUntilNext} day${nextEventData.daysUntilNext !== 1 ? 's' : ''}** (${nextEventDue.toLocaleDateString()})\n` +
                                   `💡 **Purpose**: ${nextEventData.description}`;
@@ -1204,8 +1219,14 @@ const handleCropSimChat = asyncErrorHandler(async (req, res) => {
                 
                 // Add next event information
                 let nextEventInfo = "";
-                if (nextEventData.daysUntilNext === 0) {
-                    nextEventInfo = `\n\n⚠️ **${nextEventData.nextEvent}** is **due now!** ${nextEventData.description}`;
+                if (nextEventData.daysUntilNext <= 0) {
+                    // Event is due now or overdue
+                    if (nextEventData.daysUntilNext === 0) {
+                        nextEventInfo = `\n\n⚠️ **${nextEventData.nextEvent}** is **due now!** ${nextEventData.description}`;
+                    } else {
+                        const overdueDays = Math.abs(nextEventData.daysUntilNext);
+                        nextEventInfo = `\n\n⚠️ **${nextEventData.nextEvent}** is **overdue by ${overdueDays} day${overdueDays !== 1 ? 's' : ''}!** ${nextEventData.description}`;
+                    }
                 } else if (nextEventData.daysUntilNext <= 3) {
                     nextEventInfo = `\n\n📅 **Next activity**: ${nextEventData.nextEvent} in **${nextEventData.daysUntilNext} day${nextEventData.daysUntilNext !== 1 ? 's' : ''}** (${nextEventDue.toLocaleDateString()})\n` +
                                   `💡 **Purpose**: ${nextEventData.description}`;
