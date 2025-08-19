@@ -5,7 +5,7 @@ import { OrbitControls, Text, Box, Sphere } from '@react-three/drei';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as THREE from 'three';
 import { TextureLoader } from 'three';
-import { cropAPI, authAPI, cropSimChatAPI } from '../services/api'; // Import API service
+import { cropAPI, authAPI, cropSimChatAPI, chatbotAPI } from '../services/api'; // Import API service
 import { useAuth } from '../contexts/AuthContext'; // Import auth context
 import { 
   FaTemperatureHigh, 
@@ -658,19 +658,26 @@ const CropSimulation = () => {
   const [chatMessages, setChatMessages] = useState([]);
   const [recentlyUpdated, setRecentlyUpdated] = useState({}); // Track recently updated fields
   const [growthUpdated, setGrowthUpdated] = useState(false); // Track when growth is updated
-  
-  // Add welcome message when component loads
+  // Crop simulation is always in 'my_farm' mode since it works with specific crop data
+  const chatMode = 'my_farm';
+  const [userProfile, setUserProfile] = useState(null); // Store user profile for personalization
+  const welcomeMessageAdded = useRef(false); // Track if welcome message has been added
+
+  // Add welcome message when component loads (only once)
   useEffect(() => {
-    if (cropId && harvestData) {
+    if (cropId && harvestData && !welcomeMessageAdded.current) {
       const welcomeMessage = {
-        id: 1,
-        text: `**Welcome to your Virtual ${harvestData.crop_name || 'Crop'} Farm!** 🌱 I can help you with **irrigation**, **fertilization**, **pest management**, and answer your farming questions. Your crop is currently **${cropStage.toFixed(1)}% grown**. How can I assist you today?`,
+        id: Date.now(), // Use timestamp for unique ID
+        text: `**Welcome to your Virtual ${harvestData.crop_name || 'Crop'} Farm!** 🌱 I have access to your specific crop data and can provide personalized recommendations. I can help you with **irrigation**, **fertilization**, **pest management**, and answer your farming questions. Your crop is currently **${cropStage.toFixed(1)}% grown**. How can I assist you today?`,
         isBot: true,
         timestamp: new Date()
       };
+      
+      console.log('Adding welcome message:', welcomeMessage);
       setChatMessages([welcomeMessage]);
+      welcomeMessageAdded.current = true;
     }
-  }, [cropId, harvestData, cropStage]);
+  }, [cropId, harvestData, cropStage]); // Removed chatMode dependency
   const [newMessage, setNewMessage] = useState('');
   const [isChatTyping, setIsChatTyping] = useState(false);
   const [dailyActivities, setDailyActivities] = useState([]);
@@ -951,6 +958,25 @@ const CropSimulation = () => {
     fetchCropData();
   }, [cropId, initialGrowthPercent]);
 
+  // Fetch user profile for personalized mode
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user && isAuthenticated) {
+        try {
+          const profileResponse = await authAPI.getProfile();
+          if (profileResponse.success && profileResponse.data) {
+            setUserProfile(profileResponse.data);
+            console.log('User profile loaded for crop simulation:', profileResponse.data);
+          }
+        } catch (error) {
+          console.log('Profile not available for crop simulation:', error);
+        }
+      }
+    };
+
+    fetchUserProfile();
+  }, [user, isAuthenticated]);
+
   // Harvest data processing will be handled by LLM integration
   useEffect(() => {
     // Harvest data processing will be handled by LLM integration
@@ -1100,6 +1126,9 @@ const CropSimulation = () => {
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
 
+    console.log('handleSendMessage called with:', newMessage);
+    console.log('Current chat messages before adding user message:', chatMessages.length);
+
     const userMessage = {
       id: Date.now(),
       text: newMessage,
@@ -1107,42 +1136,65 @@ const CropSimulation = () => {
       timestamp: new Date()
     };
 
-    setChatMessages(prev => [...prev, userMessage]);
+    console.log('Adding user message:', userMessage);
+    setChatMessages(prev => {
+      console.log('Previous messages:', prev.length);
+      const newMessages = [...prev, userMessage];
+      console.log('New messages after adding user message:', newMessages.length);
+      return newMessages;
+    });
+    
     const currentMessage = newMessage;
     setNewMessage('');
     setIsChatTyping(true);
 
+    console.log('About to call API with message:', currentMessage);
+
     try {
-      // Prepare farm context for the AI
+      console.log('Sending message:', currentMessage);
+      console.log('Chat mode:', chatMode);
+      console.log('Crop ID:', cropId);
+      
+      // Prepare farm context
       const farmContext = {
         weather: {
-          current: farmData.weatherToday,
-          temperature: farmData.currentTemp,
-          soilMoisture: farmData.soilMoisture,
-          soilTemp: farmData.soilTemp,
-          forecast: farmData.forecast
+          current: farmData.weatherToday || 'Clear',
+          temperature: farmData.currentTemp || 25,
+          soilMoisture: farmData.soilMoisture || 60,
+          soilTemp: farmData.soilTemp || 22,
+          forecast: farmData.forecast || []
         },
         soil: {
-          moisture: farmData.soilMoisture,
-          temperature: farmData.soilTemp
+          moisture: farmData.soilMoisture || 60,
+          temperature: farmData.soilTemp || 22
         },
         location: user?.location || "India"
       };
 
-      // Call the crop simulation chat API
-      const response = await cropSimChatAPI.sendMessage({
+      let response;
+      
+      // Crop simulation always uses my_farm mode with crop-specific context
+      console.log('Using crop simulation API in my_farm mode');
+      response = await cropSimChatAPI.sendMessage({
         message: currentMessage,
         cropId: cropId,
-        farmContext: farmContext
+        farmContext: farmContext,
+        mode: 'my_farm' // Crop simulation always uses my_farm mode
       });
 
+      console.log('API Response:', response);
+
       if (response.success) {
-        // Update crop data if it changed (for events like irrigation/fertilization)
-        if (response.data.crop) {
+        let botResponseText = '';
+        let updatedCropData = null;
+
+        if (response.data && response.data.crop) {
+          // Handle crop simulation response with crop updates
           const oldStage = cropStage;
           const newStage = response.data.crop.growth_percent;
           setCropStage(newStage);
-          setCurrentCrop(response.data.crop); // Update current crop data
+          setCurrentCrop(response.data.crop);
+          updatedCropData = response.data.crop;
           
           // Trigger growth animation if growth increased
           if (newStage > oldStage) {
@@ -1151,7 +1203,7 @@ const CropSimulation = () => {
           }
           
           // Update farm data with new irrigation/fertilization dates
-          if (response.data.detection.hasEvent) {
+          if (response.data.detection && response.data.detection.hasEvent) {
             const eventType = response.data.detection.eventType;
             
             setFarmData(prev => ({
@@ -1201,17 +1253,29 @@ const CropSimulation = () => {
               }]);
             }
           }
+          
+          botResponseText = response.data.response;
+        } else {
+          // Handle general chatbot response
+          botResponseText = response.data?.answer || response.data?.response || response.message || "I'm here to help with your farming needs!";
         }
 
         // Add bot response
         const botMessage = {
           id: Date.now() + 1,
-          text: response.data.response,
+          text: botResponseText,
           isBot: true,
           timestamp: new Date()
         };
 
-        setChatMessages(prev => [...prev, botMessage]);
+        console.log('Adding bot response:', botMessage);
+        setChatMessages(prev => {
+          console.log('Previous messages before bot response:', prev.length);
+          const newMessages = [...prev, botMessage];
+          console.log('New messages after adding bot response:', newMessages.length);
+          return newMessages;
+        });
+        console.log('Bot response added:', botResponseText);
       } else {
         throw new Error(response.message || 'Failed to get response');
       }
@@ -1225,9 +1289,16 @@ const CropSimulation = () => {
         timestamp: new Date()
       };
 
-      setChatMessages(prev => [...prev, errorMessage]);
+      console.log('Adding error message:', errorMessage);
+      setChatMessages(prev => {
+        console.log('Previous messages before error:', prev.length);
+        const newMessages = [...prev, errorMessage];
+        console.log('New messages after adding error:', newMessages.length);
+        return newMessages;
+      });
     } finally {
       setIsChatTyping(false);
+      console.log('handleSendMessage completed');
     }
   };
 
@@ -1376,8 +1447,8 @@ const CropSimulation = () => {
                 <FaRobot className="text-white text-sm sm:text-base" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-gray-800 text-sm sm:text-base truncate">Farm AI Assistant</h3>
-                <p className="text-xs text-green-600">Online</p>
+                <h3 className="font-semibold text-gray-800 text-sm sm:text-base truncate">Crop AI Assistant</h3>
+                <p className="text-xs text-green-600">🌾 My Farm Mode</p>
               </div>
             </div>
 
@@ -1395,7 +1466,9 @@ const CropSimulation = () => {
                     <div
                       className={`max-w-[85%] sm:max-w-[80%] p-2 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm break-words leading-relaxed ${
                         message.isBot
-                          ? 'bg-gray-100 text-gray-800'
+                          ? message.isSystemMessage 
+                            ? 'bg-amber-50 border border-amber-200 text-amber-800'
+                            : 'bg-gray-100 text-gray-800'
                           : 'bg-green-500 text-white'
                       }`}
                     >

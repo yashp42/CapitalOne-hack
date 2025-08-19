@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaPaperPlane, FaMicrophone, FaRobot, FaUser, FaTimes, FaEyeSlash, FaEye, FaComments, FaExclamationTriangle, FaCheckCircle, FaSpinner, FaHistory, FaBars } from 'react-icons/fa';
+import { FaPaperPlane, FaMicrophone, FaRobot, FaUser, FaTimes, FaEyeSlash, FaEye, FaComments, FaExclamationTriangle, FaCheckCircle, FaSpinner, FaHistory, FaBars, FaToggleOn, FaToggleOff, FaUserTie, FaGlobe } from 'react-icons/fa';
 import { useNavigate, useParams } from 'react-router-dom';
 import { chatbotAPI, authAPI, conversationAPI } from '../services/api';
 import ConversationSidebar from '../components/ConversationSidebar';
+import { useAuth } from '../contexts/AuthContext';
 
 // Memoized FloatingChatButton to prevent unnecessary re-renders
 const FloatingChatButton = React.memo(() => {
@@ -27,6 +28,7 @@ const FloatingChatButton = React.memo(() => {
 const Chatbot = () => {
   const navigate = useNavigate();
   const { conversationId } = useParams();
+  const { user: authUser } = useAuth(); // Get auth context
   const [backgroundImageLoaded, setBackgroundImageLoaded] = useState(false);
   const [messages, setMessages] = useState([
     {
@@ -40,29 +42,52 @@ const Chatbot = () => {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [showQuickQuestions, setShowQuickQuestions] = useState(true);
   const [userProfile, setUserProfile] = useState(null);
-  const [chatMode, setChatMode] = useState('public_advisor'); // UI display only - server determines actual mode
+  const [chatMode, setChatMode] = useState('public_advisor'); // Default to public advisor
   const [connectionStatus, setConnectionStatus] = useState('connecting'); // connecting, connected, disconnected
   const [errorMessage, setErrorMessage] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const messagesEndRef = useRef(null);
 
+  // Determine if user is authenticated
+  const isAuthenticated = authAPI.isAuthenticated();
+
+  // Function to toggle between modes (only available for authenticated users)
+  const toggleChatMode = useCallback(() => {
+    if (!isAuthenticated) return; // Prevent toggle for non-authenticated users
+    
+    const newMode = chatMode === 'my_farm' ? 'public_advisor' : 'my_farm';
+    setChatMode(newMode);
+    
+    // Add a system message to inform about the mode change
+    const modeChangeMessage = {
+      type: 'bot',
+      content: newMode === 'my_farm' 
+        ? '🌾 **Switched to My Farm mode** - I now have access to your personal farm data and can provide personalized recommendations!'
+        : '🌍 **Switched to Public Advisor mode** - I\'m now providing general agricultural advice without using your personal data.',
+      timestamp: new Date(),
+      isSystemMessage: true
+    };
+    
+    setMessages(prev => [...prev, modeChangeMessage]);
+  }, [chatMode, isAuthenticated]);
+
   // Check user authentication and profile on component mount
   useEffect(() => {
     const initializeChat = async () => {
       try {
         // Check if user is authenticated
-        const isAuthenticated = authAPI.isAuthenticated();
+        const isUserAuthenticated = authAPI.isAuthenticated();
         
-        if (isAuthenticated) {
+        if (isUserAuthenticated) {
+          // Set initial mode to my_farm for authenticated users
+          setChatMode('my_farm');
+          
           // Get user profile for personalized mode
           try {
             const profileResponse = await authAPI.getProfile();
             if (profileResponse.success && profileResponse.data) {
               setUserProfile(profileResponse.data);
-              // Set display mode to my_farm for personalized UI elements
-              // (actual API mode is determined server-side based on authentication)
-              setChatMode('my_farm');
               console.log('User profile loaded:', profileResponse.data);
               // Log specific fields we need to ensure they're available
               console.log('User ID in profile:', profileResponse.data.id);
@@ -103,6 +128,10 @@ const Chatbot = () => {
             setCurrentConversationId(null);
             setShowQuickQuestions(true);
           }
+        } else {
+          // For non-authenticated users, force public_advisor mode
+          setChatMode('public_advisor');
+          console.log('User not authenticated, using public advisor mode');
         }
 
         // Check chatbot service health
@@ -185,11 +214,12 @@ const Chatbot = () => {
         const requestPayload = {
           message: currentInput,
           conversation: conversationHistory,
-          conversationId: currentConversationId // Include current conversation ID
+          conversationId: currentConversationId, // Include current conversation ID
+          mode: chatMode // Send the current mode selection to backend
         };
 
-        // Add profile data when available
-        if (userProfile) {
+        // Add profile data when available and in my_farm mode
+        if (userProfile && chatMode === 'my_farm') {
           // Provide profile in a simple, LLM-friendly format - just flat key-value pairs
           requestPayload.profile = {
             user_id: userProfile.id, // CRITICAL: Using 'id' not '_id' as returned by API
@@ -212,7 +242,7 @@ const Chatbot = () => {
           console.log("Sending simplified profile to AI engine:", requestPayload.profile);
         }
 
-        console.log('Sending chat request:', requestPayload);
+        console.log('Sending chat request with mode:', chatMode, requestPayload);
 
         // Call the chatbot API
         const response = await chatbotAPI.sendMessage(requestPayload);
@@ -310,8 +340,8 @@ const Chatbot = () => {
 
   // Memoized quick questions to prevent re-renders
   const quickQuestions = useMemo(() => {
-    // Show personalized questions if user profile is available
-    if (userProfile) {
+    // Show personalized questions if user profile is available and in my_farm mode
+    if (isAuthenticated && chatMode === 'my_farm') {
       return [
         "What crops should I plant this season?",
         "How to manage pests in my crops?",
@@ -319,7 +349,7 @@ const Chatbot = () => {
         "Market prices for my crops"
       ];
     } else {
-      // Default questions for unauthenticated users
+      // Default questions for public advisor mode
       return [
         "What crops grow best in Karnataka?",
         "How to control white fly in cotton?", 
@@ -327,7 +357,7 @@ const Chatbot = () => {
         "Organic farming techniques"
       ];
     }
-  }, [userProfile]);
+  }, [isAuthenticated, chatMode]);
 
   // Utility function to render text with bold formatting
   const renderFormattedText = (text) => {
@@ -437,14 +467,40 @@ const Chatbot = () => {
                      connectionStatus === 'connecting' ? 'Connecting...' :
                      'Offline • Limited features'}
                   </p>
-                  {chatMode === 'my_farm' && (
-                    <span className="text-2xs sm:text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                      Personalized
-                    </span>
-                  )}
+                  
                 </div>
               </div>
             </div>
+
+            {/* Mode Toggle Button - Only show for authenticated users */}
+            {isAuthenticated && (
+              <div className="flex items-center space-x-2 mt-2 sm:mt-0">
+                <span className="text-xs text-gray-600 hidden sm:inline">Mode:</span>
+                <button
+                  onClick={toggleChatMode}
+                  className={`flex items-center space-x-2 px-3 py-1.5 rounded-full border transition-all duration-200 hover:shadow-md ${
+                    chatMode === 'my_farm'
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                      : 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100'
+                  }`}
+                  title={`Currently in ${chatMode === 'my_farm' ? 'My Farm' : 'Public Advisor'} mode. Click to toggle.`}
+                >
+                  {chatMode === 'my_farm' ? (
+                    <>
+                      <FaUserTie className="text-xs" />
+                      <span className="text-xs font-medium">My Farm</span>
+                      <FaToggleOn className="text-sm" />
+                    </>
+                  ) : (
+                    <>
+                      <FaGlobe className="text-xs" />
+                      <span className="text-xs font-medium">Public</span>
+                      <FaToggleOff className="text-sm" />
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
           
           {/* Error message display */}
@@ -508,7 +564,9 @@ const Chatbot = () => {
                         ? 'bg-gradient-to-br from-blue-500/90 to-purple-600/90 text-white border-blue-400/50 rounded-br-md' 
                         : message.isError
                           ? 'bg-gradient-to-br from-red-50/90 to-red-100/90 text-red-800 border-red-200/50 rounded-bl-md'
-                          : 'bg-white/80 text-gray-800 border-gray-200/50 rounded-bl-md'
+                          : message.isSystemMessage
+                            ? 'bg-gradient-to-br from-amber-50/90 to-yellow-100/90 text-amber-800 border-amber-200/50 rounded-bl-md'
+                            : 'bg-white/80 text-gray-800 border-gray-200/50 rounded-bl-md'
                     } shadow-lg`}>
                       <div className="text-xs md:text-sm leading-relaxed">
                         {renderFormattedText(message.content)}
@@ -530,7 +588,8 @@ const Chatbot = () => {
                       
                       <p className={`text-xs mt-1 md:mt-2 ${
                         message.type === 'user' ? 'text-blue-100' : 
-                        message.isError ? 'text-red-600' : 'text-gray-500'
+                        message.isError ? 'text-red-600' : 
+                        message.isSystemMessage ? 'text-amber-600' : 'text-gray-500'
                       }`}>
                         {message.timestamp.toLocaleTimeString()}
                       </p>

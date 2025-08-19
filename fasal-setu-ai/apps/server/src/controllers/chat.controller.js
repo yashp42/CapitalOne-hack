@@ -23,12 +23,15 @@ You will receive:
 1) The user's conversation and latest query.
 2) LLM1 planner output (intent, decision_template, facts, tool calls).
 3) Decision Engine output (may be valid, invalid, or absent).
+4) Operating mode (my_farm or public_advisor).
 
 Rules:
 - If LLM1.missing has values: do not hallucinate. Instead, politely ask the user for those specific values before giving a recommendation.
 - If intent is "other": ignore Decision Engine, answer reasonably using LLM1 facts + user query.
 - If Decision Engine output is valid and consistent with LLM1 facts: base your plain-text answer on it.
 - If Decision Engine is missing/invalid: answer from LLM1 facts and user query, clearly state uncertainty, and give safe fallback advice.
+- In "my_farm" mode: Use personalized data and speak directly to the user's specific farm situation.
+- In "public_advisor" mode: Provide general advice without referencing personal farm data.
 - Be concise, farmer-friendly, ≤180 words. Do not output JSON. Plain text only.
 - Never invent numbers or weather. Only use facts provided. If data is insufficient, say what is missing.
 - Always output in the role of an advisor, not as a system log.
@@ -142,12 +145,12 @@ const callDecisionEngineEnhanced = async (payload, requestId) => {
 };
 
 // Gemini LLM2 client with enhanced error handling
-const callGeminiLLM2 = async (conversation, llm1Response, decisionOutput, profile, requestId) => {
+const callGeminiLLM2 = async (conversation, llm1Response, decisionOutput, profile, mode, requestId) => {
   if (!GEMINI_API_KEY || GEMINI_API_KEY === 'your-gemini-api-key') {
     throw new Error('Gemini API key not configured');
   }
 
-  console.log(`[${requestId}] Calling Gemini LLM2 (2.0 Flash)`);
+  console.log(`[${requestId}] Calling Gemini LLM2 (2.0 Flash) in ${mode} mode`);
   
   // Log profile information if available
   if (profile) {
@@ -205,11 +208,14 @@ const callGeminiLLM2 = async (conversation, llm1Response, decisionOutput, profil
 
   const prompt = `${LLM2_SYSTEM_PROMPT}
 
+**Operating Mode:** ${mode}
+${mode === 'my_farm' ? 'Use personalized farm data and provide specific advice for the user\'s farm.' : 'Provide general agricultural advice without personal data.'}
+
 **User Conversation:**
 ${conversationText}
 
 **User Profile:**
-${profile ? JSON.stringify(profile, null, 2) : 'No profile information available (public mode)'}
+${profile ? JSON.stringify(profile, null, 2) : mode === 'my_farm' ? 'Profile requested but not available' : 'Public advisor mode - no personal profile used'}
 
 **Available Context:**
 - Intent: ${llm1Data.intent || 'unknown'}
@@ -223,7 +229,8 @@ ${profile ? JSON.stringify(profile, null, 2) : 'No profile information available
 - Decision Engine: ${contextSummary.has_decision_error ? 'Unavailable' : 'Available'}
 
 **Your Task:**
-Based on the user's latest query and ANY available context above, provide expert agricultural advice. 
+Based on the user's latest query and ANY available context above, provide expert agricultural advice in **${mode}** mode. 
+${mode === 'my_farm' ? 'Use the user\'s personal farm data to provide specific, personalized recommendations.' : 'Provide general agricultural advice that applies broadly to farmers.'}
 Use your knowledge to fill gaps where services failed. Be practical and helpful.
 
 **Remember:** Use **bold** formatting for key terms and actions!`;
@@ -310,7 +317,7 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
 
   try {
     // Extract base input
-    const { message, profile: requestProfile = null, conversation = [] } = req.body;
+    const { message, profile: requestProfile = null, conversation = [], mode: requestedMode = null } = req.body;
 
     if (!message || typeof message !== 'string') {
       throw new ApiError(400, "Message is required and must be a string");
@@ -320,11 +327,22 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
       throw new ApiError(400, "Conversation must be an array");
     }
     
-    // Always determine mode based on authentication status - this ensures consistent behavior
+    // Determine mode based on authentication and user preference
     const isAuthenticated = getUserIdFromRequest(req) !== null;
-    const mode = isAuthenticated ? "my_farm" : "public_advisor";
     
-    console.log(`[${requestId}] Using mode: ${mode} based on authentication status: ${isAuthenticated}`);
+    // If user is not authenticated, force public_advisor mode
+    // If user is authenticated, respect their mode choice (default to my_farm)
+    let mode;
+    if (!isAuthenticated) {
+      mode = "public_advisor";
+      console.log(`[${requestId}] User not authenticated - forcing public_advisor mode`);
+    } else {
+      // For authenticated users, use their requested mode or default to my_farm
+      mode = requestedMode === "public_advisor" ? "public_advisor" : "my_farm";
+      console.log(`[${requestId}] Authenticated user requested mode: ${requestedMode}, using: ${mode}`);
+    }
+    
+    console.log(`[${requestId}] Final mode determination: ${mode} (authenticated: ${isAuthenticated})`);
     
     // Validate mode value
     if (!["public_advisor", "my_farm"].includes(mode)) {
@@ -338,7 +356,7 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
     
     // Process profile data to create a simplified structure for the LLM
     let simplifiedProfile = null;
-    if (mode === "my_farm") {
+    if (mode === "my_farm" && isAuthenticated) {
         try {
             let profileData = requestProfile;
             // Extract userId from multiple possible sources
@@ -356,7 +374,7 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
                 console.log(`[${requestId}] Using userId from auth token: ${userId}`);
             }
             
-            if (!profileData && isAuthenticated) {
+            if (!profileData && userId) {
             if (userId) {
                 const user = await User.findById(userId).select('_id firstName lastName location land_area_acres preferred_language').lean();
                 if (user) {
@@ -542,8 +560,14 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
       console.log(`[${requestId}] Skipping Decision Engine - intent is 'other'`);
     } else if (llm1Response.missing && llm1Response.missing.length > 0) {
       console.log(`[${requestId}] Skipping Decision Engine - missing values: ${llm1Response.missing.join(', ')}`);
-    } else {
+    } else if (mode === "public_advisor") {
+      console.log(`[${requestId}] Running Decision Engine in public_advisor mode`);
       shouldCallDecisionEngine = true;
+    } else if (mode === "my_farm" && simplifiedProfile) {
+      console.log(`[${requestId}] Running Decision Engine in my_farm mode with profile`);
+      shouldCallDecisionEngine = true;
+    } else {
+      console.log(`[${requestId}] Skipping Decision Engine - insufficient data for ${mode} mode`);
     }
 
     // Call Decision Engine if needed
@@ -570,7 +594,7 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
     let finalAnswer;
     
     try {
-      finalAnswer = await callGeminiLLM2(fullConversation, llm1Response, decisionOutput, simplifiedProfile, requestId);
+      finalAnswer = await callGeminiLLM2(fullConversation, llm1Response, decisionOutput, simplifiedProfile, mode, requestId);
     } catch (error) {
       console.error(`[${requestId}] LLM2 (Gemini) call failed:`, error);
       
