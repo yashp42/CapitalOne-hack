@@ -60,12 +60,17 @@ Communication style:
 - Be specific and actionable in your advice
 - Use simple, farmer-friendly language
 - Keep responses comprehensive but under 250 words for assessments
-- Use emojis sparingly for emphasis
+- Do not use emojis
 - Format important points with **bold** text
 - Always reference the specific crop name and variety when available
 - Include growth percentage and stage in your assessments
 - **IMPORTANT: Always respond in the same language as the user's query. If the user asks in Hindi, respond in Hindi. If in English, respond in English. If in any other language, match that language.**
-
+**RESPONSE LENGTH INSTRUCTIONS**:
+Greetings / chit-chat: ≤20 words (one short line).
+Simple factual queries (e.g., “When should I irrigate next?”): 30–80 words (2–4 tight lines).
+Moderately complex questions (fertilizer schedule, pest management, crop choice): 80–200 words (short paragraph + maybe bullets).
+Analytical / multi-factor queries (weather + soil + market decision): 200–400 words (deeper explanation, still structured).
+Detailed strategy / teaching request (e.g., “Explain System of Rice Intensification step by step”): 400–600 words max (structured, stepwise, but not overlong).
 Always respond as a knowledgeable farming expert who has analyzed the provided crop and user data to give personalized recommendations.`;
 
 // Call Perplexity API for LLM2 responses
@@ -108,7 +113,7 @@ const callPerplexityLLM2 = async (messages, systemPrompt = CROP_SIM_LLM2_SYSTEM_
                     ...messages
                 ],
                 max_tokens: 2048,
-                temperature: 0.2,
+                temperature: 0,
                 top_p: 0.95
             })
         });
@@ -147,7 +152,7 @@ const formatFinalResponse = async ({
 }) => {
     try {
         // Build comprehensive context for Gemini formatting
-        let contextPrompt = `You are an expert agricultural advisor. Format a comprehensive response for a farmer based on the following analysis:
+        let contextPrompt = `You are an expert agricultural advisor. Format a concise response for a poor Indian farmer based on the following analysis:
 
 **ORIGINAL QUERY:** "${query}"
 
@@ -188,13 +193,20 @@ ${JSON.stringify(decisionEngineResponse, null, 2)}`;
         contextPrompt += `\n\n**FORMATTING INSTRUCTIONS:**
 - Create a concise, farmer-friendly response
 - Use **bold text** for important information using double asterisks (**)
-- Include appropriate emojis (🌱🌾💧🚜📅⚠️✅)
+- **Do not** use emojis
+- **Do not** include citation markers like [1], [2], etc. in your response.
+- If AI ANALYSIS has **a missing array**, to the point in one line ask ONLY for those fields and stop; never invent facts.
 - Structure the response clearly with sections if needed
-- Keep the tone encouraging and supportive
-- Include specific actionable advice
+- Include and highlight specific actionable advice
 - Reference the crop name and current status
 - If both AI and Decision Engine provided recommendations, synthesize them coherently
 - Make sure the response directly addresses the farmer's original query
+**RESPONSE LENGTH INSTRUCTIONS**:
+Greetings / chit-chat: ≤20 words (one short line).
+Simple factual queries (e.g., “When should I irrigate next?”): 30–80 words (2–4 tight lines).
+Moderately complex questions (fertilizer schedule, pest management, crop choice): 80–200 words (short paragraph + maybe bullets).
+Analytical / multi-factor queries (weather + soil + market decision): 200–400 words (deeper explanation, still structured).
+Detailed strategy / teaching request (e.g., “Explain System of Rice Intensification step by step”): 400–600 words max (structured, stepwise, but not overlong).
 - **CRITICAL: Keep response under 300 words - be concise but informative**
 - **IMPORTANT: Always respond in the same language as the farmer's original query. If they asked in Hindi, respond in Hindi. If in English, respond in English. If in any other language, match that language.**
 
@@ -221,7 +233,7 @@ Generate a well-formatted response that combines all the analysis above into hel
                         }
                     ],
                     max_tokens: 2048,
-                    temperature: 0.2,
+                    temperature: 0,
                     top_p: 0.95
                 })
             });

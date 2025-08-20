@@ -78,7 +78,7 @@ if __name__ == "__main__":  # Allow running via: python -m py.ai_engine.app
     import os
     
     # Get port from environment variable or use default
-    port = int(os.getenv("PORT", 8080))
+    port = int(os.getenv("PORT", 5173))
     host = os.getenv("HOST", "0.0.0.0")
     
     # When this package is on PYTHONPATH, module path is 'ai_engine.app:app'

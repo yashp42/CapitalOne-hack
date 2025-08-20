@@ -981,7 +981,7 @@ const MyFarm = () => {
                 </div>
                 
                 <div>
-                  <label htmlFor="variety" className="block text-sm font-medium text-gray-700 mb-2">Variety</label>
+                  <label htmlFor="variety" className="block text-sm font-medium text-gray-700 mb-2">Variety* <span className='text-xs text-gray-800/40'>(Write N/A if not applicable)</span></label>
                   <input
                     type="text"
                     id="variety"

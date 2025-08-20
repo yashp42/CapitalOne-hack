@@ -233,8 +233,24 @@ ${profile ? JSON.stringify(profile, null, 2) : mode === 'my_farm' ? 'Profile req
 Based on the user's latest query and ANY available context above, provide expert agricultural advice in **${mode}** mode. 
 ${mode === 'my_farm' ? 'Use the user\'s personal farm data to provide specific, personalized recommendations.' : 'Provide general agricultural advice that applies broadly to farmers.'}
 Use your knowledge to fill gaps where services failed. Be practical and helpful.
+Format the response exactly as the user requests (bullet points, one line, short or long answers). 
+If the user specifies length/format, follow it strictly.
+**IMPORTANT**:
+1) You are responding to the latest message in the user conversation. The user is a poor farmer in india. They need extremely concise responses and decisions. Only give long analytical responses when absolutely necessary. \n
+Example: Do not respond with useless 200 word info to just a "hello" or a 500 word passage for "when to irrigate next?".
+2) Always provide answers solely based on the *LLM1 and Decision Engine outputs*, use their responses to analyse and do not create your own data.
+3) If LLM1 has **a missing array**, to the point in one line ask ONLY for those fields and stop; never invent facts; and finally do not use any emojis.
+4) Do not include citation markers like [1], [2], etc. in your response.
+5) 5) Use line breaks (new lines) for better formatting.
+6) ONLY answer the user's query—do not include extra, related advice unless explicitly requested.
+**RESPONSE LENGTH INSTRUCTIONS**:
+Greetings / chit-chat: ≤20 words (one short line).
+Simple factual queries (e.g., “When should I irrigate next?”): 30–80 words (2–4 tight lines).
+Moderately complex questions (fertilizer schedule, pest management, crop choice): 80–200 words (short paragraph + maybe bullets).
+Analytical / multi-factor queries (weather + soil + market decision): 200–400 words (deeper explanation, still structured).
+Detailed strategy / teaching request (e.g., “Explain System of Rice Intensification step by step”): 400–600 words max (structured, stepwise, but not overlong).
 
-**Remember:** Use **bold** formatting for key terms and actions!`;
+**Remember:** Use **bold** formatting for key terms or information for the user and actions(actions/decisions which user can take)!`;
 
   const perplexityCall = async () => {
     const response = await fetch(PERPLEXITY_API_URL, {
@@ -256,7 +272,7 @@ Use your knowledge to fill gaps where services failed. Be practical and helpful.
           }
         ],
         max_tokens: 1500,
-        temperature: 0.2,
+        temperature: 0,
         top_p: 0.95
       })
     });
