@@ -1,0 +1,21 @@
+{
+  "message": "What pesticides should I use for my cotton crop?",
+  "mode": "my_farm",
+  "profile": {
+    "location": "Karnataka, India",
+    "farm_size": "5 acres",
+    "soil_type": "black_cotton_soil",
+    "crops": ["cotton"],
+    "irrigation": "drip"
+  },
+  "conversation": [
+    {
+      "role": "user",
+      "content": "I'm planning to grow cotton this season"
+    },
+    {
+      "role": "assistant",
+      "content": "Cotton is a great choice for Karnataka. What specific advice do you need?"
+    }
+  ]
+}

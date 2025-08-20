@@ -31,95 +31,122 @@ FACT_SLOT: Dict[str, str] = {
 # Location dependent tool names used repeatedly
 LOCATION_BASED_TOOLS: List[str] = ["weather_outlook", "soil_api", "storage_find"]
 
+############################
+# Tool import registration #
+############################
+
+# Each block first tries package-relative import, then script-context import
+# (when running from inside ai_engine directory), else defines stub.
+
 # Regional Crop Info tool
 try:
-    from ..tools.regional_crop_info import get_regional_crop_info
-    TOOL_MAP["regional_crop_info"] = get_regional_crop_info
-except Exception:  # noqa: E722 - broad except acceptable for optional dependency fallback
-    def get_regional_crop_info(args: Dict[str, Any]) -> Dict[str, Any]:
-        return {"data": {}, "source_stamp": {"type": "stub", "provider": "regional_crop_info"}}
-    TOOL_MAP["regional_crop_info"] = get_regional_crop_info
+    from ..tools.regional_crop_info import get_regional_crop_info  # type: ignore
+except Exception:  # noqa: E722
+    try:
+        from tools.regional_crop_info import get_regional_crop_info  # type: ignore
+    except Exception:  # noqa: E722
+        def get_regional_crop_info(args: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
+            return {"data": {}, "source_stamp": {"type": "stub", "provider": "regional_crop_info"}}
+TOOL_MAP["regional_crop_info"] = get_regional_crop_info
 
 # Weather tool
 try:
-    from ..tools.weather_api import weather_lookup as WEATHER_TOOL
-    TOOL_MAP["weather_outlook"] = WEATHER_TOOL
+    from ..tools.weather_api import weather_lookup as WEATHER_TOOL  # type: ignore
 except Exception:  # noqa: E722
-    def WEATHER_TOOL(args: Dict[str, Any]) -> Dict[str, Any]:
-        return {"data": {}, "source_stamp": {"type": "stub", "provider": "weather"}}
-    TOOL_MAP["weather_outlook"] = WEATHER_TOOL
+    try:
+        from tools.weather_api import weather_lookup as WEATHER_TOOL  # type: ignore
+    except Exception:  # noqa: E722
+        def WEATHER_TOOL(args: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
+            return {"data": {}, "source_stamp": {"type": "stub", "provider": "weather"}}
+TOOL_MAP["weather_outlook"] = WEATHER_TOOL
 
 # Policy tool
 try:
-    from ..tools.policy_match import policy_match
-    TOOL_MAP["policy_match"] = policy_match
+    from ..tools.policy_match import policy_match  # type: ignore
 except Exception:  # noqa: E722
-    def policy_match(args: Dict[str, Any]) -> Dict[str, Any]:
-        return {"data": {"eligible": []}, "source_stamp": {"type": "stub", "provider": "policy"}}
-    TOOL_MAP["policy_match"] = policy_match
+    try:
+        from tools.policy_match import policy_match  # type: ignore
+    except Exception:  # noqa: E722
+        def policy_match(args: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
+            return {"data": {"eligible": []}, "source_stamp": {"type": "stub", "provider": "policy"}}
+TOOL_MAP["policy_match"] = policy_match
 
 # Pesticide tool
 try:
-    from ..tools.pesticide_lookup import pesticide_lookup
-    TOOL_MAP["pesticide_lookup"] = pesticide_lookup
+    from ..tools.pesticide_lookup import pesticide_lookup  # type: ignore
 except Exception:  # noqa: E722
-    def pesticide_lookup(args: Dict[str, Any]) -> Dict[str, Any]:
-        return {"data": {"recommendations": []}, "source_stamp": {"type": "stub", "provider": "pesticide"}}
-    TOOL_MAP["pesticide_lookup"] = pesticide_lookup
+    try:
+        from tools.pesticide_lookup import pesticide_lookup  # type: ignore
+    except Exception:  # noqa: E722
+        def pesticide_lookup(args: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
+            return {"data": {"recommendations": []}, "source_stamp": {"type": "stub", "provider": "pesticide"}}
+TOOL_MAP["pesticide_lookup"] = pesticide_lookup
 
 # Prices tool
 try:
-    from ..tools.mandi_api import prices_fetch
-    TOOL_MAP["prices_fetch"] = prices_fetch
+    from ..tools.mandi_api import prices_fetch  # type: ignore
 except Exception:  # noqa: E722
-    def prices_fetch(args: Dict[str, Any]) -> Dict[str, Any]:
-        return {"data": {"rows": []}, "source_stamp": {"type": "stub", "provider": "mandi"}}
-    TOOL_MAP["prices_fetch"] = prices_fetch
+    try:
+        from tools.mandi_api import prices_fetch  # type: ignore
+    except Exception:  # noqa: E722
+        def prices_fetch(args: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
+            return {"data": {"rows": []}, "source_stamp": {"type": "stub", "provider": "mandi"}}
+TOOL_MAP["prices_fetch"] = prices_fetch
 
 # Storage tool
 try:
-    from ..tools.storage_find import storage_find
-    TOOL_MAP["storage_find"] = storage_find
+    from ..tools.storage_find import storage_find  # type: ignore
 except Exception:  # noqa: E722
-    def storage_find(args: Dict[str, Any]) -> Dict[str, Any]:
-        return {"data": {"wdra": []}, "source_stamp": {"type": "stub", "provider": "storage"}}
-    TOOL_MAP["storage_find"] = storage_find
+    try:
+        from tools.storage_find import storage_find  # type: ignore
+    except Exception:  # noqa: E722
+        def storage_find(args: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
+            return {"data": {"wdra": []}, "source_stamp": {"type": "stub", "provider": "storage"}}
+TOOL_MAP["storage_find"] = storage_find
 
 # Soil tool
 try:
-    from ..tools.soil_api import soil_api
-    TOOL_MAP["soil_api"] = soil_api
+    from ..tools.soil_api import soil_api  # type: ignore
 except Exception:  # noqa: E722
-    def soil_api(args: Dict[str, Any]) -> Dict[str, Any]:
-        return {"data": {}, "source_stamp": {"type": "stub", "provider": "soil"}}
-    TOOL_MAP["soil_api"] = soil_api
+    try:
+        from tools.soil_api import soil_api  # type: ignore
+    except Exception:  # noqa: E722
+        def soil_api(args: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
+            return {"data": {}, "source_stamp": {"type": "stub", "provider": "soil"}}
+TOOL_MAP["soil_api"] = soil_api
 
 # RAG tool
 try:
-    from ..tools.rag_search import rag_search
-    TOOL_MAP["rag_search"] = rag_search
+    from ..tools.rag_search import rag_search  # type: ignore
 except Exception:  # noqa: E722
-    def rag_search(args: Dict[str, Any]) -> Dict[str, Any]:
-        return {"data": {"passages": []}, "source_stamp": {"type": "stub", "provider": "rag"}}
-    TOOL_MAP["rag_search"] = rag_search
+    try:
+        from tools.rag_search import rag_search  # type: ignore
+    except Exception:  # noqa: E722
+        def rag_search(args: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
+            return {"data": {"passages": []}, "source_stamp": {"type": "stub", "provider": "rag"}}
+TOOL_MAP["rag_search"] = rag_search
 
 # Web search tool
 try:
-    from ..tools.web_search import web_search
-    TOOL_MAP["web_search"] = web_search
-except Exception:
-    def web_search(args: Dict[str, Any]) -> Dict[str, Any]:
-        return {"data": {"results": []}, "source_stamp": {"type": "stub", "provider": "web"}}
-    TOOL_MAP["web_search"] = web_search
+    from ..tools.web_search import web_search  # type: ignore
+except Exception:  # noqa: E722
+    try:
+        from tools.web_search import web_search  # type: ignore
+    except Exception:  # noqa: E722
+        def web_search(args: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
+            return {"data": {"results": []}, "source_stamp": {"type": "stub", "provider": "web"}}
+TOOL_MAP["web_search"] = web_search
 
 # Geocode tool
 try:
-    from ..tools.geocode_tool import run as geocode_run
-    TOOL_MAP["geocode_tool"] = geocode_run
-except Exception:
-    def geocode_run(args: Dict[str, Any]) -> Dict[str, Any]:
-        raise RuntimeError("geocode_tool not available; please add data/static_json/geo/district_centroids.json")
-    TOOL_MAP["geocode_tool"] = geocode_run
+    from ..tools.geocode_tool import run as geocode_run  # type: ignore
+except Exception:  # noqa: E722
+    try:
+        from tools.geocode_tool import run as geocode_run  # type: ignore
+    except Exception:  # noqa: E722
+        def geocode_run(args: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore
+            raise RuntimeError("geocode_tool not available; please add data/static_json/geo/district_centroids.json")
+TOOL_MAP["geocode_tool"] = geocode_run
 
 
 def _maybe_enrich_latlon(

@@ -282,5 +282,11 @@ async def health_check():
 # ----------------------
 if __name__ == "__main__":
     import uvicorn
-    logger.info("Starting Decision Engine API server...")
-    uvicorn.run(app, host="127.0.0.1", port=8000, reload=False, log_level="info")
+    import os
+    
+    # Get port from environment variable or use default
+    port = int(os.getenv("PORT", 5000))
+    host = os.getenv("HOST", "0.0.0.0")
+    
+    logger.info(f"Starting Decision Engine API server on {host}:{port}...")
+    uvicorn.run(app, host=host, port=port, reload=False, log_level="info")

@@ -55,6 +55,7 @@ from __future__ import annotations
 
 import os
 import re
+from pathlib import Path
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -64,9 +65,16 @@ except Exception:
     pd = None
 
 # Allow override via env; default to repo data path
-WDRA_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "../../..", "data", "static_json", "storage", "wdra"
-))
+try:
+    from .paths import STORAGE_WDRA_DIR  # type: ignore
+except Exception:
+    try:
+        from tools.paths import STORAGE_WDRA_DIR  # type: ignore
+    except Exception:
+        STORAGE_WDRA_DIR = Path(__file__).resolve().parent / ".." / "data" / "static_json" / "storage" / "wdra"
+        STORAGE_WDRA_DIR = STORAGE_WDRA_DIR.resolve()
+
+WDRA_DIR = str(STORAGE_WDRA_DIR)
 
 _WS = re.compile(r"\s+")
 

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import os
 import re
+from pathlib import Path
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -30,9 +31,16 @@ try:
 except Exception:
     pd = None
 
-POLICY_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "../../..", "data", "static_json", "policy"
-))
+try:
+    from .paths import POLICY_DIR as POLICY_PATH  # type: ignore
+except Exception:
+    try:
+        from tools.paths import POLICY_DIR as POLICY_PATH  # type: ignore
+    except Exception:
+        POLICY_PATH = Path(__file__).resolve().parent / ".." / "data" / "static_json" / "policy"
+        POLICY_PATH = POLICY_PATH.resolve()
+
+POLICY_DIR = str(POLICY_PATH)
 
 _WS = re.compile(r"\s+")
 
@@ -59,57 +67,83 @@ def _read_any(path: str) -> Optional[Any]:
     if pd is None:
         return None
     try:
-        # Try CSV first for .csv files but be resilient to mis-labelled binaries (e.g., xlsx renamed .csv)
+        # For .csv files, try Excel format first as some .csv files might actually be Excel
         if path.lower().endswith(".csv"):
             try:
-                df = pd.read_csv(path, encoding='utf-8', on_bad_lines='skip')
+                # First try reading as Excel (common case of mislabeled Excel files)
+                df = pd.read_excel(path)
+                print(f"Successfully read {path} as Excel format")
             except Exception:
-                # Fallback: maybe it's actually an Excel file with .csv extension
-                try:
-                    df = pd.read_excel(path)
-                except Exception:
+                # Fallback to CSV with different encodings
+                encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
+                df = None
+                for encoding in encodings:
+                    try:
+                        df = pd.read_csv(path, encoding=encoding, on_bad_lines='skip')
+                        print(f"Successfully read {path} as CSV with {encoding} encoding")
+                        break
+                    except Exception:
+                        continue
+                if df is None:
+                    print(f"Failed to read {path} with any method")
                     return None
         elif path.lower().endswith((".xlsx", ".xls")):
             try:
                 df = pd.read_excel(path)
+                print(f"Successfully read {path} as Excel")
             except Exception:
                 # Fallback: try CSV read if excel parser fails
                 try:
                     df = pd.read_csv(path, encoding='utf-8', on_bad_lines='skip')
+                    print(f"Successfully read {path} as CSV fallback")
                 except Exception:
+                    print(f"Failed to read {path}")
                     return None
         else:
             return None
 
-        if df is None:
+        if df is None or df.empty:
             return None
 
         df.columns = _norm_cols(list(df.columns))
+        print(f"Loaded {len(df)} rows from {path} with columns: {list(df.columns)}")
         return df
-    except Exception:
+    except Exception as e:
+        print(f"Error reading {path}: {e}")
         return None
 
 def _load_all() -> Tuple[List[str], Optional[Any]]:
     files, frames = [], []
     if not os.path.isdir(POLICY_DIR):
+        print(f"Policy directory does not exist: {POLICY_DIR}")
         return files, (pd.DataFrame() if pd is not None else None)
 
-    for fn in os.listdir(POLICY_DIR):
+    print(f"Scanning policy directory: {POLICY_DIR}")
+    dir_files = os.listdir(POLICY_DIR)
+    print(f"Found files in directory: {dir_files}")
+
+    for fn in dir_files:
         if not fn.lower().endswith((".csv", ".xlsx", ".xls")):
+            print(f"Skipping non-data file: {fn}")
             continue
         path = os.path.join(POLICY_DIR, fn)
+        print(f"Attempting to load: {path}")
         df = _read_any(path)
         if df is None or df.empty:
+            print(f"Failed to load or empty: {fn}")
             continue
         df["_source_file"] = fn
         frames.append(df)
         files.append(fn)
+        print(f"Successfully loaded {fn} with {len(df)} rows")
 
     if not frames:
+        print("No data frames loaded")
         return files, (pd.DataFrame() if pd is not None else None)
 
     if pd is not None:
         big = pd.concat(frames, ignore_index=True)
+        print(f"Combined dataset has {len(big)} rows and columns: {list(big.columns)}")
     else:
         big = None
     # unify common aliases -> normalized keys your schema expects
@@ -492,7 +526,7 @@ def policy_match(args: Dict[str, Any]) -> Dict[str, Any]:
         "data": {"items": items, "count": len(items)},
         "source_stamp": {
             "type": "static_pack",
-            "path": os.path.relpath(POLICY_DIR, start=os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))),
+            "path": "data/static_json/policy",
             "files": files
         },
         "matched": {"filters": {

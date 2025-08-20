@@ -1,0 +1,41 @@
+{
+  "name": "fasal-setu-ai-engine",
+  "description": "AI Engine for Fasal Setu AI Platform",
+  "repository": "https://github.com/Aksh10x/CapitalOne-hack",
+  "keywords": ["python", "fastapi", "ai", "langchain"],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "env": {
+    "PORT": {
+      "description": "The port the server will listen on",
+      "value": "8080"
+    },
+    "PINECONE_API_KEY": {
+      "description": "Pinecone API key for vector database",
+      "required": true
+    },
+    "PINECONE_ENV": {
+      "description": "Pinecone environment",
+      "value": "us-east-1-aws"
+    },
+    "PINECONE_INDEX": {
+      "description": "Pinecone index name",
+      "value": "capitalone"
+    },
+    "GEMINI_API_KEY": {
+      "description": "Google Gemini API key",
+      "required": true
+    },
+    "DATA_GOV_IN_API_KEY": {
+      "description": "Data.gov.in API key",
+      "required": true
+    },
+    "SERPER_API_KEY": {
+      "description": "Serper API key for web search",
+      "required": true
+    }
+  }
+}

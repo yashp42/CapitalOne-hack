@@ -1,4 +1,8 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8081/api';
+// API URL configuration with fallbacks
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+
+// Log the API URL to help with debugging
+console.log(`API configured with base URL: ${API_BASE_URL}`);
 
 // Enhanced token management using both localStorage and cookies as fallback
 const tokenManager = {
@@ -366,6 +370,78 @@ export const cropAPI = {
   // Get harvest estimation
   getHarvestEstimate: async (cropId) => {
     return apiRequest(`/crops/${cropId}/harvest-estimate`);
+  },
+
+  // Get crop details
+  getCropDetails: async (cropId) => {
+    return apiRequest(`/crops/${cropId}`);
+  }
+};
+
+// Crop Simulation Chat API calls
+export const cropSimChatAPI = {
+  // Send message to crop simulation chatbot
+  sendMessage: async (messageData) => {
+    return apiRequest('/crop-sim/chat', {
+      method: 'POST',
+      body: JSON.stringify(messageData),
+      signal: AbortSignal.timeout(90000), // 90 second timeout for AI processing
+    });
+  }
+};
+
+// Chatbot API calls
+export const chatbotAPI = {
+  // Send message to chatbot with extended timeout
+  sendMessage: async (messageData) => {
+    return apiRequest('/chat', {
+      method: 'POST',
+      body: JSON.stringify(messageData),
+      signal: AbortSignal.timeout(90000), // 90 second timeout for chatbot
+    });
+  },
+
+  // Check chatbot service health
+  checkHealth: async () => {
+    return apiRequest('/chat/health', {
+      signal: AbortSignal.timeout(10000), // 10 second timeout for health check
+    });
+  }
+};
+
+// Conversation API
+export const conversationAPI = {
+  // Get all conversations for the authenticated user
+  getConversations: async () => {
+    return await apiRequest('/conversations');
+  },
+
+  // Get a specific conversation
+  getConversation: async (conversationId) => {
+    return await apiRequest(`/conversations/${conversationId}`);
+  },
+
+  // Create a new conversation
+  createConversation: async (title) => {
+    return await apiRequest('/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ title })
+    });
+  },
+
+  // Update conversation title
+  updateConversationTitle: async (conversationId, title) => {
+    return await apiRequest(`/conversations/${conversationId}/title`, {
+      method: 'PATCH',
+      body: JSON.stringify({ title })
+    });
+  },
+
+  // Delete conversation
+  deleteConversation: async (conversationId) => {
+    return await apiRequest(`/conversations/${conversationId}`, {
+      method: 'DELETE'
+    });
   }
 };
 

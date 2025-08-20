@@ -1,0 +1,16 @@
+{
+  "name": "fasal-setu-ai",
+  "version": "1.0.0",
+  "description": "Fasal Setu AI Platform",
+  "engines": {
+    "node": "20.x",
+    "python": "3.11.x"
+  },
+  "scripts": {
+    "start": "cd py/decision_engine && uvicorn app:app --host 0.0.0.0 --port $PORT",
+    "postinstall": "cd py/decision_engine && pip install -r requirements.txt"
+  },
+  "cacheDirectories": [
+    "py/decision_engine/node_modules"
+  ]
+}

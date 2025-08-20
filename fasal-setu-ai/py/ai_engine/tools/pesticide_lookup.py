@@ -56,12 +56,20 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
-DATA_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), "../../..", "data", "static_json", "pesticides"
-))
+try:
+    from .paths import PESTICIDES_DIR  # type: ignore
+except Exception:
+    try:
+        from tools.paths import PESTICIDES_DIR  # type: ignore
+    except Exception:
+        PESTICIDES_DIR = Path(__file__).resolve().parent / ".." / "data" / "static_json" / "pesticides"
+        PESTICIDES_DIR = PESTICIDES_DIR.resolve()
+
+DATA_DIR = str(PESTICIDES_DIR)
 
 # ---------------------------- utils ----------------------------
 
@@ -231,10 +239,7 @@ def pesticide_lookup(args: Dict[str, Any]) -> Dict[str, Any]:
             "items": items,
             "count": len(items),
         },
-        "source_stamp": {
-            "type": "static_pack",
-            "path": os.path.relpath(DATA_DIR, start=os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
-        },
+    "source_stamp": {"type": "static_pack", "path": "data/static_json/pesticides"},
         "matched": {
             "filters": {
                 "crop": args.get("crop"),

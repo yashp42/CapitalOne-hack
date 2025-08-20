@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Connection Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+    .result { margin-top: 10px; padding: 10px; border-radius: 4px; }
+    .success { background-color: #d4edda; color: #155724; }
+    .error { background-color: #f8d7da; color: #721c24; }
+    .pending { background-color: #e2e3e5; color: #383d41; }
+    pre { white-space: pre-wrap; word-break: break-all; }
+    button { margin-top: 10px; padding: 8px 16px; }
+  </style>
+</head>
+<body>
+  <h1>API Connection Test</h1>
+  <p>This simple tool tests if your API is accessible and CORS is configured correctly.</p>
+
+  <div>
+    <label for="apiUrl">API URL:</label>
+    <input type="text" id="apiUrl" style="width: 400px;" value="https://fasal-setu-ai-server.ondigitalocean.app/health" />
+    <button onclick="testConnection()">Test Connection</button>
+    <button onclick="testOptions()">Test CORS Preflight</button>
+  </div>
+
+  <h3>Results:</h3>
+  <div id="results"></div>
+
+  <script>
+    const logResult = (success, message, details = null) => {
+      const resultsDiv = document.getElementById('results');
+      const resultDiv = document.createElement('div');
+      resultDiv.className = `result ${success ? 'success' : 'error'}`;
+      
+      const timestamp = new Date().toLocaleTimeString();
+      resultDiv.innerHTML = `<strong>${timestamp}: ${message}</strong>`;
+      
+      if (details) {
+        const pre = document.createElement('pre');
+        pre.textContent = typeof details === 'object' ? JSON.stringify(details, null, 2) : details;
+        resultDiv.appendChild(pre);
+      }
+      
+      resultsDiv.prepend(resultDiv);
+    };
+
+    const testConnection = async () => {
+      const apiUrl = document.getElementById('apiUrl').value;
+      const pendingDiv = document.createElement('div');
+      pendingDiv.className = 'result pending';
+      pendingDiv.textContent = `Testing GET request to ${apiUrl}...`;
+      document.getElementById('results').prepend(pendingDiv);
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const responseHeaders = {};
+        response.headers.forEach((value, name) => {
+          responseHeaders[name] = value;
+        });
+
+        const data = await response.json();
+        
+        pendingDiv.remove();
+        logResult(true, `GET request succeeded with status ${response.status}`, {
+          data,
+          headers: responseHeaders
+        });
+      } catch (error) {
+        pendingDiv.remove();
+        logResult(false, `GET request failed: ${error.message}`);
+      }
+    };
+
+    const testOptions = async () => {
+      const apiUrl = document.getElementById('apiUrl').value;
+      const pendingDiv = document.createElement('div');
+      pendingDiv.className = 'result pending';
+      pendingDiv.textContent = `Testing OPTIONS request to ${apiUrl}...`;
+      document.getElementById('results').prepend(pendingDiv);
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'OPTIONS',
+          credentials: 'include',
+          headers: {
+            'Origin': window.location.origin,
+            'Access-Control-Request-Method': 'GET',
+            'Access-Control-Request-Headers': 'Content-Type,Authorization'
+          }
+        });
+
+        const responseHeaders = {};
+        response.headers.forEach((value, name) => {
+          responseHeaders[name] = value;
+        });
+        
+        pendingDiv.remove();
+        logResult(true, `OPTIONS request succeeded with status ${response.status}`, {
+          headers: responseHeaders
+        });
+      } catch (error) {
+        pendingDiv.remove();
+        logResult(false, `OPTIONS request failed: ${error.message}`);
+      }
+    };
+  </script>
+</body>
+</html>

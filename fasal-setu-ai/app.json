@@ -1,0 +1,18 @@
+{
+  "name": "fasal-setu-ai-decision-engine",
+  "description": "Fasal Setu AI Decision Engine",
+  "repository": "https://github.com/Aksh10x/CapitalOne-hack",
+  "logo": "https://node-js-sample.herokuapp.com/node.png",
+  "keywords": ["python", "fastapi", "ai"],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "env": {
+    "PORT": {
+      "description": "The port the server will listen on",
+      "value": "8080"
+    }
+  }
+}
