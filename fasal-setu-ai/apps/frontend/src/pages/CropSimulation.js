@@ -1428,48 +1428,37 @@ const CropSimulation = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20 sm:pt-24 pb-8 sm:pb-12">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+    <div className="min-h-screen bg-gradient-to-br from-secondary-100 via-white to-secondary-100 pt-20 sm:pt-24 pb-8 sm:pb-12">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[90rem]">
         <motion.div
           initial="hidden"
           animate="visible"
           variants={containerVariants}
-          className="space-y-8 lg:grid lg:grid-cols-4 lg:gap-8 lg:space-y-0"
+          className="space-y-8 lg:grid lg:grid-cols-5 lg:gap-8 lg:space-y-0 items-start"
         >
           {/* Main Content Area - Reordered for mobile */}
-          <div className="lg:col-span-3 space-y-4 sm:space-y-6 lg:order-1">
-            {/* Header */}
-            <motion.div variants={itemVariants} className="mb-8">
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2 text-center">
-                Crop Simulation Dashboard
-              </h1>
-              {harvestData && (
-                <p className="text-center text-lg text-gray-600">
-                  Your {harvestData.crop_name || 'Crop'} farm
-                </p>
-              )}
-            </motion.div>
-
+          <div className="lg:col-span-3 lg:col-start-1 space-y-4 sm:space-y-6 lg:order-1 rounded-lg overflow-hidden mx-auto w-full">
+            
             {/* Real Crop Growth Visualization */}
             <motion.div
               variants={itemVariants}
-              className="bg-white rounded-lg border border-gray-200 p-6 mb-8"
+              className="bg-primary-500/20 shadow-sm p-6 mb-8 rounded-lg"
             >
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b border-gray-200">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">Field Visualization</h2>
+                <h2 className="text-2xl font-bold text-black mb-4 sm:mb-0">{harvestData && `Your ${harvestData.crop_name.charAt(0).toUpperCase() + harvestData.crop_name.slice(1) || 'Crop'} Field Visualization`}</h2>
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                    <FaCalendarAlt className="text-gray-500 text-sm" />
-                    <span className="text-sm font-medium text-gray-700">Day {daysSincePlanting}</span>
+                  <div className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg border border-primary-200/50">
+                    <FaCalendarAlt className="text-primary-600 text-sm" />
+                    <span className="text-sm font-medium text-primary-800">Day {daysSincePlanting}</span>
                   </div>
-                  <div className="flex items-center space-x-2 px-3 py-2 bg-emerald-50 rounded-lg border border-emerald-200">
-                    <FaSeedling className="text-emerald-600 text-sm" />
-                    <span className="text-sm font-medium text-emerald-700">{farmData.cropStage}</span>
+                  <div className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-secondary-50 to-secondary-100 rounded-lg border border-secondary-200/50">
+                    <FaSeedling className="text-secondary-700 text-sm" />
+                    <span className="text-sm font-medium text-secondary-800">{farmData.cropStage}</span>
                   </div>
                 </div>
               </div>
               
-              <div className="w-full h-64 lg:h-80 rounded-lg overflow-hidden bg-gradient-to-b from-sky-100 to-emerald-50 border border-gray-200 mb-6">
+              <div className="w-full h-[402.5px] rounded-lg overflow-hidden bg-gradient-to-b from-sky-100 to-emerald-50 border border-gray-200 mb-6">
                 <Canvas
                   camera={{ position: [0, 3, 7], fov: 60 }}
                   shadows
@@ -1495,7 +1484,7 @@ const CropSimulation = () => {
                 growthUpdated ? 'border-emerald-300 bg-emerald-50' : ''
               }`}>
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-sm font-medium text-gray-700">Growth Progress</h3>
+                  <h3 className="text-sm font-medium text-black">Growth Progress</h3>
                   <span className={`text-lg font-semibold transition-all duration-300 ${
                     growthUpdated ? 'text-emerald-600' : 'text-gray-900'
                   }`}>{Math.round(cropStage)}%</span>
@@ -1531,14 +1520,14 @@ const CropSimulation = () => {
           {/* Chatbot Sidebar */}
           <motion.div
             variants={itemVariants}
-            className="lg:col-span-1 lg:order-2 min-w-fit bg-white rounded-lg border border-gray-200 p-6 h-fit max-h-[calc(100vh-50px)] lg:sticky lg:top-24"
+            className="lg:col-span-2 lg:col-start-4 lg:order-2 w-full max-w-full bg-gradient-to-br from-white to-primary-50/30 rounded-lg border-2 border-secondary-500/20 shadow-sm p-4 sm:p-6 h-fit max-h-[calc(100vh-50px)] lg:sticky lg:top-24 overflow-hidden"
           >
-            <div className="flex items-center space-x-3 mb-6 pb-4 border-b border-gray-200">
-              <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                <FaRobot className="text-emerald-600 text-lg" />
+            <div className="flex items-center space-x-3 mb-6 pb-4 border-b border-gray-200/50">
+              <div className="w-8 h-8 bg-gradient-to-br from-primary-100 to-primary-200 rounded-lg flex items-center justify-center border border-primary-300/50">
+                <FaRobot className="text-primary-700 text-lg" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">AI Assistant</h3>
+                <h3 className="font-semibold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">AI Assistant</h3>
                 <p className="text-sm text-gray-600">Farm-specific insights</p>
               </div>
             </div>
@@ -1546,7 +1535,7 @@ const CropSimulation = () => {
             {/* Chat Messages */}
             <div 
               ref={chatContainerRef}
-              className={`overflow-y-auto mb-4 space-y-3 pr-2 scrollbar-thin scrollbar-thumb-emerald-400/50 scrollbar-track-gray-100/50 transition-all duration-300 ease-in-out ${
+              className={`overflow-y-auto mb-4 space-y-3 pr-2 scrollbar-thin scrollbar-thumb-primary-400/50 scrollbar-track-gray-100/50 transition-all duration-300 ease-in-out ${
                 quickActionsExpanded ? 'h-64' : 'h-80'
               }`} 
               id="chat-container"
@@ -1607,18 +1596,18 @@ const CropSimulation = () => {
             </div>
 
             {/* Chat Input */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 sm:space-x-3 w-full">
               <input
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="Ask about your crops..."
-                className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                className="flex-1 min-w-0 px-2 sm:px-3 py-2 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
               />
               <button
                 onClick={handleSendMessage}
-                className="p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors duration-200"
+                className="p-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all duration-200 shadow-sm flex-shrink-0"
               >
                 <FaPaperPlane className="text-sm" />
               </button>
@@ -1641,7 +1630,7 @@ const CropSimulation = () => {
             </div>
 
             {/* Quick Actions */}
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 space-y-2 w-full">
               <button 
                 onClick={() => setQuickActionsExpanded(!quickActionsExpanded)}
                 className="w-full flex items-center justify-between text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-50"
@@ -1660,10 +1649,10 @@ const CropSimulation = () => {
               </button>
               
               {/* Fixed height container to maintain chat size when collapsed */}
-              <div className={`transition-all duration-300 ease-in-out ${
+              <div className={`transition-all duration-300 ease-in-out w-full ${
                 quickActionsExpanded ? 'h-40' : 'h-0'
               } overflow-hidden`}>
-                <div className="h-full overflow-y-auto space-y-2 pt-1">
+                <div className="h-full overflow-y-auto space-y-2 pt-1 w-full">
                   {[
                     "Irrigated my crops",
                     "Applied fertilizer", 
@@ -1675,7 +1664,7 @@ const CropSimulation = () => {
                     <button
                       key={index}
                       onClick={() => setNewMessage(question)}
-                      className="w-full text-left px-3 py-2 bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:border-gray-300 rounded-lg text-sm text-gray-700 transition-colors duration-200"
+                      className="w-full text-left px-2 sm:px-3 py-2 bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:border-gray-300 rounded-lg text-xs sm:text-sm text-gray-700 transition-colors duration-200 break-words"
                     >
                       {question}
                     </button>
@@ -1690,49 +1679,49 @@ const CropSimulation = () => {
             {/* Dashboard */}
             <motion.div
               variants={itemVariants}
-              className="bg-white rounded-lg border border-gray-200 p-6"
+              className="bg-primary-500/20 rounded-lg border border-secondary-200/50 shadow-sm p-8 w-full"
             >
               <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Farm Analytics</h2>
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">Farm Analytics</h2>
                 <p className="text-gray-600">Real-time monitoring and insights for your crop</p>
               </div>
               
               {/* Key Metrics */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                  <FaTemperatureHigh className="text-xl text-blue-600 mx-auto mb-2" />
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200/50 rounded-lg p-4 text-center shadow-sm">
+                  <FaTemperatureHigh className="text-xl text-primary-600 mx-auto mb-2" />
                   <p className="text-xs font-medium text-gray-600 mb-1">Temperature</p>
                   {farmData.currentTemp !== null ? (
-                    <p className="text-lg font-semibold text-gray-900">{Math.round(farmData.currentTemp)}°C</p>
+                    <p className="text-lg font-bold text-gray-900">{Math.round(farmData.currentTemp)}°C</p>
                   ) : (
                     <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
                   )}
                 </div>
                 
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                  <FaTint className="text-xl text-blue-500 mx-auto mb-2" />
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200/50 rounded-lg p-4 text-center shadow-sm">
+                  <FaTint className="text-xl text-secondary-600 mx-auto mb-2" />
                   <p className="text-xs font-medium text-gray-600 mb-1">Soil Moisture</p>
                   {farmData.soilMoisture !== null ? (
-                    <p className="text-lg font-semibold text-gray-900">{farmData.soilMoisture}%</p>
+                    <p className="text-lg font-bold text-gray-900">{farmData.soilMoisture}%</p>
                   ) : (
                     <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
                   )}
                 </div>
                 
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                  <FaTemperatureHigh className="text-xl text-orange-500 mx-auto mb-2" />
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200/50 rounded-lg p-4 text-center shadow-sm">
+                  <FaTemperatureHigh className="text-xl text-gray-600 mx-auto mb-2" />
                   <p className="text-xs font-medium text-gray-600 mb-1">Soil Temp</p>
                   {farmData.soilTemp !== null ? (
-                    <p className="text-lg font-semibold text-gray-900">{farmData.soilTemp}°C</p>
+                    <p className="text-lg font-bold text-gray-900">{farmData.soilTemp}°C</p>
                   ) : (
                     <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
                   )}
                 </div>
                 
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                  <FaSeedling className="text-xl text-emerald-500 mx-auto mb-2" />
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200/50 rounded-lg p-4 text-center shadow-sm">
+                  <FaSeedling className="text-xl text-secondary-600 mx-auto mb-2" />
                   <p className="text-xs font-medium text-gray-600 mb-1">Days Old</p>
-                  <p className="text-lg font-semibold text-gray-900">
+                  <p className="text-lg font-bold text-gray-900">
                     {isLoadingHarvest ? (
                       <LoadingSkeleton className="w-8 h-6 mx-auto" />
                     ) : (
@@ -1741,14 +1730,14 @@ const CropSimulation = () => {
                   </p>
                 </div>
                 
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                  <FaCalendarAlt className="text-xl text-purple-500 mx-auto mb-2" />
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200/50 rounded-lg p-4 text-center shadow-sm">
+                  <FaCalendarAlt className="text-xl text-primary-600 mx-auto mb-2" />
                   <p className="text-xs font-medium text-gray-600 mb-1">Harvest In</p>
                   {isLoadingHarvest ? (
                     <LoadingSkeleton className="w-16 h-4 mx-auto" />
                   ) : (
                     <>
-                      <p className="text-lg font-semibold text-gray-900">
+                      <p className="text-lg font-bold text-gray-900">
                         {farmData.expectedHarvest}
                       </p>
                       {harvestData && (
@@ -1760,64 +1749,64 @@ const CropSimulation = () => {
                   )}
                 </div>
 
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                  <FaChartLine className="text-xl text-emerald-600 mx-auto mb-2" />
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200/50 rounded-lg p-4 text-center shadow-sm">
+                  <FaChartLine className="text-xl text-secondary-600 mx-auto mb-2" />
                   <p className="text-xs font-medium text-gray-600 mb-1">Growth</p>
-                  <p className="text-lg font-semibold text-gray-900">{Math.round(cropStage)}%</p>
+                  <p className="text-lg font-bold text-gray-900">{Math.round(cropStage)}%</p>
                 </div>
               </div>
 
               {/* Detailed Info Grid */}
-              <div className={`grid grid-cols-1 md:grid-cols-2 ${harvestData ? 'xl:grid-cols-4' : 'xl:grid-cols-3'} gap-6`}>
+              <div className="flex flex-wrap gap-6 w-full justify-center">
                 {/* Harvest Information */}
                 {isLoadingHarvest ? (
                   <HarvestInfoSkeleton />
                 ) : harvestData ? (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Harvest Information</h3>
+                  <div className="space-y-4 flex-1 min-w-[280px] max-w-[350px]">
+                    <h3 className="text-lg font-semibold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Harvest Information</h3>
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
-                        <div className="flex items-center space-x-3">
+                      <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3 min-h-[3.5rem]">
+                        <div className="flex items-center space-x-3 flex-shrink-0">
                           <FaCalendarAlt className="text-gray-500 text-sm" />
                           <span className="text-sm text-gray-700">Estimated Date</span>
                         </div>
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-gray-900 text-right ml-2 flex-shrink-0">
                           {new Date(harvestData.estimated_harvest_date).toLocaleDateString()}
                         </span>
                       </div>
                       
-                      <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
-                        <div className="flex items-center space-x-3">
+                      <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3 min-h-[3.5rem]">
+                        <div className="flex items-center space-x-3 flex-shrink-0">
                           <FaChartLine className="text-gray-500 text-sm" />
                           <span className="text-sm text-gray-700">Days Remaining</span>
                         </div>
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-gray-900 text-right ml-2 flex-shrink-0">
                           {harvestData.days_remaining} days
                         </span>
                       </div>
 
-                      <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
-                        <div className="flex items-center space-x-3">
+                      <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3 min-h-[3.5rem]">
+                        <div className="flex items-center space-x-3 flex-shrink-0">
                           <FaSeedling className="text-gray-500 text-sm" />
                           <span className="text-sm text-gray-700">Growth Progress</span>
                         </div>
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-gray-900 text-right ml-2 flex-shrink-0">
                           {Math.round(harvestData.growth_percentage)}%
                         </span>
                       </div>
 
-                      <div className={`flex items-center justify-between border rounded-lg p-3 ${
+                      <div className={`flex items-center justify-between border rounded-lg p-3 min-h-[3.5rem] ${
                         harvestData.status === 'ready_for_harvest' 
                           ? 'bg-amber-50 border-amber-200' 
                           : 'bg-gray-50 border-gray-200'
                       }`}>
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-3 flex-shrink-0">
                           <div className={`w-2 h-2 rounded-full ${
                             harvestData.status === 'ready_for_harvest' ? 'bg-amber-500' : 'bg-gray-400'
                           }`}></div>
                           <span className="text-sm text-gray-700">Status</span>
                         </div>
-                        <span className={`text-sm font-medium ${
+                        <span className={`text-sm font-medium text-right ml-2 flex-shrink-0 ${
                           harvestData.status === 'ready_for_harvest' 
                             ? 'text-amber-700' 
                             : 'text-gray-900'
@@ -1830,52 +1819,52 @@ const CropSimulation = () => {
                 ) : null}
 
                 {/* Farm Activities */}
-                <div className="space-y-4">
+                <div className="space-y-4 flex-1 min-w-[280px] max-w-[350px]">
                   <h3 className="text-lg font-semibold text-gray-900">Recent Activities</h3>
                   <div className="space-y-3">
-                    <div className={`flex items-center justify-between rounded-lg p-3 transition-all duration-300 ${
+                    <div className={`flex items-center justify-between rounded-lg p-3 min-h-[3.5rem] transition-all duration-300 ${
                       recentlyUpdated.lastIrrigated ? 'bg-blue-50 border-2 border-blue-300' : 'bg-gray-50 border border-gray-200'
                     }`}>
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-3 flex-shrink-0">
                         <FaTint className="text-blue-500 text-sm" />
                         <span className="text-sm text-gray-700">Last Irrigated</span>
                       </div>
-                      <span className="text-sm font-medium text-gray-900">{farmData.lastIrrigated}</span>
+                      <span className="text-sm font-medium text-gray-900 ml-2 flex-shrink-0">{farmData.lastIrrigated}</span>
                     </div>
                     
-                    <div className={`flex items-center justify-between rounded-lg p-3 transition-all duration-300 ${
+                    <div className={`flex items-center justify-between rounded-lg p-3 min-h-[3.5rem] transition-all duration-300 ${
                       recentlyUpdated.lastFertilized ? 'bg-emerald-50 border-2 border-emerald-300' : 'bg-gray-50 border border-gray-200'
                     }`}>
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-3 flex-shrink-0">
                         <FaSeedling className="text-emerald-500 text-sm" />
                         <span className="text-sm text-gray-700">Last Fertilized</span>
                       </div>
-                      <span className="text-sm font-medium text-gray-900">{farmData.lastFertilized}</span>
+                      <span className="text-sm font-medium text-gray-900 ml-2 flex-shrink-0">{farmData.lastFertilized}</span>
                     </div>
 
-                    <div className={`flex items-center justify-between rounded-lg p-3 transition-all duration-300 ${
+                    <div className={`flex items-center justify-between rounded-lg p-3 min-h-[3.5rem] transition-all duration-300 ${
                       recentlyUpdated.lastPestCheck ? 'bg-orange-50 border-2 border-orange-300' : 'bg-gray-50 border border-gray-200'
                     }`}>
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-3 flex-shrink-0">
                         <FaBug className="text-orange-500 text-sm" />
                         <span className="text-sm text-gray-700">Last Pest Check</span>
                       </div>
-                      <span className="text-sm font-medium text-gray-900">{farmData.lastPestCheck}</span>
+                      <span className="text-sm font-medium text-gray-900 ml-2 flex-shrink-0">{farmData.lastPestCheck}</span>
                     </div>
 
-                    <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
-                      <div className="flex items-center space-x-3">
+                    <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3 min-h-[3.5rem]">
+                      <div className="flex items-center space-x-3 flex-shrink-0">
                         <FaChartLine className="text-purple-500 text-sm" />
                         <span className="text-sm text-gray-700">Growth Rate</span>
                       </div>
-                      <span className="text-sm font-medium text-emerald-600">{farmData.growthRate}</span>
+                      <span className="text-sm font-medium text-emerald-600 ml-2 flex-shrink-0">{farmData.growthRate}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Next Event Section */}
                 {currentCrop?.derived && (
-                  <div className="space-y-4">
+                  <div className="space-y-4 flex-1 min-w-[280px] max-w-[350px]">
                     <h3 className="text-lg font-semibold text-gray-900">Scheduled Activity</h3>
                     <div className="space-y-2">
                       {/* Collapsible Event Card */}
@@ -2078,7 +2067,7 @@ const CropSimulation = () => {
   
 
                 {/* Weather Forecast */}
-                <div className="space-y-4">
+                <div className="space-y-4 flex-1 min-w-[280px] max-w-[350px]">
                   <h3 className="text-lg font-semibold text-gray-900">5-Day Forecast</h3>
                   <div className="space-y-3">
                     {isLoadingWeather ? (
@@ -2103,14 +2092,14 @@ const CropSimulation = () => {
                     ) : farmData.forecast.length > 0 ? (
                       // Weather data
                       farmData.forecast.map((day, index) => (
-                        <div key={index} className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
-                          <div className="flex items-center space-x-3">
+                        <div key={index} className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3 min-h-[3.5rem]">
+                          <div className="flex items-center space-x-3 flex-shrink-0">
                             <day.icon className="text-amber-500 text-sm" />
                             <span className="text-sm text-gray-700">{day.day}</span>
                           </div>
-                          <div className="text-right">
+                          <div className="text-right ml-2 flex-shrink-0">
                             <p className="text-sm font-medium text-gray-900">{day.temp}°C</p>
-                            <p className="text-xs text-gray-500">{day.condition}</p>
+                            <p className="text-xs text-gray-500" title={day.condition}>{day.condition.length > 12 ? day.condition.substring(0, 12) + '...' : day.condition}</p>
                           </div>
                         </div>
                       ))
