@@ -6,6 +6,8 @@ import { chatbotAPI, authAPI, conversationAPI } from '../services/api';
 import ConversationSidebar from '../components/ConversationSidebar';
 import SpeechToText from '../components/SpeechToText';
 import { useAuth } from '../contexts/AuthContext';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // Memoized FloatingChatButton to prevent unnecessary re-renders
 const FloatingChatButton = React.memo(() => {
@@ -44,6 +46,7 @@ const Chatbot = () => {
   const [showQuickQuestions, setShowQuickQuestions] = useState(true);
   const [userProfile, setUserProfile] = useState(null);
   const [chatMode, setChatMode] = useState('public_advisor'); // Default to public advisor
+  const [isModeManuallySet, setIsModeManuallySet] = useState(false); // Track if user manually changed mode
   const [connectionStatus, setConnectionStatus] = useState('connecting'); // connecting, connected, disconnected
   const [errorMessage, setErrorMessage] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
@@ -59,6 +62,7 @@ const Chatbot = () => {
     
     const newMode = chatMode === 'my_farm' ? 'public_advisor' : 'my_farm';
     setChatMode(newMode);
+    setIsModeManuallySet(true); // Mark that user manually changed the mode
     
     // Add a system message to inform about the mode change
     const modeChangeMessage = {
@@ -80,9 +84,16 @@ const Chatbot = () => {
         // Check if user is authenticated
         const isUserAuthenticated = authAPI.isAuthenticated();
         
+        // Reset manual mode flag when starting a completely new chat (no conversationId)
+        if (!conversationId) {
+          setIsModeManuallySet(false);
+        }
+        
         if (isUserAuthenticated) {
-          // Set initial mode to my_farm for authenticated users
-          setChatMode('my_farm');
+          // Set initial mode to my_farm for authenticated users, but only if not manually set
+          if (!isModeManuallySet) {
+            setChatMode('my_farm');
+          }
           
           // Get user profile for personalized mode
           try {
@@ -130,8 +141,10 @@ const Chatbot = () => {
             setShowQuickQuestions(true);
           }
         } else {
-          // For non-authenticated users, force public_advisor mode
-          setChatMode('public_advisor');
+          // For non-authenticated users, force public_advisor mode (but only if not manually set)
+          if (!isModeManuallySet) {
+            setChatMode('public_advisor');
+          }
           console.log('User not authenticated, using public advisor mode');
         }
 
@@ -152,7 +165,7 @@ const Chatbot = () => {
     };
 
     initializeChat();
-  }, [conversationId, navigate]);
+  }, [conversationId, navigate]); // Removed isModeManuallySet from dependencies to prevent mode reset
 
   // Reduced animation variants for better mobile performance
   const reducedMotion = useMemo(() => ({
@@ -360,21 +373,49 @@ const Chatbot = () => {
     }
   }, [isAuthenticated, chatMode]);
 
-  // Utility function to render text with bold formatting
-  const renderFormattedText = (text) => {
-    if (!text) return '';
+  // Custom markdown components for better styling
+  const markdownComponents = {
+    // Headings
+    h1: ({ children }) => <h1 className="text-lg font-bold text-gray-900 mb-2">{children}</h1>,
+    h2: ({ children }) => <h2 className="text-base font-bold text-gray-900 mb-2">{children}</h2>,
+    h3: ({ children }) => <h3 className="text-sm font-semibold text-gray-800 mb-1">{children}</h3>,
     
-    // Split text by **bold** markers and render accordingly
-    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    // Paragraphs
+    p: ({ children }) => <p className="mb-2 leading-relaxed">{children}</p>,
     
-    return parts.map((part, index) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        // Remove ** markers and render as bold
-        const boldText = part.slice(2, -2);
-        return <strong key={index} className="font-semibold text-green-700">{boldText}</strong>;
-      }
-      return part;
-    });
+    // Lists
+    ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+    ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+    li: ({ children }) => <li className="text-sm">{children}</li>,
+    
+    // Strong/Bold
+    strong: ({ children }) => <strong className="font-semibold text-primary-700">{children}</strong>,
+    
+    // Tables
+    table: ({ children }) => (
+      <table className="min-w-full border-collapse border border-gray-300 mb-2 text-xs">
+        {children}
+      </table>
+    ),
+    thead: ({ children }) => <thead className="bg-gray-50">{children}</thead>,
+    tbody: ({ children }) => <tbody>{children}</tbody>,
+    tr: ({ children }) => <tr className="border-b">{children}</tr>,
+    th: ({ children }) => (
+      <th className="border border-gray-300 px-2 py-1 text-left font-semibold">{children}</th>
+    ),
+    td: ({ children }) => <td className="border border-gray-300 px-2 py-1">{children}</td>,
+    
+    // Blockquotes
+    blockquote: ({ children }) => (
+      <blockquote className="border-l-4 border-primary-500 bg-primary-50 pl-3 py-2 mb-2 text-sm italic">
+        {children}
+      </blockquote>
+    ),
+    
+    // Code
+    code: ({ children }) => (
+      <code className="bg-gray-100 px-1 rounded text-xs font-mono">{children}</code>
+    ),
   };
 
   return (
@@ -570,7 +611,12 @@ const Chatbot = () => {
                             : 'bg-white/80 text-gray-800 border-gray-200/50 rounded-bl-md'
                     } shadow-lg`}>
                       <div className="text-xs md:text-sm leading-relaxed">
-                        {renderFormattedText(message.content)}
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={markdownComponents}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
                       </div>
                       
                       {/* Metadata for bot messages */}

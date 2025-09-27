@@ -8,6 +8,8 @@ import { TextureLoader } from 'three';
 import { cropAPI, authAPI, cropSimChatAPI, chatbotAPI } from '../services/api'; // Import API service
 import { useAuth } from '../contexts/AuthContext'; // Import auth context
 import SpeechToText from '../components/SpeechToText';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { 
   FaTemperatureHigh, 
   FaCloudRain, 
@@ -704,6 +706,7 @@ const CropSimulation = () => {
   }, [cropId, initialGrowthPercent]);
   
   // Real crop simulation state - grows based on user interactions
+  const [activityExpanded, setActivityExpanded] = useState(false);
   const [cropStage, setCropStage] = useState(initialGrowthPercent); // Set from URL parameter or default to 0
   const [daysSincePlanting, setDaysSincePlanting] = useState(0);
   const [lastActivity, setLastActivity] = useState(null);
@@ -725,7 +728,7 @@ const CropSimulation = () => {
     if (cropId && harvestData && !welcomeMessageAdded.current) {
       const welcomeMessage = {
         id: Date.now(), // Use timestamp for unique ID
-        text: `**Welcome to your Virtual ${harvestData.crop_name || 'Crop'} Farm!** 🌱 I have access to your specific crop data and can provide personalized recommendations. I can help you with **irrigation**, **fertilization**, **pest management**, and answer your farming questions. Your crop is currently **${cropStage.toFixed(1)}% grown**. How can I assist you today?`,
+        text: `Hi! I'm here to help with your ${harvestData.crop_name || 'crop'} farming. Ask me anything!`,
         isBot: true,
         timestamp: new Date()
       };
@@ -739,26 +742,72 @@ const CropSimulation = () => {
   const [isChatTyping, setIsChatTyping] = useState(false);
   const [dailyActivities, setDailyActivities] = useState([]);
   const [currentCrop, setCurrentCrop] = useState(null); // Store full crop data for next event display
+  const [quickActionsExpanded, setQuickActionsExpanded] = useState(true); // Control quick actions collapse
+  const messagesEndRef = useRef(null); // For auto-scroll functionality
+  const chatContainerRef = useRef(null); // Reference to chat container
 
-  // Function to format text with bold markdown
-  const formatMessageText = (text) => {
-    if (!text) return text;
+  // Auto-scroll functionality - scroll only the chat container, not the whole page
+  const scrollToBottom = useCallback(() => {
+    if (chatContainerRef.current && messagesEndRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatMessages, scrollToBottom]);
+
+  // Also scroll when typing indicator appears/disappears
+  useEffect(() => {
+    if (isChatTyping) {
+      // Small delay to allow the typing indicator to render before scrolling
+      setTimeout(scrollToBottom, 100);
+    }
+  }, [isChatTyping, scrollToBottom]);
+
+  // Custom markdown components for crop simulation chat
+  const cropMarkdownComponents = {
+    // Headings - consistent readable sizes for chat context
+    h1: ({ children }) => <h1 className="text-sm font-bold text-gray-900 mb-1">{children}</h1>,
+    h2: ({ children }) => <h2 className="text-sm font-semibold text-gray-900 mb-1">{children}</h2>,
+    h3: ({ children }) => <h3 className="text-sm font-medium text-gray-800 mb-1">{children}</h3>,
     
-    // Split text by ** markers and create spans with bold styling
-    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    // Paragraphs - consistent base size for chat
+    p: ({ children }) => <p className="text-sm mb-1 leading-tight">{children}</p>,
     
-    return parts.map((part, index) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        // Remove ** markers and make bold
-        const boldText = part.slice(2, -2);
-        return (
-          <span key={index} className="font-bold text-gray-900">
-            {boldText}
-          </span>
-        );
-      }
-      return part;
-    });
+    // Lists - same size as paragraphs for consistency
+    ul: ({ children }) => <ul className="list-disc list-inside mb-1 space-y-0.5 text-sm">{children}</ul>,
+    ol: ({ children }) => <ol className="list-decimal list-inside mb-1 space-y-0.5 text-sm">{children}</ol>,
+    li: ({ children }) => <li className="text-sm leading-tight">{children}</li>,
+    
+    // Strong/Bold - using primary colors, same size
+    strong: ({ children }) => <strong className="font-bold text-primary-700 text-sm">{children}</strong>,
+    
+    // Tables - readable size for mobile chat
+    table: ({ children }) => (
+      <table className="w-full border-collapse border border-gray-300 mb-1 text-sm">
+        {children}
+      </table>
+    ),
+    thead: ({ children }) => <thead className="bg-gray-50">{children}</thead>,
+    tbody: ({ children }) => <tbody>{children}</tbody>,
+    tr: ({ children }) => <tr className="border-b">{children}</tr>,
+    th: ({ children }) => (
+      <th className="border border-gray-300 px-2 py-1 text-left font-semibold text-sm">{children}</th>
+    ),
+    td: ({ children }) => <td className="border border-gray-300 px-2 py-1 text-sm">{children}</td>,
+    
+    // Blockquotes - for warnings/tips, same size
+    blockquote: ({ children }) => (
+      <blockquote className="border-l-2 border-orange-400 bg-orange-50 pl-2 py-1 mb-1 text-sm">
+        {children}
+      </blockquote>
+    ),
+    
+    // Code - inline code formatting, same size
+    code: ({ children }) => (
+      <code className="bg-gray-100 px-1 rounded text-sm font-mono">{children}</code>
+    ),
   };
 
   // Farm data state - will be populated by LLM integration
@@ -1212,26 +1261,45 @@ const CropSimulation = () => {
       console.log('Chat mode:', chatMode);
       console.log('Crop ID:', cropId);
       
-      // Prepare farm context
+      // Prepare farm context with real weather and soil data
       const farmContext = {
-        weather: {
+        weather: weatherData ? {
+          // Use real weather forecast data from Open-Meteo API
+          forecast: weatherData.daily,
+          timezone: weatherData.timezone,
+          // Legacy fields for backward compatibility
+          current: farmData.weatherToday || 'Clear',
+          temperature: farmData.currentTemp || 25
+        } : {
+          // Fallback to basic data if weather API hasn't loaded yet
           current: farmData.weatherToday || 'Clear',
           temperature: farmData.currentTemp || 25,
-          soilMoisture: farmData.soilMoisture || 60,
-          soilTemp: farmData.soilTemp || 22,
           forecast: farmData.forecast || []
         },
-        soil: {
+        soil: weatherData ? {
+          // Use real soil data from Open-Meteo API
+          hourly_data: weatherData.hourly,
+          // Legacy fields for backward compatibility
+          moisture: farmData.soilMoisture || 60,
+          temperature: farmData.soilTemp || 22
+        } : {
+          // Fallback to basic data if weather API hasn't loaded yet
           moisture: farmData.soilMoisture || 60,
           temperature: farmData.soilTemp || 22
         },
-        location: user?.location || "India"
+        location: {
+          // Include detailed location information
+          text: user?.location || "India",
+          coordinates: user?.location || { lat: 12.9716, lon: 77.5946 }, // Bangalore fallback
+          timezone: weatherData?.timezone || "Asia/Kolkata"
+        }
       };
 
       let response;
       
       // Crop simulation always uses my_farm mode with crop-specific context
       console.log('Using crop simulation API in my_farm mode');
+      console.log('Sending farm context with real weather/soil data:', JSON.stringify(farmContext, null, 2));
       response = await cropSimChatAPI.sendMessage({
         message: currentMessage,
         cropId: cropId,
@@ -1360,84 +1428,48 @@ const CropSimulation = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-yellow-50 pt-20 sm:pt-24 pb-4 sm:pb-8">
-      <div className="container mx-auto px-2 sm:px-4 h-full max-w-full overflow-hidden">
+    <div className="min-h-screen bg-gray-50 pt-20 sm:pt-24 pb-8 sm:pb-12">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         <motion.div
           initial="hidden"
           animate="visible"
           variants={containerVariants}
-          className="space-y-4 sm:space-y-6 lg:grid lg:grid-cols-4 lg:gap-4 xl:gap-6 lg:space-y-0 h-full"
+          className="space-y-8 lg:grid lg:grid-cols-4 lg:gap-8 lg:space-y-0"
         >
           {/* Main Content Area - Reordered for mobile */}
           <div className="lg:col-span-3 space-y-4 sm:space-y-6 lg:order-1">
             {/* Header */}
-            <motion.div variants={itemVariants} className="text-center px-2 sm:px-0">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-4">
-                Virtual Crop Simulation
+            <motion.div variants={itemVariants} className="mb-8">
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2 text-center">
+                Crop Simulation Dashboard
               </h1>
-              
-              {cropId && (
-                <div className="bg-gradient-to-r from-green-50 to-blue-50 backdrop-blur-sm rounded-2xl p-4 sm:p-6 mx-auto max-w-lg border border-green-200/50 shadow-lg mb-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    {/* Starting Growth */}
-                    <div className="bg-white/70 rounded-xl p-3 border border-blue-100">
-                      <p className="text-xs text-blue-500 font-medium uppercase tracking-wide mb-1">Starting Growth</p>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-gradient-to-r from-green-400 to-green-600 transition-all duration-300"
-                            style={{ width: `${initialGrowthPercent}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-sm font-bold text-green-600">{initialGrowthPercent}%</span>
-                      </div>
-                    </div>
-                    
-                    {/* Crop Type */}
-                    {isLoadingHarvest ? (
-                      <div className="bg-white/70 rounded-xl p-3 border border-yellow-100">
-                        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Crop Type</p>
-                        <div className="animate-pulse">
-                          <div className="h-4 bg-gray-200 rounded w-16"></div>
-                        </div>
-                      </div>
-                    ) : harvestData && (
-                      <div className="bg-white/70 rounded-xl p-3 border border-yellow-100">
-                        <p className="text-xs text-yellow-600 font-medium uppercase tracking-wide mb-1">Crop Type</p>
-                        <p className="text-sm font-bold text-gray-700 capitalize">
-                          {harvestData.crop_name || 'Loading...'}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+              {harvestData && (
+                <p className="text-center text-lg text-gray-600">
+                  Your {harvestData.crop_name || 'Crop'} farm
+                </p>
               )}
-              
-              <p className="text-sm sm:text-base text-gray-600 px-2 sm:px-0 max-w-2xl mx-auto leading-relaxed">
-                🌱 Watch your crops grow in real-time with <span className="font-semibold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">AI-powered farming insights</span>
-              </p>
             </motion.div>
 
             {/* Real Crop Growth Visualization */}
             <motion.div
               variants={itemVariants}
-              className="bg-white/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border border-gray-200/50 p-3 sm:p-4 lg:p-6"
+              className="bg-white rounded-lg border border-gray-200 p-6 mb-8"
             >
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 space-y-2 sm:space-y-0">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-800">Your Virtual Wheat Field</h2>
-                <div className="flex flex-wrap items-center gap-2 sm:space-x-3 w-full sm:w-auto">
-                  <div className="flex items-center space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-blue-100 rounded-lg sm:rounded-xl text-xs sm:text-sm">
-                    <FaCalendarAlt className="text-blue-600 text-xs sm:text-sm" />
-                    <span className="font-medium text-blue-800">Day {daysSincePlanting}</span>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b border-gray-200">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">Field Visualization</h2>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                    <FaCalendarAlt className="text-gray-500 text-sm" />
+                    <span className="text-sm font-medium text-gray-700">Day {daysSincePlanting}</span>
                   </div>
-                  <div className="flex items-center space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-green-100 rounded-lg sm:rounded-xl text-xs sm:text-sm">
-                    <FaSeedling className="text-green-600 text-xs sm:text-sm" />
-                    <span className="font-medium text-green-800 truncate max-w-24 sm:max-w-none">{farmData.cropStage}</span>
+                  <div className="flex items-center space-x-2 px-3 py-2 bg-emerald-50 rounded-lg border border-emerald-200">
+                    <FaSeedling className="text-emerald-600 text-sm" />
+                    <span className="text-sm font-medium text-emerald-700">{farmData.cropStage}</span>
                   </div>
                 </div>
               </div>
               
-              <div className="w-full h-48 sm:h-56 md:h-64 lg:h-72 rounded-lg sm:rounded-xl overflow-hidden bg-gradient-to-b from-sky-200 to-green-100 relative">
+              <div className="w-full h-64 lg:h-80 rounded-lg overflow-hidden bg-gradient-to-b from-sky-100 to-emerald-50 border border-gray-200 mb-6">
                 <Canvas
                   camera={{ position: [0, 3, 7], fov: 60 }}
                   shadows
@@ -1459,31 +1491,33 @@ const CropSimulation = () => {
                 </Canvas>
               </div>
               
-              <div className={`mt-3 sm:mt-4 rounded-lg sm:rounded-xl p-2 sm:p-3 transition-all duration-500 ${
-                growthUpdated ? 'bg-green-100 border-2 border-green-300' : 'bg-gray-100'
+              <div className={`bg-gray-50 border border-gray-200 rounded-lg p-4 transition-all duration-500 ${
+                growthUpdated ? 'border-emerald-300 bg-emerald-50' : ''
               }`}>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs sm:text-sm font-medium text-gray-600">Growth Progress</span>
-                  <span className={`text-xs sm:text-sm font-bold transition-all duration-300 ${
-                    growthUpdated ? 'text-green-700 scale-110' : 'text-green-600'
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-sm font-medium text-gray-700">Growth Progress</h3>
+                  <span className={`text-lg font-semibold transition-all duration-300 ${
+                    growthUpdated ? 'text-emerald-600' : 'text-gray-900'
                   }`}>{Math.round(cropStage)}%</span>
                 </div>
-                <div className="w-full bg-gray-300 rounded-full h-1.5 sm:h-2">
+                <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
-                    className={`h-1.5 sm:h-2 rounded-full transition-all duration-1000 ${
-                      growthUpdated ? 'bg-gradient-to-r from-green-500 to-green-700 animate-pulse' : 'bg-gradient-to-r from-green-400 to-green-600'
+                    className={`h-2 rounded-full transition-all duration-1000 ${
+                      growthUpdated ? 'bg-emerald-500' : 'bg-emerald-500'
                     }`}
                     style={{ width: `${cropStage}%` }}
                   />
                 </div>
-                <div className="mt-2 text-xs text-gray-500 text-center">
-                  {cropStage < 10 && "🌱 Seeds are germinating..."}
-                  {cropStage >= 10 && cropStage < 25 && "🌿 Young seedlings emerging"}
-                  {cropStage >= 25 && cropStage < 45 && "🌱 Vegetative growth phase"}
-                  {cropStage >= 45 && cropStage < 65 && "🌿 Tillering and branching"}
-                  {cropStage >= 65 && cropStage < 85 && "🌸 Flowering beautifully"}
-                  {cropStage >= 85 && cropStage < 100 && "🌾 Grains are filling"}
-                  {cropStage >= 100 && "🎉 Ready for harvest!"}
+                <div className="mt-3 text-center">
+                  <p className="text-sm text-gray-600">
+                    {cropStage < 10 && "Seeds are germinating"}
+                    {cropStage >= 10 && cropStage < 25 && "Young seedlings emerging"}
+                    {cropStage >= 25 && cropStage < 45 && "Vegetative growth phase"}
+                    {cropStage >= 45 && cropStage < 65 && "Tillering and branching"}
+                    {cropStage >= 65 && cropStage < 85 && "Flowering stage"}
+                    {cropStage >= 85 && cropStage < 100 && "Grain filling"}
+                    {cropStage >= 100 && "Ready for harvest"}
+                  </p>
                 </div>
                 {lastActivity && (
                   <div className="mt-2 text-xs text-blue-600 text-center">
@@ -1494,24 +1528,30 @@ const CropSimulation = () => {
             </motion.div>
           </div>
 
-          {/* Chatbot Sidebar - Mobile-optimized */}
+          {/* Chatbot Sidebar */}
           <motion.div
             variants={itemVariants}
-            className="lg:col-span-1 lg:order-2 bg-white/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border border-gray-200/50 p-3 sm:p-4 h-fit lg:sticky lg:top-24"
+            className="lg:col-span-1 lg:order-2 min-w-fit bg-white rounded-lg border border-gray-200 p-6 h-fit max-h-[calc(100vh-50px)] lg:sticky lg:top-24"
           >
-            <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-gray-200">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                <FaRobot className="text-white text-sm sm:text-base" />
+            <div className="flex items-center space-x-3 mb-6 pb-4 border-b border-gray-200">
+              <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                <FaRobot className="text-emerald-600 text-lg" />
               </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-gray-800 text-sm sm:text-base truncate">Crop AI Assistant</h3>
-                <p className="text-xs text-green-600">🌾 My Farm Mode</p>
+              <div>
+                <h3 className="font-semibold text-gray-900">AI Assistant</h3>
+                <p className="text-sm text-gray-600">Farm-specific insights</p>
               </div>
             </div>
 
-            {/* Chat Messages - Mobile-optimized height */}
-            <div className="h-48 sm:h-56 md:h-64 overflow-y-auto mb-3 sm:mb-4 space-y-2 sm:space-y-3 pr-1" id="chat-container">
-              <AnimatePresence>
+            {/* Chat Messages */}
+            <div 
+              ref={chatContainerRef}
+              className={`overflow-y-auto mb-4 space-y-3 pr-2 scrollbar-thin scrollbar-thumb-emerald-400/50 scrollbar-track-gray-100/50 transition-all duration-300 ease-in-out ${
+                quickActionsExpanded ? 'h-64' : 'h-80'
+              }`} 
+              id="chat-container"
+            >
+              <AnimatePresence mode="popLayout">
                 {chatMessages.map((message) => (
                   <motion.div
                     key={message.id}
@@ -1521,17 +1561,22 @@ const CropSimulation = () => {
                     className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
                   >
                     <div
-                      className={`max-w-[85%] sm:max-w-[80%] p-2 sm:p-3 rounded-lg sm:rounded-xl text-xs sm:text-sm break-words leading-relaxed ${
+                      className={`max-w-[85%] p-3 rounded-lg text-sm break-words leading-relaxed ${
                         message.isBot
                           ? message.isSystemMessage 
                             ? 'bg-amber-50 border border-amber-200 text-amber-800'
-                            : 'bg-gray-100 text-gray-800'
-                          : 'bg-green-500 text-white'
+                            : 'bg-gray-50 border border-gray-200 text-gray-800'
+                          : 'bg-emerald-500 text-white border border-emerald-500'
                       }`}
                     >
                       {message.isBot ? (
                         <div className="space-y-1">
-                          {formatMessageText(message.text)}
+                          <ReactMarkdown 
+                            remarkPlugins={[remarkGfm]}
+                            components={cropMarkdownComponents}
+                          >
+                            {message.text}
+                          </ReactMarkdown>
                         </div>
                       ) : (
                         message.text
@@ -1547,32 +1592,35 @@ const CropSimulation = () => {
                   animate={{ opacity: 1 }}
                   className="flex justify-start"
                 >
-                  <div className="bg-gray-100 p-2 sm:p-3 rounded-lg sm:rounded-xl">
+                  <div className="bg-gray-50 border border-gray-200 p-3 rounded-lg">
                     <div className="flex space-x-1">
-                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce" />
-                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                     </div>
                   </div>
                 </motion.div>
               )}
+              
+              {/* Auto-scroll target */}
+              <div ref={messagesEndRef} />
             </div>
 
-            {/* Chat Input - Mobile-optimized */}
-            <div className="flex items-center space-x-2">
+            {/* Chat Input */}
+            <div className="flex items-center space-x-3">
               <input
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="Ask about your crops..."
-                className="flex-1 min-w-0 px-2 sm:px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-xs sm:text-sm"
+                className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
               />
               <button
                 onClick={handleSendMessage}
-                className="p-2 bg-green-500 text-white rounded-lg sm:rounded-xl hover:bg-green-600 transition-colors duration-300 flex-shrink-0"
+                className="p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors duration-200"
               >
-                <FaPaperPlane className="text-xs sm:text-sm" />
+                <FaPaperPlane className="text-sm" />
               </button>
               
               {/* Speech-to-Text Component */}
@@ -1592,26 +1640,47 @@ const CropSimulation = () => {
               />
             </div>
 
-            {/* Quick Actions - Mobile-optimized */}
-            <div className="mt-3 sm:mt-4 space-y-1 sm:space-y-2">
-              <p className="text-xs text-gray-500 mb-2">Farm Actions:</p>
-              <div className="max-h-32 sm:max-h-40 overflow-y-auto space-y-1 sm:space-y-2">
-                {[
-                  "Irrigated my crops",
-                  "Applied fertilizer", 
-                  "Checked for pests",
-                  "How are my crops doing?",
-                  "When will harvest be ready?",
-                  "Check weather forecast"
-                ].map((question, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setNewMessage(question)}
-                    className="w-full text-left px-2 sm:px-3 py-1.5 sm:py-2 bg-gray-50 hover:bg-gray-100 rounded-md sm:rounded-lg text-xs text-gray-600 transition-colors duration-300 truncate"
-                  >
-                    {question}
-                  </button>
-                ))}
+            {/* Quick Actions */}
+            <div className="mt-4 space-y-2">
+              <button 
+                onClick={() => setQuickActionsExpanded(!quickActionsExpanded)}
+                className="w-full flex items-center justify-between text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-50"
+              >
+                <span>Quick Actions</span>
+                <svg 
+                  className={`w-4 h-4 transform transition-transform duration-200 ${
+                    quickActionsExpanded ? 'rotate-180' : ''
+                  }`}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {/* Fixed height container to maintain chat size when collapsed */}
+              <div className={`transition-all duration-300 ease-in-out ${
+                quickActionsExpanded ? 'h-40' : 'h-0'
+              } overflow-hidden`}>
+                <div className="h-full overflow-y-auto space-y-2 pt-1">
+                  {[
+                    "Irrigated my crops",
+                    "Applied fertilizer", 
+                    "Checked for pests",
+                    "How are my crops doing?",
+                    "When will harvest be ready?",
+                    "Check weather forecast"
+                  ].map((question, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setNewMessage(question)}
+                      className="w-full text-left px-3 py-2 bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:border-gray-300 rounded-lg text-sm text-gray-700 transition-colors duration-200"
+                    >
+                      {question}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </motion.div>
@@ -1621,66 +1690,69 @@ const CropSimulation = () => {
             {/* Dashboard */}
             <motion.div
               variants={itemVariants}
-              className="bg-white/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border border-gray-200/50 p-3 sm:p-4 lg:p-6"
+              className="bg-white rounded-lg border border-gray-200 p-6"
             >
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6">Farm Insights</h2>
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Farm Analytics</h2>
+                <p className="text-gray-600">Real-time monitoring and insights for your crop</p>
+              </div>
               
-              {/* Key Metrics - Mobile-first grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6">
-                <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-4 text-center">
-                  <FaTemperatureHigh className="text-lg sm:text-xl lg:text-2xl text-blue-600 mx-auto mb-1 sm:mb-2" />
-                  <p className="text-xs text-gray-600">Temperature</p>
+              {/* Key Metrics */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                  <FaTemperatureHigh className="text-xl text-blue-600 mx-auto mb-2" />
+                  <p className="text-xs font-medium text-gray-600 mb-1">Temperature</p>
                   {farmData.currentTemp !== null ? (
-                    <p className="text-sm sm:text-lg lg:text-xl font-bold text-blue-800">{Math.round(farmData.currentTemp)}°C</p>
+                    <p className="text-lg font-semibold text-gray-900">{Math.round(farmData.currentTemp)}°C</p>
                   ) : (
-                    <div className="h-5 sm:h-6 lg:h-7 bg-blue-200 rounded animate-pulse"></div>
+                    <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
                   )}
                 </div>
                 
-                <div className="bg-gradient-to-br from-amber-100 to-amber-200 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-4 text-center">
-                  <FaTint className="text-lg sm:text-xl lg:text-2xl text-amber-600 mx-auto mb-1 sm:mb-2" />
-                  <p className="text-xs text-gray-600">Soil Moisture</p>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                  <FaTint className="text-xl text-blue-500 mx-auto mb-2" />
+                  <p className="text-xs font-medium text-gray-600 mb-1">Soil Moisture</p>
                   {farmData.soilMoisture !== null ? (
-                    <p className="text-sm sm:text-lg lg:text-xl font-bold text-amber-800">{farmData.soilMoisture}%</p>
+                    <p className="text-lg font-semibold text-gray-900">{farmData.soilMoisture}%</p>
                   ) : (
-                    <div className="h-5 sm:h-6 lg:h-7 bg-amber-200 rounded animate-pulse"></div>
+                    <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
                   )}
                 </div>
                 
-                <div className="bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-4 text-center">
-                  <FaTemperatureHigh className="text-lg sm:text-xl lg:text-2xl text-orange-600 mx-auto mb-1 sm:mb-2" />
-                  <p className="text-xs text-gray-600">Soil Temp</p>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                  <FaTemperatureHigh className="text-xl text-orange-500 mx-auto mb-2" />
+                  <p className="text-xs font-medium text-gray-600 mb-1">Soil Temp</p>
                   {farmData.soilTemp !== null ? (
-                    <p className="text-sm sm:text-lg lg:text-xl font-bold text-orange-800">{farmData.soilTemp}°C</p>
+                    <p className="text-lg font-semibold text-gray-900">{farmData.soilTemp}°C</p>
                   ) : (
-                    <div className="h-5 sm:h-6 lg:h-7 bg-orange-200 rounded animate-pulse"></div>
+                    <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
                   )}
                 </div>
                 
-                <div className="bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-4 text-center">
-                  <FaSeedling className="text-lg sm:text-xl lg:text-2xl text-yellow-600 mx-auto mb-1 sm:mb-2" />
-                  <p className="text-xs text-gray-600">Days Old</p>
-                  <p className="text-sm sm:text-lg lg:text-xl font-bold text-yellow-800">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                  <FaSeedling className="text-xl text-emerald-500 mx-auto mb-2" />
+                  <p className="text-xs font-medium text-gray-600 mb-1">Days Old</p>
+                  <p className="text-lg font-semibold text-gray-900">
                     {isLoadingHarvest ? (
-                      <LoadingSkeleton className="w-6 sm:w-8 h-4 sm:h-6 mx-auto" />
+                      <LoadingSkeleton className="w-8 h-6 mx-auto" />
                     ) : (
                       daysSincePlanting
                     )}
                   </p>
                 </div>
                 
-                <div className="bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-4 text-center">
-                  <FaCalendarAlt className="text-lg sm:text-xl lg:text-2xl text-purple-600 mx-auto mb-1 sm:mb-2" />
-                  <p className="text-xs text-gray-600">Harvest In</p>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                  <FaCalendarAlt className="text-xl text-purple-500 mx-auto mb-2" />
+                  <p className="text-xs font-medium text-gray-600 mb-1">Harvest In</p>
                   {isLoadingHarvest ? (
-                    <LoadingSkeleton className="w-12 sm:w-16 h-3 sm:h-4 mx-auto" />
+                    <LoadingSkeleton className="w-16 h-4 mx-auto" />
                   ) : (
                     <>
-                      <p className="text-xs sm:text-sm font-bold text-purple-800">
+                      <p className="text-lg font-semibold text-gray-900">
                         {farmData.expectedHarvest}
                       </p>
                       {harvestData && (
-                        <p className="text-xs text-purple-600 mt-1">
+                        <p className="text-xs text-gray-500 mt-1">
                           {new Date(harvestData.estimated_harvest_date).toLocaleDateString()}
                         </p>
                       )}
@@ -1688,67 +1760,67 @@ const CropSimulation = () => {
                   )}
                 </div>
 
-                <div className="bg-gradient-to-br from-green-100 to-green-200 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-4 text-center">
-                  <FaChartLine className="text-lg sm:text-xl lg:text-2xl text-green-600 mx-auto mb-1 sm:mb-2" />
-                  <p className="text-xs text-gray-600">Growth</p>
-                  <p className="text-sm sm:text-lg lg:text-xl font-bold text-green-800">{Math.round(cropStage)}%</p>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                  <FaChartLine className="text-xl text-emerald-600 mx-auto mb-2" />
+                  <p className="text-xs font-medium text-gray-600 mb-1">Growth</p>
+                  <p className="text-lg font-semibold text-gray-900">{Math.round(cropStage)}%</p>
                 </div>
               </div>
 
-              {/* Detailed Info - Mobile-responsive grid */}
-              <div className={`grid grid-cols-1 sm:grid-cols-2 ${harvestData ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4 sm:gap-6`}>
-                {/* Harvest Information - NEW SECTION */}
+              {/* Detailed Info Grid */}
+              <div className={`grid grid-cols-1 md:grid-cols-2 ${harvestData ? 'xl:grid-cols-4' : 'xl:grid-cols-3'} gap-6`}>
+                {/* Harvest Information */}
                 {isLoadingHarvest ? (
                   <HarvestInfoSkeleton />
                 ) : harvestData ? (
-                  <div className="space-y-3 sm:space-y-4">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-800">Harvest Information</h3>
-                    <div className="space-y-2 sm:space-y-3">
-                      <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg sm:rounded-xl p-2 sm:p-3">
-                        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                          <FaCalendarAlt className="text-green-500 text-xs sm:text-sm flex-shrink-0" />
-                          <span className="text-xs sm:text-sm truncate">Estimated Harvest Date</span>
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Harvest Information</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
+                        <div className="flex items-center space-x-3">
+                          <FaCalendarAlt className="text-gray-500 text-sm" />
+                          <span className="text-sm text-gray-700">Estimated Date</span>
                         </div>
-                        <span className="text-xs sm:text-sm font-medium text-green-700 ml-2">
+                        <span className="text-sm font-medium text-gray-900">
                           {new Date(harvestData.estimated_harvest_date).toLocaleDateString()}
                         </span>
                       </div>
                       
-                      <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg sm:rounded-xl p-2 sm:p-3">
-                        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                          <FaChartLine className="text-blue-500 text-xs sm:text-sm flex-shrink-0" />
-                          <span className="text-xs sm:text-sm">Days Remaining</span>
+                      <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
+                        <div className="flex items-center space-x-3">
+                          <FaChartLine className="text-gray-500 text-sm" />
+                          <span className="text-sm text-gray-700">Days Remaining</span>
                         </div>
-                        <span className="text-xs sm:text-sm font-medium text-blue-700">
+                        <span className="text-sm font-medium text-gray-900">
                           {harvestData.days_remaining} days
                         </span>
                       </div>
 
-                      <div className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-lg sm:rounded-xl p-2 sm:p-3">
-                        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                          <FaSeedling className="text-purple-500 text-xs sm:text-sm flex-shrink-0" />
-                          <span className="text-xs sm:text-sm">Growth Progress</span>
+                      <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
+                        <div className="flex items-center space-x-3">
+                          <FaSeedling className="text-gray-500 text-sm" />
+                          <span className="text-sm text-gray-700">Growth Progress</span>
                         </div>
-                        <span className="text-xs sm:text-sm font-medium text-purple-700">
+                        <span className="text-sm font-medium text-gray-900">
                           {Math.round(harvestData.growth_percentage)}%
                         </span>
                       </div>
 
-                      <div className={`flex items-center justify-between ${
+                      <div className={`flex items-center justify-between border rounded-lg p-3 ${
                         harvestData.status === 'ready_for_harvest' 
-                          ? 'bg-yellow-50 border-yellow-200' 
+                          ? 'bg-amber-50 border-amber-200' 
                           : 'bg-gray-50 border-gray-200'
-                      } border rounded-lg sm:rounded-xl p-2 sm:p-3`}>
-                        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                          <div className={`w-2 h-2 sm:w-3 sm:h-3 ${
-                            harvestData.status === 'ready_for_harvest' ? 'bg-yellow-500' : 'bg-gray-500'
-                          } rounded-full flex-shrink-0`}></div>
-                          <span className="text-xs sm:text-sm">Status</span>
+                      }`}>
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-2 h-2 rounded-full ${
+                            harvestData.status === 'ready_for_harvest' ? 'bg-amber-500' : 'bg-gray-400'
+                          }`}></div>
+                          <span className="text-sm text-gray-700">Status</span>
                         </div>
-                        <span className={`text-xs sm:text-sm font-medium ${
+                        <span className={`text-sm font-medium ${
                           harvestData.status === 'ready_for_harvest' 
-                            ? 'text-yellow-700' 
-                            : 'text-gray-700'
+                            ? 'text-amber-700' 
+                            : 'text-gray-900'
                         }`}>
                           {harvestData.status === 'ready_for_harvest' ? 'Ready for Harvest!' : 'Growing'}
                         </span>
@@ -1758,138 +1830,202 @@ const CropSimulation = () => {
                 ) : null}
 
                 {/* Farm Activities */}
-                <div className="space-y-3 sm:space-y-4">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">Recent Activities</h3>
-                  <div className="space-y-2 sm:space-y-3">
-                    <div className={`flex items-center justify-between rounded-lg sm:rounded-xl p-2 sm:p-3 transition-all duration-300 ${
-                      recentlyUpdated.lastIrrigated ? 'bg-blue-100 border-2 border-blue-300 animate-pulse' : 'bg-gray-50'
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Recent Activities</h3>
+                  <div className="space-y-3">
+                    <div className={`flex items-center justify-between rounded-lg p-3 transition-all duration-300 ${
+                      recentlyUpdated.lastIrrigated ? 'bg-blue-50 border-2 border-blue-300' : 'bg-gray-50 border border-gray-200'
                     }`}>
-                      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                        <FaTint className="text-blue-500 text-xs sm:text-sm flex-shrink-0" />
-                        <span className="text-xs sm:text-sm truncate">Last Irrigated</span>
+                      <div className="flex items-center space-x-3">
+                        <FaTint className="text-blue-500 text-sm" />
+                        <span className="text-sm text-gray-700">Last Irrigated</span>
                       </div>
-                      <span className="text-xs sm:text-sm font-medium text-gray-600 ml-2">{farmData.lastIrrigated}</span>
+                      <span className="text-sm font-medium text-gray-900">{farmData.lastIrrigated}</span>
                     </div>
                     
-                    <div className={`flex items-center justify-between rounded-lg sm:rounded-xl p-2 sm:p-3 transition-all duration-300 ${
-                      recentlyUpdated.lastFertilized ? 'bg-green-100 border-2 border-green-300 animate-pulse' : 'bg-gray-50'
+                    <div className={`flex items-center justify-between rounded-lg p-3 transition-all duration-300 ${
+                      recentlyUpdated.lastFertilized ? 'bg-emerald-50 border-2 border-emerald-300' : 'bg-gray-50 border border-gray-200'
                     }`}>
-                      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                        <FaSeedling className="text-green-500 text-xs sm:text-sm flex-shrink-0" />
-                        <span className="text-xs sm:text-sm truncate">Last Fertilized</span>
+                      <div className="flex items-center space-x-3">
+                        <FaSeedling className="text-emerald-500 text-sm" />
+                        <span className="text-sm text-gray-700">Last Fertilized</span>
                       </div>
-                      <span className="text-xs sm:text-sm font-medium text-gray-600 ml-2">{farmData.lastFertilized}</span>
+                      <span className="text-sm font-medium text-gray-900">{farmData.lastFertilized}</span>
                     </div>
 
-                    <div className={`flex items-center justify-between rounded-lg sm:rounded-xl p-2 sm:p-3 transition-all duration-300 ${
-                      recentlyUpdated.lastPestCheck ? 'bg-orange-100 border-2 border-orange-300 animate-pulse' : 'bg-gray-50'
+                    <div className={`flex items-center justify-between rounded-lg p-3 transition-all duration-300 ${
+                      recentlyUpdated.lastPestCheck ? 'bg-orange-50 border-2 border-orange-300' : 'bg-gray-50 border border-gray-200'
                     }`}>
-                      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                        <FaBug className="text-orange-500 text-xs sm:text-sm flex-shrink-0" />
-                        <span className="text-xs sm:text-sm truncate">Last Pest Check</span>
+                      <div className="flex items-center space-x-3">
+                        <FaBug className="text-orange-500 text-sm" />
+                        <span className="text-sm text-gray-700">Last Pest Check</span>
                       </div>
-                      <span className="text-xs sm:text-sm font-medium text-gray-600 ml-2">{farmData.lastPestCheck}</span>
+                      <span className="text-sm font-medium text-gray-900">{farmData.lastPestCheck}</span>
                     </div>
 
-                    <div className="flex items-center justify-between bg-gray-50 rounded-lg sm:rounded-xl p-2 sm:p-3">
-                      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                        <FaChartLine className="text-purple-500 text-xs sm:text-sm flex-shrink-0" />
-                        <span className="text-xs sm:text-sm truncate">Growth Rate</span>
+                    <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
+                      <div className="flex items-center space-x-3">
+                        <FaChartLine className="text-purple-500 text-sm" />
+                        <span className="text-sm text-gray-700">Growth Rate</span>
                       </div>
-                      <span className="text-xs sm:text-sm font-medium text-green-600 ml-2">{farmData.growthRate}</span>
+                      <span className="text-sm font-medium text-emerald-600">{farmData.growthRate}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Next Event Section */}
                 {currentCrop?.derived && (
-                  <div className="space-y-3 sm:space-y-4">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-800">Next Farming Activity</h3>
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Scheduled Activity</h3>
                     <div className="space-y-2">
-                      {/* Next Event Card */}
-                      <div className={`rounded-lg sm:rounded-xl p-3 sm:p-4 border-2 transition-all duration-300 ${
-                        currentCrop.derived.event_restriction_active 
-                          ? 'bg-red-50 border-red-300' 
-                          : currentCrop.derived.next_event_due_date && 
-                            new Date(currentCrop.derived.next_event_due_date) <= new Date(Date.now() + 24*60*60*1000)
-                            ? 'bg-orange-50 border-orange-300 animate-pulse'
-                            : 'bg-green-50 border-green-300'
+                      {/* Collapsible Event Card */}
+                      <div className={`border-2 rounded-lg transition-all duration-300 ${
+                        (() => {
+                          // If there's an active restriction, calculate days until restriction ends
+                          if (currentCrop.derived.event_restriction_active && currentCrop.derived.event_restriction_until) {
+                            const restrictionEndDate = new Date(currentCrop.derived.event_restriction_until);
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            restrictionEndDate.setHours(0, 0, 0, 0);
+                            const daysUntilRestrictionEnds = Math.ceil((restrictionEndDate - today) / (1000 * 60 * 60 * 24));
+                            
+                            if (daysUntilRestrictionEnds === 0) return 'border-green-300 bg-green-50';
+                            if (daysUntilRestrictionEnds < 0) return 'border-red-300 bg-red-50';
+                            return 'border-yellow-300 bg-yellow-50';
+                          }
+                          
+                          // Otherwise use the regular next event timing
+                          if (currentCrop.derived.next_event_days_until === 0) return 'border-green-300 bg-green-50';
+                          if (currentCrop.derived.next_event_days_until < 0) return 'border-red-300 bg-red-50';
+                          return 'border-yellow-300 bg-yellow-50';
+                        })()
                       }`}>
-                        <div className="flex items-start space-x-3">
-                          <div className={`p-2 rounded-lg ${
-                            currentCrop.derived.event_restriction_active 
-                              ? 'bg-red-100' 
-                              : 'bg-green-100'
-                          }`}>
-                            {currentCrop.derived.next_event === 'irrigation' && <FaTint className="text-blue-500 text-sm" />}
-                            {currentCrop.derived.next_event === 'fertilization' && <FaSeedling className="text-green-500 text-sm" />}
-                            {currentCrop.derived.next_event === 'pest_check' && <FaBug className="text-orange-500 text-sm" />}
-                            {currentCrop.derived.next_event === 'harvesting' && <FaCalendarAlt className="text-purple-500 text-sm" />}
-                            {!['irrigation', 'fertilization', 'pest_check', 'harvesting'].includes(currentCrop.derived.next_event) && 
-                             <FaCalendarAlt className="text-gray-500 text-sm" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <h4 className="text-sm font-semibold capitalize text-gray-800 truncate">
-                                {currentCrop.derived.next_event?.replace('_', ' ') || 'No Activity'}
-                              </h4>
-                              <div className="flex items-center space-x-2">
-                                {/* Days Until Badge */}
-                                {currentCrop.derived.next_event_days_until !== undefined && (
-                                  <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
-                                    currentCrop.derived.next_event_days_until === 0
-                                      ? 'bg-red-100 text-red-700 animate-pulse'
-                                      : currentCrop.derived.next_event_days_until <= 1
-                                        ? 'bg-orange-100 text-orange-700'
-                                        : currentCrop.derived.next_event_days_until <= 3
-                                          ? 'bg-yellow-100 text-yellow-700'
-                                          : 'bg-blue-100 text-blue-700'
-                                  }`}>
-                                    {currentCrop.derived.next_event_days_until === 0 
-                                      ? 'Due Now!' 
-                                      : currentCrop.derived.next_event_days_until === 1
-                                        ? '1 day'
-                                        : `${currentCrop.derived.next_event_days_until} days`
-                                    }
-                                  </span>
-                                )}
-                                {/* Date Badge */}
-                                {currentCrop.derived.next_event_due_date && (
-                                  <span className={`text-xs px-2 py-1 rounded-full ${
-                                    currentCrop.derived.event_restriction_active 
-                                      ? 'bg-red-100 text-red-700'
-                                      : new Date(currentCrop.derived.next_event_due_date) <= new Date()
-                                        ? 'bg-orange-100 text-orange-700'
-                                        : 'bg-green-100 text-green-700'
-                                  }`}>
-                                    {new Date(currentCrop.derived.next_event_due_date).toLocaleDateString()}
-                                  </span>
-                                )}
+                        {/* Collapsed Header - Always Visible */}
+                        <button 
+                          className="w-full p-4 text-left focus:outline-none rounded-lg"
+                          onClick={() => setActivityExpanded(!activityExpanded)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3 flex-1">
+                              {/* Icon */}
+                              <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white border border-gray-200 rounded-lg">
+                                {currentCrop.derived.next_event === 'irrigation' && <FaTint className="text-blue-500 text-xs" />}
+                                {currentCrop.derived.next_event === 'fertilization' && <FaSeedling className="text-emerald-500 text-xs" />}
+                                {currentCrop.derived.next_event === 'pest_check' && <FaBug className="text-orange-500 text-xs" />}
+                                {currentCrop.derived.next_event === 'harvesting' && <FaCalendarAlt className="text-purple-500 text-xs" />}
+                                {!['irrigation', 'fertilization', 'pest_check', 'harvesting'].includes(currentCrop.derived.next_event) && 
+                                <FaCalendarAlt className="text-gray-500 text-xs" />}
+                              </div>
+                              
+                              {/* Title and Status */}
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <h4 className="text-sm font-semibold text-gray-900 capitalize">
+                                    {currentCrop.derived.next_event?.replace('_', ' ') || 'No Activity'}
+                                  </h4>
+                                  
+                                  
+                                </div>
+                                
+                                {/* Key Date */}
+                                <p className="text-xs text-gray-500">
+                                  {currentCrop.derived.event_restriction_active && currentCrop.derived.event_restriction_until
+                                    ? `Restricted until ${new Date(currentCrop.derived.event_restriction_until).toLocaleDateString()}`
+                                    : currentCrop.derived.next_event_due_date 
+                                      ? `Due ${new Date(currentCrop.derived.next_event_due_date).toLocaleDateString()}`
+                                      : 'No scheduled date'
+                                  }
+                                </p>
                               </div>
                             </div>
-                            <p className="text-xs text-gray-600 mb-2">
-                              {currentCrop.derived.next_event_description || 'No description available'}
-                            </p>
                             
-                            {/* Restriction Status */}
-                            {currentCrop.derived.event_restriction_active && currentCrop.derived.event_restriction_until && (
-                              <div className="bg-red-100 border border-red-200 rounded-lg p-2 mt-2">
-                                <div className="flex items-center space-x-2">
-                                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                                  <span className="text-xs font-medium text-red-700">Activity Restricted</span>
-                                </div>
-                                <p className="text-xs text-red-600 mt-1">
-                                  {currentCrop.derived.event_restriction_message || 'Activities are temporarily restricted'}
-                                </p>
-                                <p className="text-xs text-red-500 mt-1">
-                                  Restriction ends: {new Date(currentCrop.derived.event_restriction_until).toLocaleDateString()}
+                            {/* Dropdown Arrow */}
+                            <div className="flex-shrink-0 ml-2">
+                              <svg 
+                                className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${activityExpanded ? 'rotate-180' : ''}`} 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </div>
+                          </div>
+                        </button>
+                        
+                        {/* Expanded Content */}
+                        {activityExpanded && (
+                          <div className="px-4 pb-4 border-t border-gray-200 space-y-3">
+                            {/* Description - Only show when NOT restricted */}
+                            {!currentCrop.derived.event_restriction_active && (
+                              <div className="mt-3">
+                                <p className="text-sm text-gray-600">
+                                  {currentCrop.derived.next_event_description || 'No description available'}
                                 </p>
                               </div>
                             )}
                             
-                            {/* Due Status */}
-                            {!currentCrop.derived.event_restriction_active && currentCrop.derived.next_event_due_date && (
-                              <div className={`border rounded-lg p-2 mt-2 ${
+                            {/* Detailed Status */}
+                            {currentCrop.derived.event_restriction_active && currentCrop.derived.event_restriction_until ? (
+                              <div className={`rounded-lg p-3 ${
+                                (() => {
+                                  const restrictionEndDate = new Date(currentCrop.derived.event_restriction_until);
+                                  const today = new Date();
+                                  today.setHours(0, 0, 0, 0);
+                                  restrictionEndDate.setHours(0, 0, 0, 0);
+                                  const daysUntilRestrictionEnds = Math.ceil((restrictionEndDate - today) / (1000 * 60 * 60 * 24));
+                                  
+                                  if (daysUntilRestrictionEnds === 0) return 'bg-green-100 border border-green-200';
+                                  if (daysUntilRestrictionEnds < 0) return 'bg-red-100 border border-red-200';
+                                  return 'bg-yellow-100 border border-yellow-200';
+                                })()
+                              }`}>
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <div className={`w-2 h-2 rounded-full animate-pulse ${
+                                    (() => {
+                                      const restrictionEndDate = new Date(currentCrop.derived.event_restriction_until);
+                                      const today = new Date();
+                                      today.setHours(0, 0, 0, 0);
+                                      restrictionEndDate.setHours(0, 0, 0, 0);
+                                      const daysUntilRestrictionEnds = Math.ceil((restrictionEndDate - today) / (1000 * 60 * 60 * 24));
+                                      
+                                      if (daysUntilRestrictionEnds === 0) return 'bg-green-500';
+                                      if (daysUntilRestrictionEnds < 0) return 'bg-red-500';
+                                      return 'bg-yellow-500';
+                                    })()
+                                  }`}></div>
+                                  <span className={`text-sm font-medium ${
+                                    (() => {
+                                      const restrictionEndDate = new Date(currentCrop.derived.event_restriction_until);
+                                      const today = new Date();
+                                      today.setHours(0, 0, 0, 0);
+                                      restrictionEndDate.setHours(0, 0, 0, 0);
+                                      const daysUntilRestrictionEnds = Math.ceil((restrictionEndDate - today) / (1000 * 60 * 60 * 24));
+                                      
+                                      if (daysUntilRestrictionEnds === 0) return 'text-green-700';
+                                      if (daysUntilRestrictionEnds < 0) return 'text-red-700';
+                                      return 'text-yellow-700';
+                                    })()
+                                  }`}>Activity Restricted</span>
+                                </div>
+                                <p className={`text-sm ${
+                                  (() => {
+                                    const restrictionEndDate = new Date(currentCrop.derived.event_restriction_until);
+                                    const today = new Date();
+                                    today.setHours(0, 0, 0, 0);
+                                    restrictionEndDate.setHours(0, 0, 0, 0);
+                                    const daysUntilRestrictionEnds = Math.ceil((restrictionEndDate - today) / (1000 * 60 * 60 * 24));
+                                    
+                                    if (daysUntilRestrictionEnds === 0) return 'text-green-600';
+                                    if (daysUntilRestrictionEnds < 0) return 'text-red-600';
+                                    return 'text-yellow-600';
+                                  })()
+                                }`}>
+                                  Watering during flowering can cause flower drop and reduce yield by up to 30%.
+                                </p>
+                              </div>
+                            ) : currentCrop.derived.next_event_due_date && (
+                              <div className={`border rounded-lg p-3 ${
                                 currentCrop.derived.next_event_days_until === 0
                                   ? 'bg-red-100 border-red-200'
                                   : currentCrop.derived.next_event_days_until <= 1
@@ -1898,172 +2034,99 @@ const CropSimulation = () => {
                                       ? 'bg-yellow-100 border-yellow-200'
                                       : 'bg-blue-100 border-blue-200'
                               }`}>
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center space-x-2">
-                                    <div className={`w-2 h-2 rounded-full ${
-                                      currentCrop.derived.next_event_days_until === 0
-                                        ? 'bg-red-500 animate-pulse'
-                                        : currentCrop.derived.next_event_days_until <= 1
-                                          ? 'bg-orange-500 animate-pulse'
-                                          : currentCrop.derived.next_event_days_until <= 3
-                                            ? 'bg-yellow-500'
-                                            : 'bg-blue-500'
-                                    }`}></div>
-                                    <span className={`text-xs font-medium ${
-                                      currentCrop.derived.next_event_days_until === 0
-                                        ? 'text-red-700'
-                                        : currentCrop.derived.next_event_days_until <= 1
-                                          ? 'text-orange-700'
-                                          : currentCrop.derived.next_event_days_until <= 3
-                                            ? 'text-yellow-700'
-                                            : 'text-blue-700'
-                                    }`}>
-                                      {currentCrop.derived.next_event_days_until === 0
-                                        ? '⚠️ Due Now - Action Required!'
-                                        : currentCrop.derived.next_event_days_until === 1
-                                          ? '🕐 Due Tomorrow'
-                                          : `📅 Due in ${currentCrop.derived.next_event_days_until} days`
-                                      }
-                                    </span>
-                                  </div>
-                                  <span className="text-xs text-gray-500">
-                                    {new Date(currentCrop.derived.next_event_due_date).toLocaleDateString()}
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                    currentCrop.derived.next_event_days_until === 0
+                                      ? 'bg-red-500 animate-pulse'
+                                      : currentCrop.derived.next_event_days_until <= 1
+                                        ? 'bg-orange-500 animate-pulse'
+                                        : currentCrop.derived.next_event_days_until <= 3
+                                          ? 'bg-yellow-500'
+                                          : 'bg-blue-500'
+                                  }`}></div>
+                                  <span className={`text-sm font-medium ${
+                                    currentCrop.derived.next_event_days_until === 0
+                                      ? 'text-red-700'
+                                      : currentCrop.derived.next_event_days_until <= 1
+                                        ? 'text-orange-700'
+                                        : currentCrop.derived.next_event_days_until <= 3
+                                          ? 'text-yellow-700'
+                                          : 'text-blue-700'
+                                  }`}>
+                                    {currentCrop.derived.next_event_days_until === 0
+                                      ? 'Due Now - Action Required!'
+                                      : currentCrop.derived.next_event_days_until === 1
+                                        ? 'Due Tomorrow'
+                                        : `Due in ${currentCrop.derived.next_event_days_until} days`
+                                    }
                                   </span>
                                 </div>
                                 
-                                {/* Progress bar for upcoming events */}
-                                {currentCrop.derived.next_event_days_until > 0 && currentCrop.derived.next_event_days_until <= 7 && (
-                                  <div className="mt-2">
-                                    <div className="flex justify-between text-xs text-gray-500 mb-1">
-                                      <span>Progress to due date</span>
-                                      <span>{Math.max(0, 7 - currentCrop.derived.next_event_days_until)}/7 days</span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-1.5">
-                                      <div 
-                                        className={`h-1.5 rounded-full transition-all duration-300 ${
-                                          currentCrop.derived.next_event_days_until <= 1
-                                            ? 'bg-red-400'
-                                            : currentCrop.derived.next_event_days_until <= 3
-                                              ? 'bg-orange-400' 
-                                              : 'bg-blue-400'
-                                        }`}
-                                        style={{ 
-                                          width: `${Math.min(100, ((7 - currentCrop.derived.next_event_days_until) / 7) * 100)}%` 
-                                        }}
-                                      ></div>
-                                    </div>
-                                  </div>
-                                )}
+                                <div className="text-xs text-gray-600">
+                                  <strong>Scheduled:</strong> {new Date(currentCrop.derived.next_event_due_date).toLocaleDateString()}
+                                </div>
+                                
+                                
                               </div>
                             )}
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </div>
                 )}
+  
 
                 {/* Weather Forecast */}
-                <div className="space-y-3 sm:space-y-4">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">5-Day Forecast</h3>
-                  <div className="space-y-2">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900">5-Day Forecast</h3>
+                  <div className="space-y-3">
                     {isLoadingWeather ? (
-                      // Pulsating loading animation
+                      // Loading state
                       [...Array(5)].map((_, index) => (
-                        <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg sm:rounded-xl p-2 sm:p-3">
-                          <div className="flex items-center space-x-2 sm:space-x-3">
-                            <div className="w-4 h-4 sm:w-5 sm:h-5 bg-gray-200 rounded-full animate-pulse"></div>
-                            <div className="h-3 sm:h-4 bg-gray-200 rounded w-12 sm:w-16 animate-pulse"></div>
+                        <div key={index} className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-5 h-5 bg-gray-200 rounded-full animate-pulse"></div>
+                            <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
                           </div>
                           <div className="text-right space-y-1">
-                            <div className="h-3 sm:h-4 bg-gray-200 rounded w-6 sm:w-8 animate-pulse"></div>
-                            <div className="h-2 sm:h-3 bg-gray-200 rounded w-8 sm:w-12 animate-pulse"></div>
+                            <div className="h-4 bg-gray-200 rounded w-8 animate-pulse"></div>
+                            <div className="h-3 bg-gray-200 rounded w-12 animate-pulse"></div>
                           </div>
                         </div>
                       ))
                     ) : weatherError ? (
                       // Error state
-                      <div className="flex items-center justify-center bg-red-50 rounded-lg sm:rounded-xl p-2 sm:p-3">
-                        <div className="text-xs sm:text-sm text-red-600">{weatherError}</div>
+                      <div className="flex items-center justify-center bg-red-50 border border-red-200 rounded-lg p-3">
+                        <div className="text-sm text-red-600">{weatherError}</div>
                       </div>
                     ) : farmData.forecast.length > 0 ? (
                       // Weather data
                       farmData.forecast.map((day, index) => (
-                        <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg sm:rounded-xl p-2 sm:p-3">
-                          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                            <day.icon className="text-yellow-500 text-xs sm:text-sm flex-shrink-0" />
-                            <span className="text-xs sm:text-sm truncate">{day.day}</span>
+                        <div key={index} className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
+                          <div className="flex items-center space-x-3">
+                            <day.icon className="text-amber-500 text-sm" />
+                            <span className="text-sm text-gray-700">{day.day}</span>
                           </div>
-                          <div className="text-right ml-2">
-                            <p className="text-xs sm:text-sm font-medium">{day.temp}°C</p>
+                          <div className="text-right">
+                            <p className="text-sm font-medium text-gray-900">{day.temp}°C</p>
                             <p className="text-xs text-gray-500">{day.condition}</p>
                           </div>
                         </div>
                       ))
                     ) : (
                       // No data fallback
-                      <div className="flex items-center justify-center bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-6">
-                        <div className="text-xs sm:text-sm text-gray-600">Weather data unavailable</div>
+                      <div className="flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg p-6">
+                        <div className="text-sm text-gray-600">Weather data unavailable</div>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Irrigation & Alerts */}
-                <div className="space-y-3 sm:space-y-4">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">System Status</h3>
-                  <div className="space-y-2 sm:space-y-3">
-                    <div className="bg-green-50 border border-green-200 rounded-lg sm:rounded-xl p-2 sm:p-3">
-                      <div className="flex items-center space-x-2 mb-1 sm:mb-2">
-                        <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full flex-shrink-0"></div>
-                        <span className="text-xs sm:text-sm font-medium text-green-800 truncate">Irrigation System</span>
-                      </div>
-                      <p className="text-xs text-green-600 truncate">Next: {farmData.irrigation.nextScheduled}</p>
-                    </div>
 
-                    <div className={`${farmData.pests.detected ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'} border rounded-lg sm:rounded-xl p-2 sm:p-3`}>
-                      <div className="flex items-center space-x-2 mb-1 sm:mb-2">
-                        <div className={`w-2 h-2 sm:w-3 sm:h-3 ${farmData.pests.detected ? 'bg-red-500' : 'bg-blue-500'} rounded-full flex-shrink-0`}></div>
-                        <span className={`text-xs sm:text-sm font-medium ${farmData.pests.detected ? 'text-red-800' : 'text-blue-800'} truncate`}>
-                          Pest Detection
-                        </span>
-                      </div>
-                      <p className={`text-xs ${farmData.pests.detected ? 'text-red-600' : 'text-blue-600'} truncate`}>
-                        Risk: {farmData.pests.risk} | Checked: {farmData.pests.lastChecked}
-                      </p>
-                    </div>
-
-                    <div className="bg-gray-50 rounded-lg sm:rounded-xl p-2 sm:p-3">
-                      <div className="text-xs text-gray-600 space-y-1">
-                        <p className="truncate">Total Water Used: {farmData.irrigation.totalWaterUsed}</p>
-                        <p className="truncate">AI Recommendations: Active</p>
-                        <p className="truncate">Sensor Status: Online</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
 
-              {/* Nutrient Levels */}
-              <div className="mt-4 sm:mt-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">Soil Nutrients</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                  {Object.entries(farmData.nutrients).map(([nutrient, level]) => (
-                    <div key={nutrient} className="bg-gray-50 rounded-lg sm:rounded-xl p-3 sm:p-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-xs sm:text-sm font-medium text-gray-600 capitalize truncate">{nutrient}</span>
-                        <span className="text-xs sm:text-sm font-bold text-green-600 ml-2">{level}%</span>
-                      </div>
-                      <div className="w-full bg-gray-300 rounded-full h-1.5 sm:h-2">
-                        <div
-                          className="bg-gradient-to-r from-green-400 to-green-600 h-1.5 sm:h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${level}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+
             </motion.div>
           </div>
         </motion.div>

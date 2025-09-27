@@ -360,12 +360,7 @@ const Profile = () => {
         <div className="space-y-6">
           {/* Header */}
           <div className="text-center">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
-              My Profile
-            </h1>
-            <p className="text-gray-600">
-              Manage your account information and farming details
-            </p>
+            
           </div>
 
           {/* Success/Error Messages */}
@@ -386,7 +381,7 @@ const Profile = () => {
             {/* Profile Overview Card - Second on mobile, first on desktop */}
             <div className="lg:col-span-2 order-2 lg:order-1 bg-primary/20 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/50 p-6">
               <div className="flex justify-between items-start mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Profile Information</h2>
+                <h2 className="text-2xl font-bold text-gray-800">Your Profile Information</h2>
                 <button
                   onClick={handleEditToggle}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 ${

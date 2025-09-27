@@ -18,22 +18,16 @@ const Home = () => {
   const [heroImageLoaded, setHeroImageLoaded] = useState(false);
   const [aboutImageLoaded, setAboutImageLoaded] = useState(false);
 
-  // Language variations for the tagline
+  // Language variations for the tagline - focused on Kerala
   const taglineLanguages = [
-    { text: "Your Intelligent Farming Companion", lang: "English" },
-    { text: "आपका बुद्धिमान कृषि साथी", lang: "Hindi" },
-    { text: "উৎপাদনে আপনার বুদ্ধিমত্তার সাথী", lang: "Bengali" },
-    { text: "உங்கள் அறிவார்ந்த விவசாய துணை", lang: "Tamil" },
-    { text: "మీ తెలివైన వ్యవసాయ సహచరుడు", lang: "Telugu" },
-    { text: "आपले हुशार शेती साथी", lang: "Marathi" },
-    { text: "ನಿಮ್ಮ ಬುದ್ಧಿವಂತ ಕೃಷಿ ಸಹಚರ", lang: "Kannada" },
     { text: "നിങ്ങളുടെ ബുദ്ധിമാനായ കൃഷി സഹചാരി", lang: "Malayalam" },
-    { text: "તમારા બુદ્ધિશાળી ખેતી સાથી", lang: "Gujarati" },
-    { text: "ਤੁਹਾਡਾ ਬੁੱਧੀਮਾਨ ਖੇਤੀ ਸਾਥੀ", lang: "Punjabi" },
-    { text: "ଆପଣଙ୍କର ବୁଦ୍ଧିମାନ କୃଷି ସାଥୀ", lang: "Odia" },
-    { text: "আপোনাৰ বুদ্ধিমান কৃষি সাথী", lang: "Assamese" },
-    { text: "آپ کا ذہین زراعتی ساتھی", lang: "Urdu" },
-    { text: "भवतः बुद्धिमान् कृषि सहायकः", lang: "Sanskrit" }
+    { text: "Your Intelligent Farming Companion", lang: "English" },
+    { text: "നിങ്ങളുടെ സ്മാർട്ട് കൃഷി ഉപദേഷ്ടാവ്", lang: "Malayalam" },
+    { text: "Kerala's Smart Agriculture Partner", lang: "English" },
+    { text: "உங்கள் அறிவார்ந்த விவசாய துணை", lang: "Tamil" },
+    { text: "കേരളത്തിലെ കാർഷിക വിപ്ലവം", lang: "Malayalam" },
+    { text: "ನಿಮ್ಮ ಬುದ್ಧಿವಂತ ಕೃಷಿ ಸಹಚರ", lang: "Kannada" },
+    { text: "स्मार्ट खेती का साथी", lang: "Hindi" }
   ];
 
   useEffect(() => {
@@ -174,39 +168,39 @@ const Home = () => {
   const features = [
     {
       icon: <FaRobot className="text-2xl sm:text-3xl" />,
-      title: "Smart AI Assistant",
-      description: "24/7 available AI chatbot that provides instant answers to your farming queries in multiple languages. Get expert guidance anytime.",
-      benefit: "Instant farming guidance in your language",
+      title: "Malayalam AI Assistant",
+      description: "24/7 available AI chatbot in Malayalam and English. Get expert guidance for rice, coconut, rubber, and spice cultivation specific to Kerala.",
+      benefit: "Expert advice in Malayalam & English",
       link: "/chatbot"
     },
     {
       icon: <FaSeedling className="text-2xl sm:text-3xl" />,
-      title: "Crop Simulation",
-      description: "Virtual technology to predict crop growth under different conditions. Test seed varieties, weather patterns, and farming techniques.",
-      benefit: "Predict crop growth virtually",
+      title: "Kerala Crop Simulation",
+      description: "Predict growth for Kerala's major crops like rice, coconut, pepper, cardamom under monsoon conditions and tropical climate.",
+      benefit: "Monsoon-optimized crop predictions",
       link: "/simulation"
     },
     {
       icon: <FaChartLine className="text-2xl sm:text-3xl" />,
-      title: "Smart Analytics",
-      description: "Real-time analysis of weather, soil health, market prices, and government policies to help you make informed decisions.",
-      benefit: "Real-time market & weather data",
+      title: "Kerala Market Analytics",
+      description: "Real-time analysis of Kerala's weather patterns, laterite soil conditions, spice market prices, and state agricultural policies.",
+      benefit: "Kerala-specific market insights",
       link: "/insights"
     },
     {
       icon: <FaMoneyBillWave className="text-2xl sm:text-3xl" />,
-      title: "Financial Guidance",
-      description: "Find affordable credit options, government schemes, and market timing advice to maximize your farming profits.",
-      benefit: "Maximize profits with smart financing",
+      title: "Kerala Schemes & Finance",
+      description: "Access Kerala state government schemes, cooperative bank loans, and optimal timing for coconut, rubber, and spice harvesting.",
+      benefit: "Kerala govt schemes & co-op finance",
       link: "/finance"
     }
   ];
 
   const stats = [
-    { number: "200K+", label: "Farmers to Empower", sublabel: "Our Goal" },
-    { number: "95%", label: "Accuracy Rate", sublabel: "AI Predictions" },
-    { number: "12+", label: "Languages", sublabel: "Supported" },
-    { number: "24/7", label: "Support", sublabel: "Always Available" }
+    { number: "50K+", label: "Kerala Farmers", sublabel: "Target Community" },
+    { number: "95%", label: "Monsoon Accuracy", sublabel: "Weather Predictions" },
+    { number: "ML + EN", label: "Languages", sublabel: "Malayalam & English" },
+    { number: "14", label: "Districts", sublabel: "Complete Kerala" }
   ];
 
   if (!mounted) return null;
@@ -233,7 +227,7 @@ const Home = () => {
           
           {/* Gradient Overlays */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/70 via-gray-50/80 to-blue-50/60" />
-          <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
         </div>
 
         {/* Animated Glow Effects */}
@@ -263,7 +257,7 @@ const Home = () => {
                 variants={itemVariants}
                 className="block px-3 xs:px-4 sm:px-5 py-1 xs:py-1.5 rounded-full bg-gradient-to-r from-primary-100/80 to-secondary-100/80 backdrop-blur-sm border border-primary-300/50"
                 >
-                    <span className="text-primary-700 text-xs sm:text-sm font-medium">AI Solutions for Indian Farmers</span>
+                    <span className="text-primary-700 text-xs sm:text-sm font-medium">AI Solutions for Kerala Farmers</span>
                 </motion.div>
             </div>
 
@@ -336,8 +330,8 @@ const Home = () => {
               variants={itemVariants}
               className="text-xs xs:text-sm sm:text-base md:text-lg text-gray-600 max-w-3xl mx-auto font-light leading-relaxed px-4 flex-shrink-0"
             >
-              <span className="text-primary-600">AI-powered</span> agricultural advisor that helps you make 
-              <span className="text-secondary-600"> smart farming</span> decisions for better yields and profits.
+              <span className="text-primary-600">AI-powered</span> agricultural advisor specifically designed for 
+              <span className="text-secondary-600">{" Kerala's unique farming"}</span> conditions and crop patterns.
             </motion.p>
 
             <motion.div
@@ -399,30 +393,26 @@ const Home = () => {
       </section>
 
       {/* Features Section */}
-      <section className="relative py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-100 via-white to-blue-50">
-        {/* Smooth fade transitions */}
-        <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-white/20 to-transparent z-10"></div>
-        <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-gray-100/50 to-transparent z-10"></div>
-        
-        <div className="container mx-auto max-w-7xl relative z-20">
+      <section className="py-20 md:py-28 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="container mx-auto max-w-6xl">
           <motion.div 
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.2 }}
             variants={containerVariants}
-            className="text-center mb-12 sm:mb-16 md:mb-20"
+            className="text-center mb-16 md:mb-20"
           >
             <motion.h2 
               variants={itemVariants}
-              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent"
+              className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-secondary-500"
             >
-              Modern Agricultural Solutions
+              Kerala Agricultural Solutions
             </motion.h2>
             <motion.p 
               variants={itemVariants}
-              className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto font-light"
+              className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed"
             >
-              Traditional farming wisdom meets cutting-edge AI technology
+              Comprehensive AI-powered tools designed specifically for Kerala's agricultural landscape
             </motion.p>
           </motion.div>
 
@@ -431,43 +421,37 @@ const Home = () => {
             whileInView="visible"
             viewport={{ once: true, amount: 0.1 }}
             variants={containerVariants}
-            className="grid grid-cols-1 xs:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 xs:gap-6 sm:gap-8"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8"
           >
             {features.map((feature, index) => (
               <motion.div
                 key={index}
                 variants={itemVariants}
                 whileHover={{ 
-                  y: -10, 
-                  scale: 1.02
+                  y: -4,
+                  transition: { duration: 0.2 }
                 }}
-                className="group relative p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-white/80 to-gray-50/80 backdrop-blur-xl border border-gray-200/50 hover:border-primary-300/50 transition-all duration-500 h-full shadow-lg hover:shadow-xl"
+                className="group relative bg-white border border-gray-200 rounded-2xl p-6 h-full hover:border-primary-200 hover:shadow-lg transition-all duration-300"
               >
-                {/* Hover Glow */}
-                <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary-100/20 to-secondary-100/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                
-                <div className="relative z-10 h-full flex flex-col">
-                  <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-2xl bg-gradient-to-br from-primary-100/80 to-secondary-100/80 w-fit text-primary-600">
+                <div className="h-full flex flex-col">
+                  <div className="mb-4 p-3 rounded-lg bg-primary-50 w-fit text-primary-600 group-hover:bg-primary-100 transition-colors duration-300">
                     {feature.icon}
                   </div>
                   
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-3">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
                     {feature.title}
                   </h3>
-                  <p className="text-gray-600 mb-4 text-sm sm:text-base leading-relaxed flex-grow">
+                  <p className="text-gray-600 mb-4 leading-relaxed flex-grow">
                     {feature.description}
                   </p>
-                  <p className="text-primary-600 text-xs sm:text-sm font-medium mb-4 sm:mb-6">
+                  <div className="text-primary-600 text-sm font-medium mb-6">
                     {feature.benefit}
-                  </p>
+                  </div>
                   
                   <Link to={feature.link} className="mt-auto">
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      className="w-full py-3 bg-gradient-to-r from-primary-500/90 to-secondary-500/90 text-white rounded-xl font-medium text-sm backdrop-blur-sm border border-primary-400/30 hover:border-primary-400/50 transition-all duration-300 shadow-md hover:shadow-lg"
-                    >
+                    <button className="w-full py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-500 transition-colors duration-200">
                       Learn More
-                    </motion.button>
+                    </button>
                   </Link>
                 </div>
               </motion.div>
@@ -510,13 +494,13 @@ const Home = () => {
               variants={itemVariants}
               className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 mb-4"
             >
-              Our Mission
+              Our Mission for Kerala
             </motion.h2>
             <motion.p 
               variants={itemVariants}
               className="text-gray-600 text-lg"
             >
-              Empowering farmers with AI-driven agricultural solutions
+              Empowering Kerala farmers with AI-driven solutions for rice, spices, and coconut cultivation
             </motion.p>
           </motion.div>
 
@@ -601,8 +585,8 @@ const Home = () => {
                     <FaMapMarkerAlt className="text-lg sm:text-xl" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-gray-800 font-medium">Serving All of India</div>
-                    <div className="text-gray-600 text-sm">All states covered</div>
+                    <div className="text-gray-800 font-medium">Serving All of Kerala</div>
+                    <div className="text-gray-600 text-sm">All 14 districts covered</div>
                   </div>
                 </div>
               </div>
@@ -643,7 +627,7 @@ const Home = () => {
       <footer className="relative py-8 sm:py-12 px-4 sm:px-6 lg:px-8 border-t border-gray-300/50 bg-gray-100/80">
         <div className="container mx-auto text-center">
           <p className="text-lg sm:text-xl font-medium text-gray-800 mb-2">
-            Fasal Setu AI - The Future of Indian Agriculture
+            Fasal Setu AI - The Future of Kerala Agriculture
           </p>
           <p className="text-gray-600 text-sm sm:text-base">Built for Capital One Hackathon 2025</p>
         </div>

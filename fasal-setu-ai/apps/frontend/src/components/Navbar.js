@@ -108,10 +108,32 @@ const Navbar = () => {
             <div className="flex items-center">
               <Link 
                 to="/" 
-                className="text-lg sm:text-xl font-bold text-primary-600 hover:text-primary-700 transition-colors duration-200 hover:scale-105 transform"
+                className="flex items-center space-x-2 text-xl sm:text-2xl font-bold text-primary-600 hover:text-primary-700 transition-all duration-500 hover:scale-105 transform group"
                 onMouseEnter={() => preloadComponent(() => import('../pages/Home'))}
               >
-                FasalSetu.ai
+                {/* Icon - Always visible, animated */}
+                <div className="flex items-center justify-center">
+                  <FaSeedling 
+                    className={`text-primary-500 transition-all duration-500 ease-in-out transform
+                      sm:text-lg sm:mr-1 sm:scale-100 sm:rotate-0
+                      text-xl scale-110 rotate-12 group-hover:rotate-0 group-hover:scale-125
+                    `}
+                  />
+                </div>
+                
+                {/* Text - Hidden on mobile, visible on desktop with slide animation */}
+                <span 
+                  className={`transition-all duration-500 ease-in-out transform
+                    hidden sm:inline-block sm:opacity-100 sm:translate-x-0 sm:scale-100
+                    opacity-0 -translate-x-4 scale-95
+                    group-hover:text-primary-800
+                  `}
+                >
+                  FasalSetu.ai
+                </span>
+                
+                {/* Mobile-only pulsing effect */}
+                <div className="sm:hidden absolute inset-0 rounded-full bg-primary-500/20 animate-pulse opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </Link>
             </div>
             
@@ -141,7 +163,7 @@ const Navbar = () => {
                     <Link 
                       to="/profile"
                       onMouseEnter={() => preloadComponent(() => import('../pages/Profile'))}
-                      className="flex items-center space-x-2 text-sm text-gray-600 hover:text-primary-600 transition-colors duration-200 px-2 py-1 rounded-lg hover:bg-gray-100/50"
+                      className="flex items-center space-x-2 text-sm text-gray-600 hover:text-primary-600 transition-colors duration-200 p-3 rounded-lg hover:bg-gray-100/50"
                     >
                       <FaUser className="text-xs text-primary-500" />
                       <span className="hidden lg:inline">{user.firstName}</span>
@@ -149,7 +171,7 @@ const Navbar = () => {
                     <button
                       onClick={handleLogout}
                       disabled={isLoggingOut}
-                      className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50 hover:scale-105 transform"
+                      className="button-67"
                     >
                       <FaSignOutAlt className="text-xs" />
                       <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
@@ -198,7 +220,7 @@ const Navbar = () => {
         
         {/* Sidebar */}
         <div
-          className={`fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-white/95 backdrop-blur-xl border-l border-gray-200/50 shadow-2xl z-40 md:hidden transform transition-transform duration-300 ease-out ${
+          className={`fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-[#F5F5FA] backdrop-blur-xl border-l border-gray-200/50 shadow-2xl z-40 md:hidden transform transition-transform duration-300 ease-out ${
             isSidebarOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
           style={{
@@ -264,7 +286,7 @@ const Navbar = () => {
                       <button
                         onClick={handleLogout}
                         disabled={isLoggingOut}
-                        className="w-full flex items-center justify-center space-x-3 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-xl font-medium transition-all duration-200 disabled:opacity-50"
+                        className="button-68 w-full flex items-center justify-center space-x-3"
                       >
                         <FaSignOutAlt />
                         <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>

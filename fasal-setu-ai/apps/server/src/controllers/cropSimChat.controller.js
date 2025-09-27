@@ -35,38 +35,151 @@ const retryPerplexityCall = async (callFn, maxRetries = 3, baseDelay = 1000) => 
 // LLM2 System Prompt for Crop Simulation
 const CROP_SIM_LLM2_SYSTEM_PROMPT = `You are an expert agricultural advisor for Fasal-Setu crop simulation.
 
+
+
 Your role is to:
+
 1. Analyze the specific crop data and user profile provided to give personalized advice
+
 2. Answer general queries like "How are my crops doing?" by thoroughly assessing:
-   - Current crop growth percentage and stage
-   - Days since sowing vs expected timeline
-   - Recent farming activities (irrigation, fertilization, pest checks)
-   - Weather conditions and their impact
-   - Upcoming recommended activities
+
+   - Current crop growth percentage and stage
+
+   - Days since sowing vs expected timeline
+
+   - Recent farming activities (irrigation, fertilization, pest checks)
+
+   - Weather conditions and their impact
+
+   - Upcoming recommended activities
+
 3. Provide farming advice specific to the crop type, variety, and growth stage
+
 4. Give recommendations based on current weather, soil conditions, and farm location
+
+   - You now have access to REAL weather forecast data from Open-Meteo API (temperature, precipitation, wind)
+   
+   - You have REAL soil moisture and temperature data for precise irrigation decisions
+   
+   - Use this actual data instead of assumptions for better recommendations
+
 5. Help with timing of agricultural activities and explain the reasoning
 
+
+
+**CRITICAL: BE DECISIVE AND SPECIFIC**
+
+- Always provide EXACT dates, quantities, and specific actions
+
+- When asked "when should I irrigate?" give specific dates like "irrigate on October 1st and 4th"
+
+- When asked about fertilizer, specify exact amounts like "apply 50kg NPK per acre"
+
+- When asked about timing, give precise schedules not vague ranges
+
+- Avoid generic advice - be concrete and actionable
+
+- If you don't have enough data, ask for specific missing information
+
+
+
 Guidelines for assessment queries:
+
 - When asked "How are my crops doing?" or similar general questions, provide a comprehensive crop health assessment
+
 - Analyze growth rate: Compare current growth % with expected growth for days after sowing
+
 - Evaluate recent care: Check last irrigation, fertilization, and pest management dates
+
 - Consider environmental factors: Weather, soil moisture, temperature impacts
+
 - Predict upcoming needs: What activities are due soon and why
+
 - Give specific insights about the crop variety and its typical behavior
+
 - Rate overall crop health as Excellent/Good/Fair/Poor with clear reasoning
 
+
+
+**QUERY TYPE & LENGTH GUIDELINES:**
+
+Your response must reflect the user's query type and be concise but informative enough for the user to useful take action.
+
+Categorize the user's query and respond with appropriate length for crop simulation context:
+
+
+
+1. **GREETING/CASUAL (15-25 words)**: "Hi", "Hello", "Thanks"
+
+   - Brief, friendly response related to crop simulation
+
+   - Example: "Hello! I can help analyze your crop data. What would you like to know about your crops?"
+
+
+
+2. **SIMPLE/QUICK CHECK (40-60 words)**: "How's my crop?", "Growth status?", "Any problems?"
+
+   - Provide a decisive answer first
+
+   - Concise status update with key metrics
+
+   - Include growth %, stage, and immediate action if needed
+
+
+
+3. **DETAILED ANALYSIS (80-120 words)**: "How are my crops doing?", "Full assessment", "What should I do next?"
+
+   - Provide a decisive answer first
+
+   - Structured assessment with multiple factors
+
+   - Include current status, recent activities, and recommendations, end again with our decisive answer
+
+
+
+4. **TECHNICAL/SPECIFIC (60-100 words)**: Specific farming questions, disease diagnosis, technical advice, and analysis
+
+   - Focused technical response with actionable steps
+
+   - Include reasoning and specific recommendations
+
+
+
 Communication style:
+
 - Be specific and actionable in your advice
+
 - Use simple, farmer-friendly language
-- Keep responses comprehensive but under 250 words for assessments
-- Use emojis sparingly for emphasis
-- Format important points with **bold** text
-- Always reference the specific crop name and variety when available
-- Include growth percentage and stage in your assessments
+
+- **CRITICAL:** Respect the word limits above. Do not exceed them!
+
+- **USER LENGTH OVERRIDE:** If user specifically asks for a certain length ("give me a short answer", "explain in detail", "briefly tell me"), override default limits and match their request
+
 - **IMPORTANT: Always respond in the same language as the user's query. If the user asks in Hindi, respond in Hindi. If in English, respond in English. If in any other language, match that language.**
 
-Always respond as a knowledgeable farming expert who has analyzed the provided crop and user data to give personalized recommendations.`;
+
+
+**FORMATTING GUIDELINES:**
+
+- Use proper markdown formatting for clear data representation
+
+- Structure responses with clear sections using ## headings
+
+- Use bullet points (-) for recommendations and action items
+
+- Present data in tables when showing multiple metrics
+
+- Use progress indicators for growth percentages (e.g., "Growth: **75%**")
+
+- Format dates and numbers clearly
+
+- Use > blockquotes for critical warnings or urgent actions
+
+- Avoid excessive use of emojis, use sparsingly
+
+- Break information into digestible sections for better readability
+
+- **NEVER use citations, references, or numbered annotations like [1], [2], etc. Provide information directly without source citations**`; 
 
 // Call Perplexity API for LLM2 responses
 const callPerplexityLLM2 = async (messages, systemPrompt = CROP_SIM_LLM2_SYSTEM_PROMPT) => {
@@ -134,6 +247,75 @@ const callPerplexityLLM2 = async (messages, systemPrompt = CROP_SIM_LLM2_SYSTEM_
     }
 };
 
+// Update crop schedule in background when LLM2 recommends changes
+const updateScheduleInBackground = async (cropId, newDateStr, reason) => {
+    try {
+        const newDate = new Date(newDateStr);
+        
+        // Validate the date
+        if (isNaN(newDate.getTime())) {
+            throw new Error(`Invalid date format: ${newDateStr}`);
+        }
+        
+        const now = new Date();
+        const daysUntil = Math.ceil((newDate - now) / (1000 * 60 * 60 * 24));
+        
+        // Don't allow dates more than 30 days in the past or future
+        if (daysUntil < -30 || daysUntil > 30) {
+            throw new Error(`Date ${newDateStr} is too far from current date (${daysUntil} days)`);
+        }
+        
+        // Determine event type from reason (simple keyword matching)
+        let eventType = 'irrigation'; // default
+        const reasonLower = reason.toLowerCase();
+        if (reasonLower.includes('fertiliz')) {
+            eventType = 'fertilization';
+        } else if (reasonLower.includes('pest')) {
+            eventType = 'pest_check';
+        } else if (reasonLower.includes('harvest')) {
+            eventType = 'harvesting';
+        }
+        
+        const updateData = {
+            'derived.next_event': eventType,
+            'derived.next_event_due_date': newDate,
+            'derived.next_event_days_until': Math.max(0, daysUntil),
+            'derived.next_event_description': `AI-corrected: ${reason.substring(0, 100)}`, // Limit length
+            'derived.event_restriction_active': false, // Clear restrictions when updating
+            'derived.event_restriction_until': null
+        };
+        
+        const updatedCrop = await Crop.findByIdAndUpdate(
+            cropId,
+            { $set: updateData },
+            { new: true, runValidators: true }
+        );
+        
+        if (!updatedCrop) {
+            throw new Error(`Crop not found with ID: ${cropId}`);
+        }
+        
+        console.log('📅 Schedule updated successfully:', {
+            cropId: cropId.toString(),
+            eventType,
+            oldDescription: updatedCrop.derived?.next_event_description,
+            newDate: newDateStr,
+            daysUntil,
+            reason: reason.substring(0, 50) + (reason.length > 50 ? '...' : '')
+        });
+        
+        return updatedCrop;
+    } catch (error) {
+        console.error('❌ Error updating schedule:', {
+            cropId: cropId?.toString(),
+            newDateStr,
+            reason: reason?.substring(0, 50),
+            error: error.message
+        });
+        throw error;
+    }
+};
+
 // Format final response using Gemini with all context
 const formatFinalResponse = async ({
     aiEngineResponse,
@@ -169,7 +351,14 @@ const formatFinalResponse = async ({
 **AI ANALYSIS:**
 - Intent Detected: ${aiEngineResponse.intent || 'general_information'}
 - Key Facts: ${JSON.stringify(aiEngineResponse.facts || {}, null, 2)}
-- AI Recommendation: ${aiEngineResponse.decision_template || aiEngineResponse.general_answer || 'No specific recommendation'}`;
+- AI Recommendation: ${aiEngineResponse.decision_template || aiEngineResponse.general_answer || 'No specific recommendation'}
+
+**CURRENT SCHEDULED EVENT:**
+- Next Event: ${cropContext.next_recommendations?.next_event || 'None'}
+- Scheduled Date: ${cropContext.next_recommendations?.next_event_due_date ? new Date(cropContext.next_recommendations.next_event_due_date).toLocaleDateString() : 'Not set'}
+- Days Until Event: ${cropContext.next_recommendations?.next_event_days_until || 'Unknown'}
+- Event Description: ${cropContext.next_recommendations?.next_event_description || 'No description'}
+- Restriction Active: ${cropContext.next_recommendations?.restriction_active ? 'Yes - activities restricted until ' + new Date(cropContext.next_recommendations.restriction_until).toLocaleDateString() : 'No'}`;
 
         // Add Decision Engine response if available
         if (decisionEngineResponse) {
@@ -188,7 +377,7 @@ ${JSON.stringify(decisionEngineResponse, null, 2)}`;
         contextPrompt += `\n\n**FORMATTING INSTRUCTIONS:**
 - Create a concise, farmer-friendly response
 - Use **bold text** for important information using double asterisks (**)
-- Include appropriate emojis (🌱🌾💧🚜📅⚠️✅)
+- Avoid excessive use of emojis, use sparsingly
 - Structure the response clearly with sections if needed
 - Keep the tone encouraging and supportive
 - Include specific actionable advice
@@ -196,7 +385,20 @@ ${JSON.stringify(decisionEngineResponse, null, 2)}`;
 - If both AI and Decision Engine provided recommendations, synthesize them coherently
 - Make sure the response directly addresses the farmer's original query
 - **CRITICAL: Keep response under 300 words - be concise but informative**
+- **NEVER include citations, references, or numbered annotations like [1], [2], etc. Provide information directly**
 - **IMPORTANT: Always respond in the same language as the farmer's original query. If they asked in Hindi, respond in Hindi. If in English, respond in English. If in any other language, match that language.**
+
+**SCHEDULE VALIDATION INSTRUCTIONS:**
+- If the query is about irrigation timing and you have a scheduled irrigation event, check if the scheduled date makes sense
+- If the scheduled irrigation is appropriate (within 1-2 days of optimal timing), align your response with it
+- If the scheduled irrigation is significantly wrong (>3 days off from optimal timing), provide the correct date instead
+
+**CRITICAL: SCHEDULE UPDATE FORMAT**
+- If you recommend changing the scheduled irrigation date, YOU MUST include the exact format at the end
+- Format: "SCHEDULE_UPDATE_NEEDED: [YYYY-MM-DD] - [reason for change]"
+- Example: "SCHEDULE_UPDATE_NEEDED: 2025-10-03 - Delay due to heavy rain forecast, irrigate after rains subside"
+- This MUST be included when you suggest a different date than currently scheduled
+- The system depends on this exact format to update the schedule automatically
 
 Generate a well-formatted response that combines all the analysis above into helpful farming advice:`;
 
@@ -213,7 +415,7 @@ Generate a well-formatted response that combines all the analysis above into hel
                     messages: [
                         {
                             role: "system",
-                            content: "You are an expert agricultural advisor. Format comprehensive responses for farmers."
+                            content: CROP_SIM_LLM2_SYSTEM_PROMPT
                         },
                         {
                             role: "user",
@@ -240,6 +442,78 @@ Generate a well-formatted response that combines all the analysis above into hel
         if (result.choices && result.choices[0] && result.choices[0].message) {
             const formattedResponse = result.choices[0].message.content;
             console.log('Final formatted response generated successfully');
+            
+            // Check if LLM2 recommended a schedule update
+            const scheduleUpdateMatch = formattedResponse.match(/SCHEDULE_UPDATE_NEEDED:\s*(\d{4}-\d{2}-\d{2})\s*-\s*(.+)/i);
+            if (scheduleUpdateMatch) {
+                const [, newDate, reason] = scheduleUpdateMatch;
+                console.log('🔄 LLM2 recommended schedule update:', { 
+                    cropId: cropContext.crop_id, 
+                    currentSchedule: cropContext.next_recommendations?.next_event_due_date,
+                    newDate, 
+                    reason 
+                });
+                
+                // Trigger schedule update in background (don't wait for it)
+                updateScheduleInBackground(cropContext.crop_id, newDate, reason)
+                    .then(() => console.log('✅ Schedule updated successfully'))
+                    .catch(error => console.error('❌ Failed to update schedule:', error));
+                
+                // Remove the update instruction from user response
+                const cleanResponse = formattedResponse.replace(/SCHEDULE_UPDATE_NEEDED:[^\n]*/i, '').trim();
+                return cleanResponse;
+            }
+            
+            // Fallback: Try to detect date recommendations in natural language
+            // This catches cases where LLM forgot to use the exact SCHEDULE_UPDATE_NEEDED format
+            const fallbackDateMatches = [
+                // "irrigate on October 3 or 4" or "irrigate around October 3"
+                formattedResponse.match(/irrigate\s+(?:on|around|after|until)\s+(?:the\s+)?(\w+)\s+(\d{1,2})(?:\s+or\s+\d{1,2})?/i),
+                // "wait until October 3-4" or "postpone until October 3"  
+                formattedResponse.match(/(?:wait|postpone|delay)\s+until\s+(?:the\s+)?(\w+)\s+(\d{1,2})/i),
+                // "plan to irrigate around October 3"
+                formattedResponse.match(/plan\s+to\s+irrigate\s+(?:around|on|after)\s+(?:the\s+)?(\w+)\s+(\d{1,2})/i)
+            ];
+
+            for (const match of fallbackDateMatches) {
+                if (match) {
+                    const [, monthStr, dayStr] = match;
+                    const day = parseInt(dayStr);
+                    
+                    // Convert month name to number
+                    const monthMap = {
+                        'january': 1, 'february': 2, 'march': 3, 'april': 4,
+                        'may': 5, 'june': 6, 'july': 7, 'august': 8,
+                        'september': 9, 'october': 10, 'november': 11, 'december': 12
+                    };
+                    
+                    const month = monthMap[monthStr.toLowerCase()];
+                    if (month && day >= 1 && day <= 31) {
+                        // Determine year (current year or next year if month has passed)
+                        const currentDate = new Date();
+                        const currentYear = currentDate.getFullYear();
+                        const currentMonth = currentDate.getMonth() + 1;
+                        
+                        const year = month >= currentMonth ? currentYear : currentYear + 1;
+                        const newDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        
+                        console.log('🔄 Detected irrigation date recommendation (fallback):', {
+                            cropId: cropContext.crop_id,
+                            currentSchedule: cropContext.next_recommendations?.next_event_due_date,
+                            detectedDate: newDate,
+                            matchedText: match[0]
+                        });
+                        
+                        // Trigger schedule update in background
+                        updateScheduleInBackground(cropContext.crop_id, newDate, 'LLM recommended new irrigation date based on weather conditions')
+                            .then(() => console.log('✅ Schedule updated successfully (fallback detection)'))
+                            .catch(error => console.error('❌ Failed to update schedule (fallback):', error));
+                        
+                        break; // Only process the first match
+                    }
+                }
+            }
+            
             return formattedResponse;
         } else {
             throw new Error('Invalid Perplexity response structure');
@@ -356,6 +630,7 @@ const generateGeminiResponse = async (query, profile) => {
 - Structure your response with clear sections when needed
 - Keep responses concise but informative
 - Always be encouraging and supportive to the farmer
+- **NEVER use citations, references, or numbered annotations like [1], [2], etc. Provide information directly without source citations**
 
 **USER PROFILE:**
 Farmer: ${profile.user?.name || 'Farmer'}
@@ -880,22 +1155,64 @@ const updateCropWithEvent = async (crop, eventType) => {
 };
 
 // Call AI Engine for query processing with Gemini LLM2 fallback
-const processQuery = async (query, cropData, farmContext, userId, eventInfo = null) => {
+const processQuery = async (query, cropData, farmContext, userId, user, eventInfo = null) => {
     try {
         console.log('ProcessQuery called with:', { query, hasCropData: !!cropData, hasEventInfo: !!eventInfo });
         
         // Try AI Engine first - crop simulation is ALWAYS my_farm mode
         try {
+            // Get coordinates - use user's coordinates or default to location-based fallbacks
+            let lat = user.location?.lat || cropData.location_override?.lat;
+            let lon = user.location?.lon || cropData.location_override?.lon;
+            
+            // Fallback coordinates for major Indian cities if no coordinates available
+            if (!lat || !lon) {
+                const locationFallbacks = {
+                    // Uttar Pradesh
+                    'varanasi': { lat: 25.3176, lon: 82.9739 },
+                    'lucknow': { lat: 26.8467, lon: 80.9462 },
+                    'kanpur': { lat: 26.4499, lon: 80.3319 },
+                    'agra': { lat: 27.1767, lon: 78.0081 },
+                    
+                    // Other major agricultural regions
+                    'delhi': { lat: 28.7041, lon: 77.1025 },
+                    'mumbai': { lat: 19.0760, lon: 72.8777 },
+                    'bangalore': { lat: 12.9716, lon: 77.5946 },
+                    'chennai': { lat: 13.0827, lon: 80.2707 },
+                    'hyderabad': { lat: 17.3850, lon: 78.4867 },
+                    'pune': { lat: 18.5204, lon: 73.8567 },
+                    'kolkata': { lat: 22.5726, lon: 88.3639 }
+                };
+                
+                const district = (user.location?.district || farmContext.location?.district || "").toLowerCase();
+                const state = (user.location?.state || farmContext.location?.state || "").toLowerCase();
+                
+                // Try to match district first, then state
+                if (locationFallbacks[district]) {
+                    lat = locationFallbacks[district].lat;
+                    lon = locationFallbacks[district].lon;
+                    console.log(`Using fallback coordinates for ${district}: ${lat}, ${lon}`);
+                } else if (state.includes('uttar pradesh') || state.includes('up')) {
+                    // Default to Lucknow for UP if no specific district match
+                    lat = locationFallbacks['lucknow'].lat;
+                    lon = locationFallbacks['lucknow'].lon;
+                    console.log(`Using UP default coordinates (Lucknow): ${lat}, ${lon}`);
+                } else {
+                    // Ultimate fallback to Delhi
+                    lat = locationFallbacks['delhi'].lat;
+                    lon = locationFallbacks['delhi'].lon;
+                    console.log(`Using ultimate fallback coordinates (Delhi): ${lat}, ${lon}`);
+                }
+            }
+
             // Prepare comprehensive user profile and crop context for AI Engine
             const userProfile = {
                 user_id: userId,
                 location: {
                     state: cropData.location_override?.state || farmContext.location?.state || "Unknown",
                     district: cropData.location_override?.district || farmContext.location?.district || "Unknown",
-                    coordinates: {
-                        lat: cropData.location_override?.lat || farmContext.location?.lat,
-                        lon: cropData.location_override?.lon || farmContext.location?.lon
-                    }
+                    lat: lat,  // AI Engine expects lat/lon at root level
+                    lon: lon
                 },
                 farming_experience: farmContext.farming_experience || "intermediate",
                 farm_size_acres: cropData.area_acres || 0,
@@ -949,7 +1266,13 @@ const processQuery = async (query, cropData, farmContext, userId, eventInfo = nu
 
             console.log('Sending request to AI Engine:', { 
                 query: requestBody.query,
-                profileKeys: Object.keys(requestBody.profile)
+                mode: requestBody.mode,
+                profileKeys: Object.keys(requestBody.profile),
+                cropName: requestBody.profile.crop.crop_name,
+                location: `${requestBody.profile.user.location.state}, ${requestBody.profile.user.location.district}`,
+                coordinates: `${requestBody.profile.user.location.lat}, ${requestBody.profile.user.location.lon}`,
+                hasWeatherData: !!requestBody.profile.weather,
+                hasSoilData: !!requestBody.profile.soil
             });
 
             const AI_ENGINE_URL = process.env.AI_ENGINE_URL || 'http://127.0.0.1:8080';
@@ -1032,34 +1355,58 @@ const processQuery = async (query, cropData, farmContext, userId, eventInfo = nu
                 throw new Error(`AI Engine error: ${response.status}`);
             }
         } catch (aiEngineError) {
-            console.error('AI Engine error, falling back to Gemini:', aiEngineError);
+            console.error('AI Engine error details:', {
+                message: aiEngineError.message,
+                stack: aiEngineError.stack?.split('\n').slice(0, 3).join('\n'), // First 3 lines of stack
+                url: AI_ENGINE_URL,
+                payload: {
+                    query: requestBody.query,
+                    mode: requestBody.mode,
+                    hasProfile: !!requestBody.profile,
+                    cropName: requestBody.profile?.crop?.crop_name,
+                    location: requestBody.profile?.user?.location?.state
+                }
+            });
             
-            // Fallback to Gemini LLM2 with proper formatting instructions
-            try {
-                return await generateGeminiResponse(query, {
-                    user: {
-                        name: farmContext.userName || 'Farmer',
-                        location: cropData.location_override?.state || farmContext.location?.state || 'Unknown',
-                        farmSize: cropData.area_acres || 'Not specified',
-                        experience: farmContext.farming_experience || 'intermediate'
-                    },
-                    crops: [{
-                        cropType: cropData.crop_name,
-                        variety: cropData.variety,
-                        plantingDate: cropData.sowing_date,
-                        currentStage: cropData.derived?.stage,
-                        growth: cropData.growth_percent,
-                        health: cropData.health || 'good',
-                        location: cropData.location_override?.state || 'Unknown',
-                        soilType: farmContext.soil?.type || 'Unknown',
-                        irrigationSchedule: cropData.irrigation_source,
-                        growthDays: cropData.derived?.days_after_sowing || 0
-                    }]
-                });
-            } catch (geminiError) {
-                console.error('Gemini fallback failed:', geminiError);
-                return "I'm sorry, I'm having trouble processing your request right now. Please try again.";
+            // For irrigation questions, try to provide a more decisive fallback using crop data
+            if (query.toLowerCase().includes('irrigat') || query.toLowerCase().includes('water')) {
+                const lastIrrigation = cropData.derived?.last_irrigation_at;
+                const daysSinceLastIrrigation = lastIrrigation ? 
+                    Math.floor((new Date() - new Date(lastIrrigation)) / (1000 * 60 * 60 * 24)) : 7;
+                
+                const growthStage = cropData.derived?.stage || 'vegetative';
+                const growthPercent = cropData.growth_percent || 0;
+                
+                // Provide specific irrigation timing based on crop data
+                if (daysSinceLastIrrigation >= 3 || growthStage === 'flowering') {
+                    const nextIrrigationDate = new Date();
+                    nextIrrigationDate.setDate(nextIrrigationDate.getDate() + 1);
+                    
+                    return `🌧️ **Irrigation Recommendation for ${cropData.crop_name}**\n\n` +
+                           `**When to irrigate**: ${daysSinceLastIrrigation >= 4 ? '**Irrigate today**' : `**Irrigate tomorrow (${nextIrrigationDate.toLocaleDateString()})**`}\n\n` +
+                           `**Analysis**:\n` +
+                           `- Current growth: **${growthPercent.toFixed(1)}%** (${growthStage} stage)\n` +
+                           `- Last irrigation: **${daysSinceLastIrrigation} days ago**\n` +
+                           `- ${growthStage === 'flowering' ? 'Critical water need during flowering' : 'Regular maintenance irrigation needed'}\n\n` +
+                           `**Action**: Apply irrigation using your ${cropData.irrigation_source} system. Monitor soil moisture for next irrigation in 3-4 days.`;
+                } else {
+                    const nextIrrigationDate = new Date();
+                    nextIrrigationDate.setDate(nextIrrigationDate.getDate() + (3 - daysSinceLastIrrigation));
+                    
+                    return `💧 **Irrigation Status for ${cropData.crop_name}**\n\n` +
+                           `**When to irrigate**: **Wait until ${nextIrrigationDate.toLocaleDateString()}** (${3 - daysSinceLastIrrigation} more days)\n\n` +
+                           `**Current status**: Soil moisture should still be adequate (last irrigated ${daysSinceLastIrrigation} days ago)\n\n` +
+                           `**Monitoring**: Check soil 6-8 inches deep. If dry, irrigate earlier. Otherwise, maintain schedule to avoid overwatering.`;
+                }
             }
+            
+            // For other questions, provide context-aware response
+            return `🌾 **${cropData.crop_name} Advisory**\n\n` +
+                   `I'm analyzing your query about your **${cropData.crop_name}** crop (${cropData.growth_percent.toFixed(1)}% growth, ${cropData.derived?.stage || 'developing'} stage).\n\n` +
+                   `**Current Status**: Your crop is progressing well in ${user.location?.state || 'your region'}. ` +
+                   `For specific recommendations, please ensure all farming data is up to date.\n\n` +
+                   `**General Advice**: Continue regular monitoring, maintain proper irrigation schedule, and watch for any signs of pest or disease issues.\n\n` +
+                   `💡 *Tip: Try asking more specific questions like "when should I irrigate" or "what fertilizer to apply" for detailed guidance.*`;
         }
     } catch (error) {
         console.error('Complete query processing error:', error);
@@ -1069,10 +1416,11 @@ const processQuery = async (query, cropData, farmContext, userId, eventInfo = nu
 
 // Main chat endpoint
 const handleCropSimChat = asyncErrorHandler(async (req, res) => {
-    const { message, cropId, mode = 'my_farm' } = req.body;
+    const { message, cropId, mode = 'my_farm', farmContext: frontendFarmContext } = req.body;
     const userId = req.user._id;
 
     console.log('Received chat request:', { message, cropId, mode: 'my_farm', userId });
+    console.log('Frontend farmContext received:', JSON.stringify(frontendFarmContext, null, 2));
 
     if (!message || !message.trim()) {
         throw new ApiError(400, "Message is required");
@@ -1102,29 +1450,64 @@ const handleCropSimChat = asyncErrorHandler(async (req, res) => {
         throw new ApiError(404, "User not found");
     }
 
-    // Build comprehensive farmContext from user data
+    // Build comprehensive farmContext from user data and real weather/soil data from frontend
     const farmContext = {
         location: {
             state: user.location?.state || "Unknown",
             district: user.location?.district || "Unknown", 
             lat: user.location?.lat,
-            lon: user.location?.lon
+            lon: user.location?.lon,
+            // Include coordinates from frontend farmContext if available
+            coordinates: frontendFarmContext?.location?.coordinates || { lat: user.location?.lat, lon: user.location?.lon }
         },
-        farming_experience: "intermediate", // Default value - could be added to user model
+        farming_experience: user.farming_experience || "intermediate",
         farm_size_acres: user.land_area_acres || 0,
-        weather: {
-            // Placeholder - could be populated from weather API
-            current_conditions: "Unknown"
+        // Use real weather data from frontend if available, otherwise use defaults
+        weather: frontendFarmContext?.weather?.forecast ? {
+            // Real weather data from Open-Meteo API
+            real_forecast: frontendFarmContext.weather.forecast,
+            timezone: frontendFarmContext.weather.timezone,
+            current_conditions: frontendFarmContext.weather.current || "typical_for_season",
+            temperature: frontendFarmContext.weather.temperature,
+            season: crop.season || "kharif",
+            location_state: user.location?.state || "Unknown",
+            location_district: user.location?.district || "Unknown",
+            irrigation_needs: "assess_based_on_crop_stage_and_last_irrigation"
+        } : {
+            // Fallback to default weather context
+            current_conditions: "typical_for_season",
+            season: crop.season || "kharif",
+            location_state: user.location?.state || "Unknown",
+            location_district: user.location?.district || "Unknown",
+            irrigation_needs: "assess_based_on_crop_stage_and_last_irrigation"
         },
-        soil: {
-            // Placeholder - could be populated from soil data
-            type: crop.soil_type || "Unknown"
+        // Use real soil data from frontend if available, otherwise use defaults
+        soil: frontendFarmContext?.soil?.hourly_data ? {
+            // Real soil data from Open-Meteo API
+            real_hourly_data: frontendFarmContext.soil.hourly_data,
+            moisture: frontendFarmContext.soil.moisture,
+            temperature: frontendFarmContext.soil.temperature,
+            type: crop.soil_type || "medium",
+            drainage: "good",
+            ph: "neutral",
+            organic_matter: "medium"
+        } : {
+            // Fallback to default soil context
+            type: crop.soil_type || "medium",
+            drainage: "good", 
+            moisture_retention: "medium",
+            ph: "neutral", 
+            organic_matter: "medium"
         },
         market_prices: {
-            // Placeholder - could be populated from market data
-            current_prices: {}
+            crop_name: crop.crop_name,
+            current_season: crop.season,
+            location_context: `${user.location?.state || "Unknown"}_${user.location?.district || "Unknown"}`,
+            // Note: Real market API integration should be added here
         }
     };
+    
+    console.log('Built farmContext with real weather/soil data:', JSON.stringify(farmContext, null, 2));
 
     // Initialize next event data if not present
     const initializedCrop = await initializeNextEventData(crop);
@@ -1271,7 +1654,7 @@ const handleCropSimChat = asyncErrorHandler(async (req, res) => {
             };
         }
         
-        queryResponse = await processQuery(queryToProcess, updatedCrop.toObject(), farmContext, userId, eventInfo);
+        queryResponse = await processQuery(queryToProcess, updatedCrop.toObject(), farmContext, userId, user, eventInfo);
     }
 
     // Step 4: Combine responses
