@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { preloadComponent } from '../utils/loadable';
-import { FaBars, FaTimes, FaHome, FaRobot, FaSignInAlt, FaSignOutAlt, FaUser, FaSeedling } from 'react-icons/fa';
+import { FaBars, FaTimes, FaHome, FaRobot, FaSignInAlt, FaSignOutAlt, FaUser, FaSeedling, FaComments } from 'react-icons/fa';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout, authKey } = useAuth();
@@ -73,6 +73,12 @@ const Navbar = () => {
       label: 'Chatbot', 
       icon: FaRobot,
       preload: () => preloadComponent(() => import('../pages/Chatbot'))
+    },
+    { 
+      to: '/community', 
+      label: 'Community', 
+      icon: FaComments,
+      preload: () => preloadComponent(() => import('../pages/CommunityList'))
     },
   ];
   

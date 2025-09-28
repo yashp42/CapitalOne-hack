@@ -11,6 +11,7 @@ import SpeechToText from '../components/SpeechToText';
 import TextToSpeech from '../components/TextToSpeech';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+
 import { 
   FaTemperatureHigh, 
   FaCloudRain, 
@@ -1223,6 +1224,8 @@ const CropSimulation = () => {
     window.scrollTo(0, 0);
   }, []);
 
+
+
   // Authentication check - redirect if not authenticated
   if (loading) {
     return (
@@ -1455,7 +1458,7 @@ const CropSimulation = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-yellow-200/30 via-secondary-200/80 to-secondary-200 pt-20 sm:pt-24 pb-8 sm:pb-12">
+    <div className="min-h-screen bg-gradient-to-br from-secondary-200 via-white to-primary-200 pt-20 sm:pt-24 pb-8 sm:pb-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 sm:max-w-[75vw]">
         <motion.div
           initial="hidden"

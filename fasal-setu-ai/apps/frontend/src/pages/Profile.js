@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI, cropAPI } from '../services/api';
+import notificationManager from '../utils/notifications';
 import { 
   FaUser, 
   FaEdit, 
@@ -15,8 +16,10 @@ import {
   FaBuilding,
   FaHome,
   FaTractor,
-  FaChartLine
+  FaChartLine,
+  FaBell
 } from 'react-icons/fa';
+import MyPosts from '../components/community/MyPosts';
 
 const Profile = () => {
   const { user, isAuthenticated } = useAuth();
@@ -30,6 +33,7 @@ const Profile = () => {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -157,6 +161,26 @@ const Profile = () => {
     }
   }, [isAuthenticated]);
 
+  // Initialize notification manager
+  useEffect(() => {
+    const initNotifications = async () => {
+      console.log('Initializing notification manager...');
+      try {
+        const initialized = await notificationManager.initialize();
+        console.log('Notification manager initialized:', initialized);
+        
+        if (initialized) {
+          const isSubscribed = await notificationManager.isSubscribed();
+          console.log('Current subscription status:', isSubscribed);
+          setNotificationsEnabled(isSubscribed);
+        }
+      } catch (error) {
+        console.error('Failed to initialize notifications:', error);
+      }
+    };
+    initNotifications();
+  }, []);
+
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
     setError('');
@@ -245,6 +269,57 @@ const Profile = () => {
       setError('Failed to update profile');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  // Handle notification toggle
+  const handleNotificationToggle = async () => {
+    console.log('Notification toggle clicked, current state:', notificationsEnabled);
+    
+    try {
+      if (notificationsEnabled) {
+        console.log('Attempting to unsubscribe...');
+        const success = await notificationManager.unsubscribe();
+        console.log('Unsubscribe result:', success);
+        if (success) {
+          setNotificationsEnabled(false);
+          setSuccess('Notifications disabled successfully');
+        } else {
+          setError('Failed to disable notifications');
+        }
+      } else {
+        console.log('Attempting to subscribe...');
+        
+        // Re-initialize notification manager to ensure it's properly set up
+        console.log('Re-initializing notification manager...');
+        const initialized = await notificationManager.initialize();
+        console.log('Re-initialization result:', initialized);
+        
+        if (!initialized) {
+          setError('Failed to initialize notification system. Please check if your server is running.');
+          return;
+        }
+        
+        const hasPermission = await notificationManager.requestPermission();
+        console.log('Permission granted:', hasPermission);
+        
+        if (hasPermission) {
+          const success = await notificationManager.subscribe();
+          console.log('Subscribe result:', success);
+          if (success) {
+            setNotificationsEnabled(true);
+            setSuccess('Crop event notifications enabled successfully');
+          } else {
+            setError('Failed to enable notifications. Please try again.');
+          }
+        } else {
+          console.log('Notification permission denied');
+          setError('Please allow notifications in your browser settings to receive crop event alerts.');
+        }
+      }
+    } catch (error) {
+      console.error('Notification toggle error:', error);
+      setError('Failed to toggle notifications. Please try again.');
     }
   };
 
@@ -578,6 +653,11 @@ const Profile = () => {
                   )}
                 </div>
               )}
+
+              {/* My Posts Section */}
+              <div className="mt-6">
+                <MyPosts />
+              </div>
             </div>
 
             {/* Profile Stats Sidebar - First on mobile, second on desktop */}
@@ -663,6 +743,40 @@ const Profile = () => {
                       </span>
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* Notification Settings */}
+              <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/50 p-6">
+                <h3 className="text-lg font-bold text-gray-800 mb-4">Notification Settings</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <FaBell className="text-blue-600" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">Crop Event Notifications</p>
+                        <p className="text-xs text-gray-500">Get alerts for irrigation, fertilization & harvest</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleNotificationToggle}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+                        notificationsEnabled ? 'bg-emerald-600' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                          notificationsEnabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  <div className="text-xs text-gray-500 pl-8">
+                    {notificationsEnabled 
+                      ? 'You will receive push notifications for crop events' 
+                      : 'Notifications are disabled'
+                    }
+                  </div>
                 </div>
               </div>
 

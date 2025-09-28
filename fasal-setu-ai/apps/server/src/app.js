@@ -11,10 +11,15 @@ import chatRoutes from "./routes/chat.routes.js";
 import conversationRoutes from "./routes/conversation.routes.js";
 import cropSimChatRoutes from "./routes/cropSimChat.route.js";
 import ttsRoutes from "./routes/tts.routes.js";
+import notificationRoutes from "./routes/notifications.route.js";
+import communityRoutes from "./routes/community.routes.js";
 
 // Import middleware
 import errorHandler from "./middleware/errorHandler.middleware.js";
 import corsDebug from "./middleware/cors-debug.middleware.js";
+
+// Import services
+import './services/cropNotifications.js'; // Initialize notification service
 
 const app = express();
 
@@ -134,6 +139,8 @@ app.use("/api", chatRoutes);
 app.use("/api", conversationRoutes);
 app.use("/api/crop-sim", cropSimChatRoutes);
 app.use("/api/tts", ttsRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/community", communityRoutes);
 
 // Extended health check with CORS info
 app.get("/health", (req, res) => {

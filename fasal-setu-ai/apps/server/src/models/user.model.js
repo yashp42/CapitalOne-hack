@@ -79,6 +79,15 @@ const userSchema = new mongoose.Schema({
         collateral_available: { type: Boolean, default: null }
     },
 
+    // Push Notification for Crop Events
+    push_subscription: {
+        endpoint: { type: String },
+        keys: {
+            p256dh: { type: String },
+            auth: { type: String }
+        }
+    },
+
     // Profile Management
     profile_version: {
         type: Number,

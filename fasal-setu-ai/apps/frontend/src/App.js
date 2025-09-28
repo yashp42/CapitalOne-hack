@@ -11,6 +11,9 @@ const Chatbot = createLoadableComponent(() => import('./pages/Chatbot'));
 const CropSimulation = createLoadableComponent(() => import('./pages/CropSimulation'));
 const MyFarm = createLoadableComponent(() => import('./pages/MyFarm'));
 const Profile = createLoadableComponent(() => import('./pages/Profile'));
+const CommunityList = createLoadableComponent(() => import('./pages/CommunityList'));
+const AskQuestion = createLoadableComponent(() => import('./pages/AskQuestion'));
+const QuestionDetail = createLoadableComponent(() => import('./pages/QuestionDetail'));
 
 // Preload critical routes on app load
 setTimeout(() => {
@@ -45,6 +48,9 @@ function AppContent() {
           <Route path="/crop-simulation/:cropId" element={<CropSimulation />} />
           <Route path="/my-farm" element={<MyFarm />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/community" element={<CommunityList />} />
+          <Route path="/community/ask" element={<AskQuestion />} />
+          <Route path="/community/question/:id" element={<QuestionDetail />} />
         </Routes>
       </Suspense>
     </div>
