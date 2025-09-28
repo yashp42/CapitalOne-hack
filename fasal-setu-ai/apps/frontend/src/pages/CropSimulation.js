@@ -8,6 +8,7 @@ import { TextureLoader } from 'three';
 import { cropAPI, authAPI, cropSimChatAPI, chatbotAPI } from '../services/api'; // Import API service
 import { useAuth } from '../contexts/AuthContext'; // Import auth context
 import SpeechToText from '../components/SpeechToText';
+import TextToSpeech from '../components/TextToSpeech';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { 
@@ -701,8 +702,7 @@ const CropSimulation = () => {
   
   // Debug: Log the received parameters
   useEffect(() => {
-    console.log('CropSimulation - Crop ID:', cropId);
-    console.log('CropSimulation - Initial Growth:', initialGrowthPercent);
+
   }, [cropId, initialGrowthPercent]);
   
   // Real crop simulation state - grows based on user interactions
@@ -733,7 +733,7 @@ const CropSimulation = () => {
         timestamp: new Date()
       };
       
-      console.log('Adding welcome message:', welcomeMessage);
+
       setChatMessages([welcomeMessage]);
       welcomeMessageAdded.current = true;
     }
@@ -844,7 +844,7 @@ const CropSimulation = () => {
   // Growth simulation will be handled by LLM integration
   const simulateCropGrowth = useCallback((activity) => {
     // This will be replaced with LLM-powered growth simulation
-    console.log('Growth simulation triggered for activity:', activity);
+
     return 0; // Placeholder return value
   }, []);
 
@@ -1009,7 +1009,7 @@ const CropSimulation = () => {
           if (!urlParams.get('growth')) {
             setCropStage(harvestResponse.data.growth_percentage);
           }
-          console.log('Harvest data loaded:', harvestResponse.data);
+
         }
 
         // Update farm data with actual crop irrigation/fertilization dates
@@ -1025,7 +1025,7 @@ const CropSimulation = () => {
             lastPestCheck: crop.derived.last_pest_check_at ?
               new Date(crop.derived.last_pest_check_at).toLocaleDateString() : 'Never'
           }));
-          console.log('Crop data loaded:', crop);
+
         } else {
           // Set default values if crop data not available
           setCurrentCrop(null);
@@ -1086,7 +1086,7 @@ const CropSimulation = () => {
   // Harvest data processing will be handled by LLM integration
   useEffect(() => {
     // Harvest data processing will be handled by LLM integration
-    console.log('Harvest data changed:', harvestData);
+
   }, [harvestData]);
 
   // Natural daily progression will be handled by LLM integration
@@ -1232,8 +1232,7 @@ const CropSimulation = () => {
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
 
-    console.log('handleSendMessage called with:', newMessage);
-    console.log('Current chat messages before adding user message:', chatMessages.length);
+
 
     const userMessage = {
       id: Date.now(),
@@ -1242,13 +1241,7 @@ const CropSimulation = () => {
       timestamp: new Date()
     };
 
-    console.log('Adding user message:', userMessage);
-    setChatMessages(prev => {
-      console.log('Previous messages:', prev.length);
-      const newMessages = [...prev, userMessage];
-      console.log('New messages after adding user message:', newMessages.length);
-      return newMessages;
-    });
+    setChatMessages(prev => [...prev, userMessage]);
     
     const currentMessage = newMessage;
     setNewMessage('');
@@ -1535,7 +1528,7 @@ const CropSimulation = () => {
             {/* Chat Messages */}
             <div 
               ref={chatContainerRef}
-              className={`overflow-y-auto mb-4 space-y-3 pr-2 scrollbar-thin scrollbar-thumb-primary-400/50 scrollbar-track-gray-100/50 transition-all duration-300 ease-in-out ${
+              className={`overflow-y-auto mb-4 space-y-3 pr-2 scrollbar-emerald transition-all duration-300 ease-in-out ${
                 quickActionsExpanded ? 'h-64' : 'h-80'
               }`} 
               id="chat-container"
@@ -1549,27 +1542,37 @@ const CropSimulation = () => {
                     exit={{ opacity: 0, y: -10 }}
                     className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
                   >
-                    <div
-                      className={`max-w-[85%] p-3 rounded-lg text-sm break-words leading-relaxed ${
-                        message.isBot
-                          ? message.isSystemMessage 
-                            ? 'bg-amber-50 border border-amber-200 text-amber-800'
-                            : 'bg-gray-50 border border-gray-200 text-gray-800'
-                          : 'bg-emerald-500 text-white border border-emerald-500'
-                      }`}
-                    >
-                      {message.isBot ? (
-                        <div className="space-y-1">
-                          <ReactMarkdown 
-                            remarkPlugins={[remarkGfm]}
-                            components={cropMarkdownComponents}
-                          >
-                            {message.text}
-                          </ReactMarkdown>
-                        </div>
-                      ) : (
-                        message.text
-                      )}
+                    <div className="flex items-start gap-2 max-w-[85%]">
+                      <div
+                        className={`relative flex-1 p-3 rounded-lg text-sm break-words leading-relaxed ${
+                          message.isBot
+                            ? message.isSystemMessage 
+                              ? 'bg-amber-50 border border-amber-200 text-amber-800'
+                              : 'bg-gray-50 border border-gray-200 text-gray-800'
+                            : 'bg-emerald-500 text-white border border-emerald-500'
+                        }`}
+                      >
+                        {message.isBot ? (
+                          <div className="space-y-1">
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkGfm]}
+                              components={cropMarkdownComponents}
+                            >
+                              {message.text}
+                            </ReactMarkdown>
+                            
+                            {/* TTS Button - Only show for bot messages */}
+                            {message.text && message.text.trim().length > 0 && (
+                              <TextToSpeech 
+                                text={message.text}
+                                className=""
+                              />
+                            )}
+                          </div>
+                        ) : (
+                          message.text
+                        )}
+                      </div>
                     </div>
                   </motion.div>
                 ))}
@@ -1652,7 +1655,7 @@ const CropSimulation = () => {
               <div className={`transition-all duration-300 ease-in-out w-full ${
                 quickActionsExpanded ? 'h-40' : 'h-0'
               } overflow-hidden`}>
-                <div className="h-full overflow-y-auto space-y-2 pt-1 w-full">
+                <div className="h-full overflow-y-auto space-y-2 pt-1 w-full scrollbar-elegant">
                   {[
                     "Irrigated my crops",
                     "Applied fertilizer", 

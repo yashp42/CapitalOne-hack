@@ -52,26 +52,26 @@ const setupRecaptcha = () => {
   // Check if user is authenticated on app load
   const checkAuthStatus = async () => {
     try {
-      console.log('Checking auth status...');
+
       
       // Check if we have a valid access token
       if (authAPI.isAuthenticated()) {
-        console.log('Found access token, fetching user data...');
+
         try {
           const userData = await authAPI.getCurrentUser();
           if (userData && userData.data) {
-            console.log('User data retrieved:', userData.data);
+
             setUser(userData.data);
             return;
           }
         } catch (error) {
-          console.log('Token might be expired, trying to refresh...');
+
           
           // Try to refresh token
           try {
             const refreshResult = await authAPI.refreshToken();
             if (refreshResult && refreshResult.success) {
-              console.log('Token refresh successful, retrying user fetch...');
+
               // Retry getting user data with new token
               const userData = await authAPI.getCurrentUser();
               if (userData && userData.data) {
@@ -80,7 +80,7 @@ const setupRecaptcha = () => {
               }
             }
           } catch (refreshError) {
-            console.log('Token refresh failed:', refreshError);
+
           }
         }
       }

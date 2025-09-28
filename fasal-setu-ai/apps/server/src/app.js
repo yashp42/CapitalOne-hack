@@ -10,6 +10,7 @@ import cropRoutes from "./routes/crop.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
 import conversationRoutes from "./routes/conversation.routes.js";
 import cropSimChatRoutes from "./routes/cropSimChat.route.js";
+import ttsRoutes from "./routes/tts.routes.js";
 
 // Import middleware
 import errorHandler from "./middleware/errorHandler.middleware.js";
@@ -132,6 +133,7 @@ app.use("/api/crops", cropRoutes);
 app.use("/api", chatRoutes);
 app.use("/api", conversationRoutes);
 app.use("/api/crop-sim", cropSimChatRoutes);
+app.use("/api/tts", ttsRoutes);
 
 // Extended health check with CORS info
 app.get("/health", (req, res) => {

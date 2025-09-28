@@ -3,6 +3,122 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== ELEGANT SCROLLBARS - CROSS BROWSER ===== */
+
+/* Firefox scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.6);
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: rgba(75, 85, 99, 0.7);
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Refined scrollbars for specific containers */
+.scrollbar-elegant {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(59, 130, 246, 0.3) transparent;
+}
+
+.scrollbar-elegant::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-elegant::-webkit-scrollbar-track {
+  background: rgba(248, 250, 252, 0.8);
+  border-radius: 3px;
+}
+
+.scrollbar-elegant::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.3);
+  border-radius: 3px;
+  border: 1px solid transparent;
+  background-clip: content-box;
+}
+
+.scrollbar-elegant::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.5);
+  background-clip: content-box;
+}
+
+.scrollbar-elegant::-webkit-scrollbar-thumb:active {
+  background: rgba(37, 99, 235, 0.6);
+  background-clip: content-box;
+}
+
+/* Emerald theme scrollbars */
+.scrollbar-emerald {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(16, 185, 129, 0.3) transparent;
+}
+
+.scrollbar-emerald::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-emerald::-webkit-scrollbar-track {
+  background: rgba(236, 253, 245, 0.8);
+  border-radius: 3px;
+}
+
+.scrollbar-emerald::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.3);
+  border-radius: 3px;
+  border: 1px solid transparent;
+  background-clip: content-box;
+}
+
+.scrollbar-emerald::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.5);
+  background-clip: content-box;
+}
+
+.scrollbar-emerald::-webkit-scrollbar-thumb:active {
+  background: rgba(5, 150, 105, 0.6);
+  background-clip: content-box;
+}
+
+/* Hidden scrollbars but still functional */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* Viewport units that don't jump when the address bar hides */
 :root {
   --vh: 1svh; /* fallback if needed */

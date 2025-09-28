@@ -61,16 +61,25 @@ const SpeechToText = ({
 
   // Initialize speech recognition on mount
   useEffect(() => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    // Check for speech recognition support (prioritize webkitSpeechRecognition for mobile)
+    const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+    
+    if (SpeechRecognition) {
       setIsSupported(true);
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognitionInstance = new SpeechRecognition();
       
+      // Mobile-optimized settings
       recognitionInstance.continuous = false;
       recognitionInstance.interimResults = true;
       recognitionInstance.maxAlternatives = 1;
       
+      // Mobile-specific settings
+      if (window.webkitSpeechRecognition) {
+        recognitionInstance.webkitSpeechRecognition = true;
+      }
+      
       setRecognition(recognitionInstance);
+      console.log('Speech recognition initialized successfully');
     } else {
       setIsSupported(false);
       console.warn('Speech recognition not supported in this browser');
@@ -130,21 +139,27 @@ const SpeechToText = ({
     };
 
     const handleError = (event) => {
-      console.error('Speech recognition error:', event.error);
+      console.error('Speech recognition error:', event.error, event);
       setIsListening(false);
       setTranscript('');
-      setCurrentInterimText(''); // Clear interim tracking on error
-      stopAudioAnalysis(); // Stop amplitude detection on error
+      setCurrentInterimText('');
+      stopAudioAnalysis();
       
-      // Show user-friendly error message
+      // Show user-friendly error messages with mobile-specific guidance
       if (event.error === 'not-allowed') {
-        alert('Microphone access denied. Please allow microphone access to use voice input.');
+        alert('Microphone access denied. Please go to your browser settings and allow microphone access for this website.');
       } else if (event.error === 'network') {
-        alert('Network error. Please check your internet connection.');
+        alert('Network error. Please check your internet connection and try again.');
       } else if (event.error === 'no-speech') {
-        // Silent error for no speech detected
+        console.log('No speech detected - this is normal if user didn\'t speak');
+        // Don't show alert for no speech
+      } else if (event.error === 'audio-capture') {
+        alert('Microphone not found or not working. Please check your microphone and try again.');
+      } else if (event.error === 'service-not-allowed') {
+        alert('Speech recognition service not available. Please try again later.');
       } else {
-        alert('Speech recognition error. Please try again.');
+        console.log('Speech recognition error details:', event);
+        alert(`Speech recognition error: ${event.error}. Please try again.`);
       }
     };
 
@@ -174,13 +189,31 @@ const SpeechToText = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Setup audio context for voice amplitude detection
+  // Setup audio context for voice amplitude detection with mobile compatibility
   const setupAudioAnalysis = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Request microphone permissions with better constraints for mobile
+      const constraints = {
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 16000 // Lower sample rate for mobile
+        }
+      };
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       microphoneRef.current = stream;
       
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      // Use webkitAudioContext for mobile compatibility
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      const audioContext = new AudioContextClass();
+      
+      // Resume audio context if suspended (mobile requirement)
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+      
       audioContextRef.current = audioContext;
       
       const analyser = audioContext.createAnalyser();
@@ -190,9 +223,11 @@ const SpeechToText = ({
       const microphone = audioContext.createMediaStreamSource(stream);
       microphone.connect(analyser);
       
+      console.log('Audio analysis setup successful');
       return true;
     } catch (error) {
       console.error('Error setting up audio analysis:', error);
+      // Don't fail completely if audio analysis fails
       return false;
     }
   };
@@ -300,6 +335,8 @@ const SpeechToText = ({
   };
 
   const handleMicClick = async () => {
+    console.log('Mic button clicked, isSupported:', isSupported);
+    
     if (!isSupported) {
       alert('Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
       return;
@@ -311,24 +348,55 @@ const SpeechToText = ({
     }
 
     if (isListening) {
+      console.log('Stopping speech recognition');
       recognition.stop();
       setIsListening(false);
       stopAudioAnalysis();
     } else {
-      recognition.lang = selectedLanguage;
+      console.log('Starting speech recognition with language:', selectedLanguage);
+      
       try {
-        // Start audio analysis for voice amplitude detection
+        // Set language before starting
+        recognition.lang = selectedLanguage;
+        
+        // Request microphone permissions first on mobile
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            stream.getTracks().forEach(track => track.stop()); // Stop immediately, just checking permissions
+            console.log('Microphone permission granted');
+          } catch (permError) {
+            console.error('Microphone permission denied:', permError);
+            alert('Microphone access is required for voice input. Please allow microphone access in your browser settings.');
+            return;
+          }
+        }
+        
+        // Start audio analysis for voice amplitude detection (optional)
         const audioStarted = await setupAudioAnalysis();
         if (audioStarted) {
           startAmplitudeDetection();
         }
         
+        // Start speech recognition
         recognition.start();
         setIsListening(true);
+        console.log('Speech recognition started successfully');
+        
       } catch (error) {
         console.error('Failed to start speech recognition:', error);
-        alert('Failed to start voice recognition. Please try again.');
-        stopAudioAnalysis(); // Clean up audio if speech recognition fails
+        
+        // Provide specific error messages
+        if (error.name === 'NotAllowedError') {
+          alert('Microphone access denied. Please allow microphone access to use voice input.');
+        } else if (error.name === 'NotFoundError') {
+          alert('No microphone found. Please connect a microphone and try again.');
+        } else {
+          alert('Failed to start voice recognition. Please try again.');
+        }
+        
+        stopAudioAnalysis();
+        setIsListening(false);
       }
     }
   };
@@ -372,8 +440,17 @@ const SpeechToText = ({
 
   const sizes = sizeClasses[size];
 
+  // Don't render if not supported, but provide helpful message on mobile
   if (!isSupported) {
-    return null; // Don't render if not supported
+    // On mobile, show a helpful message instead of hiding completely
+    if (navigator.userAgent.match(/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i)) {
+      return (
+        <div className={`text-xs text-gray-500 ${className}`} title="Speech recognition not available in this browser">
+          🎤❌
+        </div>
+      );
+    }
+    return null;
   }
 
   return (
@@ -423,15 +500,16 @@ const SpeechToText = ({
         {/* Microphone Button */}
         <button
           onClick={handleMicClick}
-          className={`${sizes.button} rounded-lg transition-all duration-200 flex items-center justify-center ${
+          onTouchStart={() => {}} // Enable touch events on mobile
+          className={`${sizes.button} rounded-lg transition-all duration-200 flex items-center justify-center touch-manipulation ${
             isListening
               ? voiceAmplitude > 15 
-                ? 'bg-green-500 hover:bg-green-600 text-white animate-pulse' 
+                ? 'bg-green-500 hover:bg-green-600 active:bg-green-700 text-white animate-pulse' 
                 : voiceAmplitude > 5 
-                  ? 'bg-yellow-500 hover:bg-yellow-600 text-white animate-pulse'
-                  : 'bg-red-500 hover:bg-red-600 text-white animate-pulse'
+                  ? 'bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 text-white animate-pulse'
+                  : 'bg-red-500 hover:bg-red-600 active:bg-red-700 text-white animate-pulse'
               : hasSelectedLanguage
-                ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                ? 'bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
           disabled={!hasSelectedLanguage}
@@ -440,11 +518,11 @@ const SpeechToText = ({
               ? 'Select a language first' 
               : isListening 
                 ? voiceAmplitude > 15 
-                  ? 'Hearing you clearly - Stop recording'
+                  ? 'Hearing you clearly - Tap to stop'
                   : voiceAmplitude > 5 
-                    ? 'Hearing you softly - Stop recording'
-                    : 'Listening... - Stop recording'
-                : 'Start voice input'
+                    ? 'Hearing you softly - Tap to stop'
+                    : 'Listening... - Tap to stop'
+                : 'Tap to start voice input'
           }
         >
           {isListening ? (

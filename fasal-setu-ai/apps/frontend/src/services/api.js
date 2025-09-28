@@ -2,7 +2,7 @@
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
 // Log the API URL to help with debugging
-console.log(`API configured with base URL: ${API_BASE_URL}`);
+
 
 // Enhanced token management using both localStorage and cookies as fallback
 const tokenManager = {
@@ -54,19 +54,19 @@ const tokenManager = {
     if (accessToken) {
       localStorage.setItem('accessToken', accessToken);
       tokenManager.setCookie('accessToken', accessToken);
-      console.log('Access token saved to localStorage and cookies');
+
     }
     if (refreshToken) {
       localStorage.setItem('refreshToken', refreshToken);
       tokenManager.setCookie('refreshToken', refreshToken);
-      console.log('Refresh token saved to localStorage and cookies');
+
     }
   },
   
   // Check if user has access token
   hasAccessToken: () => {
     const token = tokenManager.getAccessToken();
-    console.log('Checking access token:', !!token);
+
     return !!token;
   },
   
@@ -79,10 +79,10 @@ const tokenManager = {
       // Check if token is expired
       const payload = JSON.parse(atob(token.split('.')[1]));
       const isValid = payload.exp > Date.now() / 1000;
-      console.log('Token expiry check:', isValid ? 'valid' : 'expired');
+
       return isValid;
     } catch (error) {
-      console.log('Token validation failed:', error);
+
       return false;
     }
   },
@@ -130,7 +130,7 @@ const apiRequest = async (endpoint, options = {}) => {
     
     // If unauthorized and we have tokens, try to refresh
     if (response.status === 401 && (tokenManager.hasAccessToken() || tokenManager.getRefreshToken())) {
-      console.log('Received 401, attempting token refresh...');
+
       
       try {
         const refreshToken = tokenManager.getRefreshToken();
@@ -149,13 +149,13 @@ const apiRequest = async (endpoint, options = {}) => {
           // Update tokens with new ones
           if (refreshData.data && refreshData.data.accessToken) {
             tokenManager.setTokens(refreshData.data.accessToken, refreshData.data.refreshToken);
-            console.log('Token refresh successful, retrying original request...');
+
             
             // Retry original request with new token
             response = await makeRequest();
           }
         } else {
-          console.log('Token refresh failed, clearing tokens...');
+
           // Refresh failed, clear tokens and redirect to login
           tokenManager.clearTokens();
           if (window.location.pathname !== '/login') {
@@ -164,7 +164,7 @@ const apiRequest = async (endpoint, options = {}) => {
           return;
         }
       } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError);
+
         tokenManager.clearTokens();
         if (window.location.pathname !== '/login') {
           window.location.href = '/login';
@@ -442,6 +442,22 @@ export const conversationAPI = {
     return await apiRequest(`/conversations/${conversationId}`, {
       method: 'DELETE'
     });
+  }
+};
+
+// TTS API
+export const ttsAPI = {
+  // Synthesize speech from text
+  synthesize: async (text, lang = null) => {
+    return await apiRequest('/tts/synthesize', {
+      method: 'POST',
+      body: JSON.stringify({ text, lang })
+    });
+  },
+
+  // Check TTS service health
+  health: async () => {
+    return await apiRequest('/tts/health');
   }
 };
 

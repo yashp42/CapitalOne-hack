@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTS Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-text {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        #status {
+            margin: 10px 0;
+            padding: 10px;
+            background: #e8f4f8;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>TTS Test - Hindi Text</h1>
+    
+    <div class="test-text" id="testText">
+आपके वाराणसी के खेत के लिए निम्नलिखित पौधों की खेती उपयुक्त रहेगी, साथ ही मौजूदा फसलों के साथ भी तालमेल बनाए रखेंगे:
+
+1. मौजूदा फसलें:
+मक्का, धान (चावल), चना पहले से आपकी फसलों में हैं, ये क्षेत्र के लिए उपयुक्त हैं।
+
+2. नई फसलें जो आप लगा सकते हैं:
+मसूर (Lentil): यह रबी सीजन की फसल है, अक्टूबर के मध्य से नवंबर के मध्य तक बोवाई करें। यह आपकी मिट्टी में नमी का सदुपयोग करता है और मक्का-धान के बाद अच्छी पैदावार देता है।
+
+मूंग और उड़द (Greengram, Blackgram): ये खरीफ के बाद की फसलें हैं, जो धान के बाद बोई जा सकती हैं। ये नाइट्रोजन फिक्सिंग फसलें हैं, जिससे मिट्टी की उर्वरता बढ़ती है।
+
+तिल (Sesame): खरीफ के बाद की फसल के रूप में उपयुक्त, कम पानी मांगती है और आपकी मिट्टी के लिए अनुकूल है।
+    </div>
+
+    <div class="controls">
+        <button onclick="testTTS()">Test TTS</button>
+        <button onclick="stopAudio()">Stop Audio</button>
+    </div>
+
+    <div id="status">Ready to test</div>
+
+    <script>
+        let currentAudio = null;
+        let isPlaying = false;
+
+        async function testTTS() {
+            const text = document.getElementById('testText').textContent.trim();
+            const status = document.getElementById('status');
+            
+            try {
+                status.textContent = 'Starting TTS request...';
+                console.log('Testing TTS with text length:', text.length);
+                
+                const response = await fetch('http://localhost:8080/api/tts/synthesize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: text })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `Request failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+                status.textContent = 'Creating audio...';
+                console.log('Audio data size:', data.audioData.length, 'characters');
+
+                // Create audio blob
+                const binaryString = atob(data.audioData);
+                const audioBytes = new Uint8Array(binaryString.length);
+                
+                for (let i = 0; i < binaryString.length; i++) {
+                    audioBytes[i] = binaryString.charCodeAt(i);
+                }
+                
+                const audioBlob = new Blob([audioBytes], { type: 'audio/wav' });
+                console.log('Audio blob size:', audioBlob.size, 'bytes');
+                
+                const audioUrl = URL.createObjectURL(audioBlob);
+                
+                // Create and configure audio
+                currentAudio = new Audio(audioUrl);
+                
+                currentAudio.onloadedmetadata = () => {
+                    console.log('Audio duration:', currentAudio.duration, 'seconds');
+                    status.textContent = `Audio loaded - Duration: ${currentAudio.duration.toFixed(1)}s`;
+                };
+                
+                currentAudio.oncanplay = () => {
+                    status.textContent = `Playing audio - Duration: ${currentAudio.duration.toFixed(1)}s`;
+                    isPlaying = true;
+                };
+                
+                let lastLogTime = 0;
+                currentAudio.ontimeupdate = () => {
+                    if (currentAudio.currentTime - lastLogTime >= 2) {
+                        console.log(`Progress: ${currentAudio.currentTime.toFixed(1)}s / ${currentAudio.duration.toFixed(1)}s`);
+                        status.textContent = `Playing: ${currentAudio.currentTime.toFixed(1)}s / ${currentAudio.duration.toFixed(1)}s`;
+                        lastLogTime = currentAudio.currentTime;
+                    }
+                };
+                
+                currentAudio.onended = () => {
+                    console.log('Audio playback completed');
+                    status.textContent = 'Playback completed';
+                    isPlaying = false;
+                    URL.revokeObjectURL(audioUrl);
+                };
+                
+                currentAudio.onerror = (e) => {
+                    console.error('Audio error:', e);
+                    status.textContent = 'Audio playback error';
+                    isPlaying = false;
+                };
+
+                // Start playback
+                await currentAudio.play();
+                console.log('Audio playback started');
+                
+            } catch (error) {
+                console.error('TTS error:', error);
+                status.textContent = 'Error: ' + error.message;
+            }
+        }
+
+        function stopAudio() {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                isPlaying = false;
+                document.getElementById('status').textContent = 'Audio stopped';
+            }
+        }
+    </script>
+</body>
+</html>

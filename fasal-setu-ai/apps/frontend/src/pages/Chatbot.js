@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { chatbotAPI, authAPI, conversationAPI } from '../services/api';
 import ConversationSidebar from '../components/ConversationSidebar';
 import SpeechToText from '../components/SpeechToText';
+import TextToSpeech from '../components/TextToSpeech';
 import { useAuth } from '../contexts/AuthContext';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -574,7 +575,7 @@ const Chatbot = () => {
             showQuickQuestions ? 'mb-4 md:mb-6' : 'mb-3 md:mb-4'
           }`}
         >
-          <div className="h-full overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4 scrollbar-thin scrollbar-thumb-emerald-400/50 scrollbar-track-gray-100/50">
+          <div className="h-full overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4 scrollbar-emerald">
             <AnimatePresence mode="popLayout">
               {messages.map((message, index) => (
                 <motion.div
@@ -591,7 +592,7 @@ const Chatbot = () => {
                     {/* Avatar */}
                     <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                       message.type === 'user' 
-                        ? 'bg-gradient-to-br from-blue-500 to-purple-600' 
+                        ? 'bg-emerald-500' 
                         : 'bg-gradient-to-br from-emerald-500 to-emerald-600'
                     }`}>
                       {message.type === 'user' ? 
@@ -600,16 +601,18 @@ const Chatbot = () => {
                       }
                     </div>
                     
-                    {/* Message Bubble */}
-                    <div className={`px-3 md:px-4 py-2 md:py-3 rounded-2xl backdrop-blur-sm border transition-opacity duration-200 ${
-                      message.type === 'user' 
-                        ? 'bg-gradient-to-br from-blue-500/90 to-purple-600/90 text-white border-blue-400/50 rounded-br-md' 
-                        : message.isError
-                          ? 'bg-gradient-to-br from-red-50/90 to-red-100/90 text-red-800 border-red-200/50 rounded-bl-md'
-                          : message.isSystemMessage
-                            ? 'bg-gradient-to-br from-amber-50/90 to-yellow-100/90 text-amber-800 border-amber-200/50 rounded-bl-md'
-                            : 'bg-white/80 text-gray-800 border-gray-200/50 rounded-bl-md'
-                    } shadow-lg`}>
+                    {/* Message Content Container */}
+                    <div className="flex items-start space-x-2 flex-1">
+                      {/* Message Bubble */}
+                      <div className={`relative flex-1 px-3 md:px-4 py-2 md:py-3 rounded-2xl backdrop-blur-sm border transition-opacity duration-200 ${
+                        message.type === 'user' 
+                          ? 'bg-emerald-500 text-white border-emerald-500 rounded-br-md' 
+                          : message.isError
+                            ? 'bg-gradient-to-br from-red-50/90 to-red-100/90 text-red-800 border-red-200/50 rounded-bl-md'
+                            : message.isSystemMessage
+                              ? 'bg-gradient-to-br from-amber-50/90 to-yellow-100/90 text-amber-800 border-amber-200/50 rounded-bl-md'
+                              : 'bg-white/80 text-gray-800 border-gray-200/50 rounded-bl-md'
+                      } shadow-lg`}>
                       <div className="text-xs md:text-sm leading-relaxed">
                         <ReactMarkdown 
                           remarkPlugins={[remarkGfm]}
@@ -633,13 +636,22 @@ const Chatbot = () => {
                         </div>
                       )}
                       
-                      <p className={`text-xs mt-1 md:mt-2 ${
-                        message.type === 'user' ? 'text-blue-100' : 
-                        message.isError ? 'text-red-600' : 
-                        message.isSystemMessage ? 'text-amber-600' : 'text-gray-500'
-                      }`}>
-                        {message.timestamp.toLocaleTimeString()}
-                      </p>
+                        <p className={`text-xs mt-1 md:mt-2 ${
+                          message.type === 'user' ? 'text-blue-100' : 
+                          message.isError ? 'text-red-600' : 
+                          message.isSystemMessage ? 'text-amber-600' : 'text-gray-500'
+                        }`}>
+                          {message.timestamp.toLocaleTimeString()}
+                        </p>
+                        
+                        {/* TTS Button - Only show for bot messages */}
+                        {message.type === 'bot' && message.content && message.content.trim().length > 0 && !message.isError && (
+                          <TextToSpeech 
+                            text={message.content}
+                            className=""
+                          />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </motion.div>

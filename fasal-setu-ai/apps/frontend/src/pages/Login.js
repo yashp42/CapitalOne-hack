@@ -916,7 +916,7 @@ const Login = () => {
                   exit="exit"
                   transition={{ duration: 0.3 }}
                 >
-                  <div className="space-y-3 sm:space-y-4 max-h-96 overflow-y-auto pr-2">
+                  <div className="space-y-3 sm:space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-elegant">
                     {/* Basic Information */}
                     <div className="bg-gray-50/50 p-3 rounded-lg">
                       <h4 className="font-semibold text-gray-700 text-sm mb-3">Basic Information</h4>
