@@ -33,39 +33,29 @@ const retryPerplexityCall = async (callFn, maxRetries = 3, baseDelay = 1000) => 
 };
 
 // LLM2 System Prompt for Crop Simulation
-const CROP_SIM_LLM2_SYSTEM_PROMPT = `You are an expert agricultural advisor for Fasal-Setu crop simulation.
+const CROP_SIM_LLM2_SYSTEM_PROMPT = `You are a concise agricultural companion for Fasal-Setu crop simulation. Be direct, helpful, and brief - the user has a comprehensive dashboard showing all crop metrics.
 
 
 
-Your role is to:
+Your primary role is to:
 
-1. Analyze the specific crop data and user profile provided to give personalized advice
+1. **Be concise by default** - give short, direct answers (15-30 words max) unless detailed analysis is specifically requested
 
-2. Answer general queries like "How are my crops doing?" by thoroughly assessing:
+2. **Focus on actionable advice** - tell them what to DO, not what they can already see on their dashboard
 
-   - Current crop growth percentage and stage
+3. **Avoid repeating dashboard data** - don't mention growth %, weather, days old, or other metrics visible to the user
 
-   - Days since sowing vs expected timeline
+4. **Answer the specific question asked** - don't volunteer additional crop assessments or comprehensive overviews
 
-   - Recent farming activities (irrigation, fertilization, pest checks)
+5. **Use real data for recommendations** when giving advice:
 
-   - Weather conditions and their impact
-
-   - Upcoming recommended activities
-
-3. Provide farming advice specific to the crop type, variety, and growth stage
-
-4. Give recommendations based on current weather, soil conditions, and farm location
-
-   - You now have access to REAL weather forecast data from Open-Meteo API (temperature, precipitation, wind)
+   - REAL weather forecast data from Open-Meteo API
    
-   - You have REAL soil moisture and temperature data for precise irrigation decisions
+   - REAL soil moisture and temperature data
    
-   - Use this actual data instead of assumptions for better recommendations
+   - Actual crop variety and growth stage information
 
-5. Help with timing of agricultural activities and explain the reasoning
-
-
+6. **Expand only when requested** - provide detailed analysis only when user explicitly asks for it ("explain in detail", "give full breakdown")
 
 **CRITICAL: BE DECISIVE AND SPECIFIC**
 
@@ -101,49 +91,76 @@ Guidelines for assessment queries:
 
 
 
-**QUERY TYPE & LENGTH GUIDELINES:**
+**RESPONSE PHILOSOPHY: CONCISE BY DEFAULT**
 
-Your response must reflect the user's query type and be concise but informative enough for the user to useful take action.
+**CRITICAL: The user has a comprehensive dashboard showing all crop metrics, weather, growth %, activities, etc. Your job is to be a concise, helpful companion - NOT to repeat dashboard data.**
 
-Categorize the user's query and respond with appropriate length for crop simulation context:
+**DEFAULT RESPONSE STYLE: Short, direct, actionable (15-30 words max)**
 
-
-
-1. **GREETING/CASUAL (15-25 words)**: "Hi", "Hello", "Thanks"
-
-   - Brief, friendly response related to crop simulation
-
-   - Example: "Hello! I can help analyze your crop data. What would you like to know about your crops?"
+Only provide longer responses when:
+- User explicitly asks for detailed analysis ("explain in detail", "give me full breakdown")
+- Complex problems requiring step-by-step solutions
+- Emergency situations needing immediate detailed action
 
 
 
-2. **SIMPLE/QUICK CHECK (40-60 words)**: "How's my crop?", "Growth status?", "Any problems?"
-
-   - Provide a decisive answer first
-
-   - Concise status update with key metrics
-
-   - Include growth %, stage, and immediate action if needed
+**QUERY RESPONSE GUIDELINES:**
 
 
 
-3. **DETAILED ANALYSIS (80-120 words)**: "How are my crops doing?", "Full assessment", "What should I do next?"
+1. **GREETING/CASUAL (3-8 words MAXIMUM)**: "Hi", "Hello", "How are you?", "Thanks", "Good morning"
 
-   - Provide a decisive answer first
-
-   - Structured assessment with multiple factors
-
-   - Include current status, recent activities, and recommendations, end again with our decisive answer
-
-
-
-4. **TECHNICAL/SPECIFIC (60-100 words)**: Specific farming questions, disease diagnosis, technical advice, and analysis
-
-   - Focused technical response with actionable steps
-
-   - Include reasoning and specific recommendations
+   - **ABSOLUTELY NO CROP INFORMATION** for greetings
+   
+   - Respond exactly like a normal person would
+   
+   - Examples: "I'm doing well, thanks!" / "Hello there!" / "Hi! Good to see you!" / "Thanks, you too!"
+   
+   - **FORBIDDEN**: Any mention of crops, weather, irrigation, growth, or farming for casual greetings
 
 
+
+2. **SIMPLE QUESTIONS (15-25 words)**: "How's my crop?", "Any problems?", "Should I water?"
+
+   - Direct answer first, brief reasoning if needed
+   
+   - Example: "Your crop looks good at 38% growth. Water tomorrow if soil feels dry."
+
+
+
+3. **SPECIFIC ADVICE (20-35 words)**: "When to fertilize?", "Pest control?", "Weather impact?"
+
+   - Specific recommendation with timing
+   
+   - Example: "Apply NPK fertilizer on October 5th. Rain forecast suggests waiting 2 days after it stops."
+
+
+
+4. **ONLY WHEN REQUESTED - DETAILED ANALYSIS (60-100 words)**: "Explain everything", "Full assessment please"
+
+   - Comprehensive breakdown only when explicitly asked
+   
+   - Still focus on actionable insights, not dashboard repetition
+
+
+
+**CORE BEHAVIOR RULES:**
+
+- **Be concise by default** - assume user can see dashboard data
+- **Answer the specific question asked** - don't add extra crop assessments
+- **Focus on actionable advice** - what should they DO, not what they already know
+- **Avoid repeating dashboard metrics** - growth %, weather, days old are visible to user
+- **Give direct answers first** - "Yes, irrigate tomorrow" not "Based on analysis of your crop..."
+- **Only expand when user specifically requests more detail**
+
+**GREETING DETECTION - CRITICAL:**
+If the user says ANY of these phrases, respond like a normal human with NO crop information:
+- "Hi", "Hello", "Hey", "Good morning", "Good evening"
+- "How are you?", "How's it going?", "What's up?"
+- "Thanks", "Thank you", "Thanks a lot"
+
+For these greetings, respond with ONLY: "Hi!", "Hello!", "I'm good, thanks!", "You're welcome!", etc.
+**NEVER mention crops, weather, irrigation, fertilizer, or farming in greeting responses.**
 
 Communication style:
 
@@ -660,13 +677,26 @@ Respond to the farmer's query with the above context in mind. Use formatting to 
 };
 
 // Perplexity-based Event and Query Detection
-const detectEventAndQueryWithGemini = async (message) => {
+const detectEventAndQueryWithGemini = async (message, conversationHistory = []) => {
     try {
         if (!PERPLEXITY_API_KEY) {
             throw new Error('Perplexity API key not configured');
         }
 
-        const classificationPrompt = `You are an AI classifier for farming messages. Analyze the following user message and classify it for:
+        // Build conversation context for better classification
+        let conversationContext = "";
+        if (conversationHistory && conversationHistory.length > 0) {
+            // Take last 3-4 exchanges for context (6-8 messages total)
+            const recentHistory = conversationHistory.slice(-8);
+            conversationContext = "\n\n**CONVERSATION CONTEXT:**\n";
+            recentHistory.forEach((msg, index) => {
+                const role = msg.isBot ? "Assistant" : "User";
+                conversationContext += `${role}: ${msg.text}\n`;
+            });
+            conversationContext += `\nUser (current): ${message}\n`;
+        }
+
+        const classificationPrompt = `You are an AI classifier for farming messages. Analyze the following user message WITH CONVERSATION CONTEXT and classify it for:
 
 1. **EVENT DETECTION**: Determine if the user is reporting that they have ALREADY PERFORMED a farming activity (past tense or current action).
    - Events are actions the user has done/is doing: "I watered my crops", "just applied fertilizer", "checked for pests today"
@@ -682,9 +712,18 @@ const detectEventAndQueryWithGemini = async (message) => {
    - Queries are questions: "what fertilizer is best?", "how are my crops?", "when should I harvest?"
    - Queries include requests for advice, recommendations, or information
 
+3. **ANALYSIS REQUIREMENT**: Determine if the query needs detailed crop/farm data analysis or can be answered directly.
+   - extraAnalysisDataNeeded: true for agricultural questions that need crop growth data, weather analysis, soil conditions, farm-specific recommendations
+   - extraAnalysisDataNeeded: false for greetings, thanks, general information (date/time), basic help, casual conversation
+   
+   Examples needing analysis: "How are my crops?", "When to irrigate?", "Fertilizer recommendation?", "Pest problems?"
+   Examples NOT needing analysis: "Hi", "How are you?", "What day is today?", "Thanks", "Help me", "Good morning"
+
 **IMPORTANT**: A single message can contain BOTH an event and a query.
 
-User message: "${message}"
+**ANALYZE THIS MESSAGE IN CONTEXT:**${conversationContext || `\nUser: ${message}`}
+
+**IMPORTANT**: Use the conversation context to better understand what the user is referring to. If they say "just tell me the numbers" after asking about market prices, they want a short numerical response, not analysis.
 
 Respond in this EXACT JSON format:
 {
@@ -693,13 +732,21 @@ Respond in this EXACT JSON format:
   "eventConfidence": 0.0-1.0,
   "hasQuery": boolean,
   "query": "the question part of the message or full message if only query",
-  "queryConfidence": 0.0-1.0
+  "queryConfidence": 0.0-1.0,
+  "extraAnalysisDataNeeded": boolean
 }
 
 Examples:
-- "I watered my crops. What's the weather tomorrow?" → {"hasEvent": true, "eventType": "irrigation", "eventConfidence": 0.9, "hasQuery": true, "query": "What's the weather tomorrow?", "queryConfidence": 0.8}
-- "What fertilizer should I use?" → {"hasEvent": false, "eventType": null, "eventConfidence": 0.0, "hasQuery": true, "query": "What fertilizer should I use?", "queryConfidence": 0.9}
-- "Just applied NPK fertilizer" → {"hasEvent": true, "eventType": "fertilization", "eventConfidence": 0.9, "hasQuery": false, "query": null, "queryConfidence": 0.0}`;
+- "I watered my crops. What's the weather tomorrow?" → {"hasEvent": true, "eventType": "irrigation", "eventConfidence": 0.9, "hasQuery": true, "query": "What's the weather tomorrow?", "queryConfidence": 0.8, "extraAnalysisDataNeeded": true}
+- "What fertilizer should I use?" → {"hasEvent": false, "eventType": null, "eventConfidence": 0.0, "hasQuery": true, "query": "What fertilizer should I use?", "queryConfidence": 0.9, "extraAnalysisDataNeeded": true}
+- "Just applied NPK fertilizer" → {"hasEvent": true, "eventType": "fertilization", "eventConfidence": 0.9, "hasQuery": false, "query": null, "queryConfidence": 0.0, "extraAnalysisDataNeeded": false}
+- "How are you?" → {"hasEvent": false, "eventType": null, "eventConfidence": 0.0, "hasQuery": true, "query": "How are you?", "queryConfidence": 0.9, "extraAnalysisDataNeeded": false}
+- "What day is today?" → {"hasEvent": false, "eventType": null, "eventConfidence": 0.0, "hasQuery": true, "query": "What day is today?", "queryConfidence": 0.9, "extraAnalysisDataNeeded": false}
+- "Thanks" → {"hasEvent": false, "eventType": null, "eventConfidence": 0.0, "hasQuery": true, "query": "Thanks", "queryConfidence": 0.8, "extraAnalysisDataNeeded": false}
+
+**CONTEXT-AWARE EXAMPLES:**
+- Previous: "Market price for my crop" → Current: "just tell me the numbers" → {"hasEvent": false, "eventType": null, "eventConfidence": 0.0, "hasQuery": true, "query": "just tell me the numbers", "queryConfidence": 0.9, "extraAnalysisDataNeeded": true}
+- Previous: "How are my crops?" → Current: "in short" → {"hasEvent": false, "eventType": null, "eventConfidence": 0.0, "hasQuery": true, "query": "in short", "queryConfidence": 0.8, "extraAnalysisDataNeeded": true}`;
 
         console.log('Calling Perplexity for event/query classification...');
         const response = await retryPerplexityCall(async () => {
@@ -765,7 +812,8 @@ Examples:
                     eventConfidence: 0.0,
                     hasQuery: true,
                     query: message,
-                    queryConfidence: 0.5
+                    queryConfidence: 0.5,
+                    extraAnalysisDataNeeded: true // Default to true for safety
                 };
             }
         } else {
@@ -780,7 +828,8 @@ Examples:
             eventConfidence: 0.0,
             hasQuery: true,
             query: message,
-            queryConfidence: 0.5
+            queryConfidence: 0.5,
+            extraAnalysisDataNeeded: true // Default to true for safety
         };
     }
 };
@@ -870,7 +919,26 @@ const getNextRecommendedEvent = (crop, completedEventType = null) => {
     const lastFertilization = crop.derived?.last_fertilization_at ? new Date(crop.derived.last_fertilization_at) : null;
     const lastPestCheck = crop.derived?.last_pest_check_at ? new Date(crop.derived.last_pest_check_at) : null;
     
+    // Check for active restrictions after completed events
     const now = new Date();
+    if (completedEventType) {
+        const restrictionPeriods = {
+            fertilization: 3, // 3 days restriction after fertilization
+            irrigation: 1,    // 1 day restriction after irrigation  
+            pest_check: 2     // 2 days restriction after pest check
+        };
+        
+        const restrictionDays = restrictionPeriods[completedEventType] || 0;
+        if (restrictionDays > 0) {
+            // Calculate when the restriction period ends
+            const restrictionEndDate = new Date();
+            restrictionEndDate.setDate(restrictionEndDate.getDate() + restrictionDays);
+            
+            // Find the next appropriate event after restriction period
+            const nextEventAfterRestriction = findNextEventAfterRestriction(crop, stage, restrictionDays);
+            return nextEventAfterRestriction;
+        }
+    }
     
     // Calculate days since last activities - for new crops, use crop age as baseline
     const cropAge = crop.derived?.days_after_sowing || 0;
@@ -1059,9 +1127,12 @@ Generate a brief, encouraging response (≤100 words) acknowledging the complete
 };
 
 // Initialize next event data for crops that don't have it
-const initializeNextEventData = async (crop) => {
+const initializeNextEventData = async (crop, farmContext = null) => {
     if (!crop.derived?.next_event) {
-        const nextEventData = getNextRecommendedEvent(crop);
+        // Use intelligent scheduling if farmContext is available, otherwise fallback to hardcoded
+        const nextEventData = farmContext ? 
+            await getIntelligentNextEvent(crop, farmContext) : 
+            getNextRecommendedEvent(crop);
         const nextEventDue = new Date();
         nextEventDue.setDate(nextEventDue.getDate() + nextEventData.daysUntilNext);
         
@@ -1155,9 +1226,35 @@ const updateCropWithEvent = async (crop, eventType) => {
 };
 
 // Call AI Engine for query processing with Gemini LLM2 fallback
-const processQuery = async (query, cropData, farmContext, userId, user, eventInfo = null) => {
+const processQuery = async (query, cropData, farmContext, userId, user, eventInfo = null, conversationHistory = []) => {
     try {
-        console.log('ProcessQuery called with:', { query, hasCropData: !!cropData, hasEventInfo: !!eventInfo });
+        console.log('ProcessQuery called with:', { query, hasCropData: !!cropData, hasEventInfo: !!eventInfo, hasConversationHistory: conversationHistory.length > 0 });
+        
+        // Check if this is a context-dependent follow-up query
+        if (conversationHistory && conversationHistory.length > 0) {
+            const lowerQuery = query.toLowerCase().trim();
+            
+            // Check for follow-up patterns that reference previous context
+            // Be more specific to avoid treating legitimate questions as follow-ups
+            if (lowerQuery.includes('numbers') || lowerQuery.includes('short') || 
+                lowerQuery.includes('brief') || lowerQuery.includes('summary') ||
+                lowerQuery.includes('just tell') || lowerQuery.includes('only') ||
+                (lowerQuery.includes('price') && lowerQuery.length < 20) ||
+                lowerQuery.includes('cost') || 
+                (lowerQuery.includes('date') && !lowerQuery.includes('when should')) ||
+                (lowerQuery.includes('when') && lowerQuery.length < 15 && !lowerQuery.includes('should'))) {
+                
+                // This seems like a follow-up request, generate context-aware response
+                console.log('Detected context-dependent follow-up query, using conversation history...');
+                
+                // Build conversation context string from conversation history
+                const conversationContext = conversationHistory.slice(-6).map((msg, index) => {
+                    return `${msg.sender === 'user' ? 'User' : 'Assistant'}: ${msg.text}`;
+                }).join('\n');
+                
+                return await generateContextAwareResponse(query, conversationContext);
+            }
+        }
         
         // Try AI Engine first - crop simulation is ALWAYS my_farm mode
         try {
@@ -1414,9 +1511,318 @@ const processQuery = async (query, cropData, farmContext, userId, user, eventInf
     }
 };
 
+
+
+// Generate direct response for simple queries using Perplexity
+const generateDirectResponse = async (message, conversationHistory = []) => {
+    try {
+        const lowerMessage = message.toLowerCase().trim();
+        
+        // Build conversation context if available
+        let conversationContext = '';
+        if (conversationHistory && conversationHistory.length > 0) {
+            const recentMessages = conversationHistory.slice(-6); // Last 6 messages for context
+            conversationContext = recentMessages.map((msg, index) => {
+                return `${msg.sender === 'user' ? 'User' : 'Assistant'}: ${msg.text}`;
+            }).join('\n');
+        }
+        
+        // Handle common queries directly
+        if (lowerMessage.includes('how are you')) {
+            return "I'm doing well, thanks for asking! What can I help you with?";
+        }
+        
+        if (lowerMessage.match(/^(hi|hello|hey|good\s*(morning|evening|afternoon))$/)) {
+            const greetings = [
+                'Hello! How can I help you today?',
+                'Hi there! What can I do for you?',
+                'Hey! How can I assist you?'
+            ];
+            return greetings[Math.floor(Math.random() * greetings.length)];
+        }
+        
+        if (lowerMessage.match(/^(thanks?|thank\s+you)(\s+.*)?$/)) {
+            return "You're welcome! Happy to help!";
+        }
+        
+        // Removed hardcoded date/time responses to allow conversation context to work
+        
+        // Handle help queries
+        if (lowerMessage.includes('help') || lowerMessage.includes('what can you do')) {
+            return 'I can help you with crop management, irrigation advice, pest control, fertilization, weather guidance, and more! What would you like to know?';
+        }
+        
+        // Check if this might be a follow-up query with context
+        if (conversationContext) {
+            // Check for follow-up patterns that reference previous context
+            // Be more specific to avoid treating legitimate questions as follow-ups
+            if (lowerMessage.includes('numbers') || lowerMessage.includes('short') || 
+                lowerMessage.includes('brief') || lowerMessage.includes('summary') ||
+                lowerMessage.includes('just tell') || lowerMessage.includes('only') ||
+                lowerMessage.includes('price') || lowerMessage.includes('cost') ||
+                (lowerMessage.includes('date') && !lowerMessage.includes('when should')) ||
+                (lowerMessage.includes('when') && lowerMessage.length < 15 && !lowerMessage.includes('should'))) {
+                
+                // This seems like a follow-up request, generate context-aware response
+                return await generateContextAwareResponse(message, conversationContext);
+            }
+        }
+        
+        // For other simple queries, use a basic friendly response
+        return 'I\'m here to help! What would you like to know about your farm?';
+        
+    } catch (error) {
+        console.error('Error generating direct response:', error);
+        return 'Hello! How can I help you with your farm today?';
+    }
+};
+
+// Generate context-aware response for follow-up queries
+const generateContextAwareResponse = async (message, conversationContext) => {
+    try {
+        const prompt = `You are a helpful agricultural AI assistant. Based on the recent conversation history and the user's current request, provide a concise, relevant response.
+
+**RECENT CONVERSATION CONTEXT:**
+${conversationContext}
+
+**CURRENT USER REQUEST:** ${message}
+
+**INSTRUCTIONS:**
+- This appears to be a follow-up to the previous conversation
+- If the user is asking for "numbers", "short answer", "brief", etc., they likely want a concise version of previously discussed information
+- If they asked about "date" or "when" after discussing irrigation/activities, provide the specific date mentioned in the context
+- If they mentioned prices/costs and there was market price data in the context, provide that specific information
+- Keep the response under 100 words and very direct
+- Match the user's requested format (numbers only, brief summary, specific dates, etc.)
+- Don't ask what they want to know - they're referencing the previous conversation
+- **NEVER include citations, references, or bracketed annotations like [1], [2], [context] etc. Provide information directly without source references**
+- If you cannot determine what they're referring to from the context, politely ask for clarification
+
+Provide a direct, contextual response:`;
+
+        const response = await fetch(PERPLEXITY_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
+            },
+            body: JSON.stringify({
+                model: "sonar",
+                messages: [
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ],
+                max_tokens: 200,
+                temperature: 0.1,
+                top_p: 0.9
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Context-aware response error: ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        if (result.choices && result.choices[0] && result.choices[0].message) {
+            return result.choices[0].message.content.trim();
+        }
+        
+        return "Could you clarify what specific information you'd like me to provide?";
+        
+    } catch (error) {
+        console.error('Error generating context-aware response:', error);
+        return "Could you please be more specific about what information you'd like?";
+    }
+};
+
+// LLM-based intelligent scheduling with farm context
+const getIntelligentNextEvent = async (crop, farmContext, completedEventType = null) => {
+    try {
+        const currentAge = crop.derived?.days_after_sowing || 0;
+        const currentGrowth = crop.growth_percent || 0;
+        const stage = crop.derived?.stage || "germination";
+        
+        // Get last activity dates
+        const lastIrrigation = crop.derived?.last_irrigation_at ? new Date(crop.derived.last_irrigation_at) : null;
+        const lastFertilization = crop.derived?.last_fertilization_at ? new Date(crop.derived.last_fertilization_at) : null;
+        const lastPestCheck = crop.derived?.last_pest_check_at ? new Date(crop.derived.last_pest_check_at) : null;
+        
+        // Build context for LLM
+        const schedulingPrompt = `You are an expert agricultural advisor tasked with scheduling the next farm activity for a crop. Use the provided context to make intelligent scheduling decisions.
+
+**CROP INFORMATION:**
+- Crop: ${crop.crop_name}
+- Current Age: ${currentAge} days after sowing
+- Growth Stage: ${stage} (${currentGrowth}% complete)
+- Season: ${crop.season}
+- Area: ${crop.area_acres || 1} acres
+
+**LAST ACTIVITIES:**
+- Last Irrigation: ${lastIrrigation ? lastIrrigation.toLocaleDateString() : 'Never'}
+- Last Fertilization: ${lastFertilization ? lastFertilization.toLocaleDateString() : 'Never'}
+- Last Pest Check: ${lastPestCheck ? lastPestCheck.toLocaleDateString() : 'Never'}
+
+**COMPLETED EVENT TODAY:** ${completedEventType || 'None'}
+
+**WEATHER FORECAST:**
+${farmContext.weather?.real_forecast ? 
+  farmContext.weather.real_forecast.time.map((date, i) => 
+    `${date}: ${farmContext.weather.real_forecast.temperature_2m_max[i]}°C, Precipitation: ${farmContext.weather.real_forecast.precipitation_sum[i]}mm`
+  ).join('\\n') : 'No weather data available'}
+
+**SOIL CONDITIONS:**
+- Current Moisture: ${farmContext.soil?.moisture || 'Unknown'}%
+- Temperature: ${farmContext.soil?.temperature || 'Unknown'}°C
+- Type: ${farmContext.soil?.type || 'Unknown'}
+
+**INSTRUCTIONS:**
+1. Consider upcoming weather (rain means delay irrigation, avoid fertilization before heavy rain)
+2. Consider soil moisture levels and crop water needs
+3. Consider standard timing between activities for ${crop.crop_name}
+4. If an activity was just completed, consider appropriate rest periods (1-3 days max)
+5. Prioritize the most urgent activity needed for optimal crop health
+6. Avoid scheduling activities during heavy rain periods (>5mm precipitation)
+7. **RESTRICTION PERIODS**: Keep reasonable - irrigation: 1-2 days, fertilization: 2-3 days, pest_check: 1-2 days
+
+**OUTPUT FORMAT (JSON):**
+{
+  "nextEvent": "irrigation|fertilization|pest_check",
+  "daysUntilNext": <number of days from today (minimum 2 to avoid conflicts with weather)>,
+  "description": "<reason for this timing>",
+  "restrictionDays": <days to wait before next activity (maximum 3 days)>,
+  "reasoning": "<explanation of decision considering weather and soil data>"
+}
+
+Provide scheduling recommendation:`;
+
+        console.log('Calling LLM for intelligent event scheduling...');
+        const response = await fetch(PERPLEXITY_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
+            },
+            body: JSON.stringify({
+                model: "sonar",
+                messages: [
+                    {
+                        role: "user",
+                        content: schedulingPrompt
+                    }
+                ],
+                max_tokens: 500,
+                temperature: 0.1,
+                top_p: 0.9
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`LLM scheduling error: ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        if (result.choices && result.choices[0] && result.choices[0].message) {
+            const llmResponse = result.choices[0].message.content;
+            console.log('LLM scheduling response:', llmResponse);
+            
+            // Try to parse JSON response
+            try {
+                const jsonMatch = llmResponse.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    const schedulingData = JSON.parse(jsonMatch[0]);
+                    console.log('Parsed LLM scheduling data:', schedulingData);
+                    
+                    // Validate and cap restriction days to prevent excessive restrictions
+                    const maxRestrictionDays = completedEventType === 'fertilization' ? 3 : 
+                                             completedEventType === 'pest_check' ? 2 : 2; // irrigation
+                    const restrictionDays = Math.min(Math.max(1, schedulingData.restrictionDays || 1), maxRestrictionDays);
+                    
+                    return {
+                        nextEvent: schedulingData.nextEvent || "irrigation",
+                        daysUntilNext: Math.max(2, schedulingData.daysUntilNext || 3), // Minimum 2 days
+                        description: schedulingData.description || "Regular crop maintenance",
+                        restrictionDays: restrictionDays,
+                        restrictionMessage: `Wait ${restrictionDays} days before next activity`,
+                        reasoning: schedulingData.reasoning || "LLM-based scheduling with weather consideration"
+                    };
+                }
+            } catch (parseError) {
+                console.error('Error parsing LLM scheduling response:', parseError);
+            }
+        }
+        
+        // Fallback to hardcoded logic if LLM fails
+        console.log('LLM scheduling failed, falling back to hardcoded logic');
+        return getNextRecommendedEvent(crop, completedEventType);
+        
+    } catch (error) {
+        console.error('Error in intelligent scheduling:', error);
+        // Fallback to hardcoded logic
+        return getNextRecommendedEvent(crop, completedEventType);
+    }
+};
+
+// Helper function to find next event after restriction period
+const findNextEventAfterRestriction = (crop, stage, restrictionDays) => {
+    // Stage-specific recommendations (same as in getNextRecommendedEvent)
+    const stageRecommendations = {
+        germination: {
+            irrigation: { frequency: 2, description: "Keep soil moist for germination" },
+            fertilization: { frequency: 7, description: "Light starter fertilizer" },
+            pest_check: { frequency: 5, description: "Check for seedling pests" }
+        },
+        seedling: {
+            irrigation: { frequency: 3, description: "Regular watering for growth" },
+            fertilization: { frequency: 10, description: "Balanced NPK fertilizer" },
+            pest_check: { frequency: 7, description: "Monitor for early pest attacks" }
+        },
+        vegetative: {
+            irrigation: { frequency: 3, description: "Deep watering for root development" },
+            fertilization: { frequency: 14, description: "Nitrogen-rich fertilizer for foliage" },
+            pest_check: { frequency: 10, description: "Regular pest and disease monitoring" }
+        },
+        tillering: {
+            irrigation: { frequency: 4, description: "Moderate watering during tillering" },
+            fertilization: { frequency: 14, description: "Balanced fertilizer for tiller development" },
+            pest_check: { frequency: 7, description: "Check for stem borers and leaf diseases" }
+        },
+        flowering: {
+            irrigation: { frequency: 2, description: "Critical watering during flowering" },
+            fertilization: { frequency: 21, description: "Potassium-rich fertilizer for flower development" },
+            pest_check: { frequency: 5, description: "Monitor for flower pests and pollination issues" }
+        },
+        grain_filling: {
+            irrigation: { frequency: 3, description: "Consistent moisture for grain filling" },
+            fertilization: { frequency: 28, description: "Light fertilizer if needed" },
+            pest_check: { frequency: 7, description: "Watch for grain pests and diseases" }
+        },
+        maturity: {
+            irrigation: { frequency: 7, description: "Reduced watering before harvest" },
+            fertilization: { frequency: 999, description: "No fertilization needed" },
+            pest_check: { frequency: 10, description: "Final pest check before harvest" }
+        }
+    };
+    
+    const currentRecommendations = stageRecommendations[stage] || stageRecommendations.vegetative;
+    
+    // For now, return irrigation as the next activity after restriction period
+    // This ensures proper timing is respected
+    return {
+        nextEvent: "irrigation",
+        daysUntilNext: restrictionDays,
+        description: currentRecommendations.irrigation.description,
+        restrictionDays: restrictionDays,
+        restrictionMessage: `Wait ${restrictionDays} more days before next activity due to recent fertilization`
+    };
+};
+
 // Main chat endpoint
 const handleCropSimChat = asyncErrorHandler(async (req, res) => {
-    const { message, cropId, mode = 'my_farm', farmContext: frontendFarmContext } = req.body;
+    const { message, cropId, mode = 'my_farm', farmContext: frontendFarmContext, conversationHistory = [] } = req.body;
     const userId = req.user._id;
 
     console.log('Received chat request:', { message, cropId, mode: 'my_farm', userId });
@@ -1433,7 +1839,29 @@ const handleCropSimChat = asyncErrorHandler(async (req, res) => {
 
     console.log('Processing crop simulation for crop:', cropId);
 
-    // Get the crop and user data
+    // Step 1: Use LLM to classify the message and determine if extra analysis is needed
+    console.log('Classifying message to determine if AI engine analysis is needed...');
+    const detection = await detectEventAndQueryWithGemini(message, conversationHistory);
+    
+    console.log('Classification result:', detection);
+    
+    // If no extra analysis needed, respond directly using Perplexity
+    if (detection.hasQuery && !detection.extraAnalysisDataNeeded) {
+        console.log('Simple query detected, responding directly without AI engine');
+        
+        // Generate direct response using Perplexity with conversation context
+        const directResponse = await generateDirectResponse(message, conversationHistory);
+        
+        return res.status(200).json(
+            new ApiResponse(200, {
+                response: directResponse,
+                crop: null, // No crop updates for simple queries
+                detection: { ...detection, isDirectResponse: true }
+            }, "Direct response generated successfully")
+        );
+    }
+
+    // Get the crop and user data for complex queries requiring analysis
     const [crop, user] = await Promise.all([
         Crop.findOne({
             _id: cropId,
@@ -1510,10 +1938,19 @@ const handleCropSimChat = asyncErrorHandler(async (req, res) => {
     console.log('Built farmContext with real weather/soil data:', JSON.stringify(farmContext, null, 2));
 
     // Initialize next event data if not present
-    const initializedCrop = await initializeNextEventData(crop);
+    const initializedCrop = await initializeNextEventData(crop, farmContext);
 
-    // Step 1: Use Gemini AI to intelligently detect events and queries
-    const detection = await detectEventAndQueryWithGemini(message);
+    // Log initial crop restriction state for debugging
+    console.log('Initial crop restriction state:', {
+        cropId: initializedCrop._id,
+        restrictionActive: initializedCrop.derived?.event_restriction_active,
+        restrictionUntil: initializedCrop.derived?.event_restriction_until,
+        restrictionMessage: initializedCrop.derived?.event_restriction_message,
+        nextEvent: initializedCrop.derived?.next_event,
+        nextEventDue: initializedCrop.derived?.next_event_due_date
+    });
+
+    // detection already done above
     
     let updatedCrop = initializedCrop;
     let eventResponse = null;
@@ -1522,6 +1959,13 @@ const handleCropSimChat = asyncErrorHandler(async (req, res) => {
     // Step 2: Check for event restrictions if event is detected
     if (detection.hasEvent && detection.eventType && detection.eventConfidence > 0.5) {
         const now = new Date();
+        
+        console.log('Checking event restrictions:', {
+            hasRestriction: initializedCrop.derived?.event_restriction_active,
+            restrictionUntil: initializedCrop.derived?.event_restriction_until,
+            currentTime: now.toISOString(),
+            eventType: detection.eventType
+        });
         
         // Check if there's an active restriction
         if (initializedCrop.derived?.event_restriction_active && 
@@ -1532,18 +1976,18 @@ const handleCropSimChat = asyncErrorHandler(async (req, res) => {
             const daysLeft = Math.ceil((restrictionEndDate - now) / (1000 * 60 * 60 * 24));
             
             // Event is restricted - reject with LLM2 response
-            eventResponse = `🚫 **${initializedCrop.derived.event_restriction_message || 'Action restricted'}**\n\n` +
+            eventResponse = `**${initializedCrop.derived.event_restriction_message || 'Action restricted'}**\n\n` +
                           `You need to wait **${daysLeft} more day${daysLeft !== 1 ? 's' : ''}** before performing any farm activities. ` +
                           `**Next recommended activity**: ${initializedCrop.derived.next_event} on **${restrictionEndDate.toLocaleDateString()}**.\n\n` +
-                          `⏰ **Proper timing ensures optimal crop health and prevents over-treatment!**`;
+                          `**Proper timing ensures optimal crop health and prevents over-treatment!**`;
         } else {
             // No restriction - proceed with event
             updatedCrop = await updateCropWithEvent(initializedCrop, detection.eventType);
             
             const growthIncrease = updatedCrop.growth_percent - crop.growth_percent;
             
-            // Get next recommended event after this action
-            const nextEventData = getNextRecommendedEvent(updatedCrop, detection.eventType);
+            // Get next recommended event after this action using intelligent scheduling
+            const nextEventData = await getIntelligentNextEvent(updatedCrop, farmContext, detection.eventType);
             
             // Update crop with next event information and restrictions
             const restrictionUntil = new Date();
@@ -1561,6 +2005,15 @@ const handleCropSimChat = asyncErrorHandler(async (req, res) => {
                 'derived.event_restriction_until': nextEventData.restrictionDays > 0 ? restrictionUntil : null,
                 'derived.event_restriction_message': nextEventData.restrictionMessage || `Wait ${nextEventData.restrictionDays} days before next activity`
             };
+            
+            console.log('Setting restriction data after event:', {
+                eventType: detection.eventType,
+                restrictionActive: nextEventData.restrictionDays > 0,
+                restrictionUntil: restrictionUntil?.toISOString(),
+                restrictionDays: nextEventData.restrictionDays,
+                nextEvent: nextEventData.nextEvent,
+                daysUntilNext: nextEventData.daysUntilNext
+            });
             
             updatedCrop = await Crop.findByIdAndUpdate(
                 updatedCrop._id,
@@ -1582,21 +2035,21 @@ const handleCropSimChat = asyncErrorHandler(async (req, res) => {
                 if (nextEventData.daysUntilNext <= 0) {
                     // Event is due now or overdue
                     if (nextEventData.daysUntilNext === 0) {
-                        nextEventInfo = `\n\n⚠️ **${nextEventData.nextEvent}** is **due now!** ${nextEventData.description}`;
+                        nextEventInfo = `\n\n**${nextEventData.nextEvent}** is **due now!** ${nextEventData.description}`;
                     } else {
                         const overdueDays = Math.abs(nextEventData.daysUntilNext);
-                        nextEventInfo = `\n\n⚠️ **${nextEventData.nextEvent}** is **overdue by ${overdueDays} day${overdueDays !== 1 ? 's' : ''}!** ${nextEventData.description}`;
+                        nextEventInfo = `\n\n**${nextEventData.nextEvent}** is **overdue by ${overdueDays} day${overdueDays !== 1 ? 's' : ''}!** ${nextEventData.description}`;
                     }
                 } else if (nextEventData.daysUntilNext <= 3) {
-                    nextEventInfo = `\n\n📅 **Next activity**: ${nextEventData.nextEvent} in **${nextEventData.daysUntilNext} day${nextEventData.daysUntilNext !== 1 ? 's' : ''}** (${nextEventDue.toLocaleDateString()})\n` +
-                                  `💡 **Purpose**: ${nextEventData.description}`;
+                    nextEventInfo = `\n\n**Next activity**: ${nextEventData.nextEvent} in **${nextEventData.daysUntilNext} day${nextEventData.daysUntilNext !== 1 ? 's' : ''}** (${nextEventDue.toLocaleDateString()})\n` +
+                                  `**Purpose**: ${nextEventData.description}`;
                 } else {
-                    nextEventInfo = `\n\n📅 **Next activity**: ${nextEventData.nextEvent} in **${nextEventData.daysUntilNext} days** on ${nextEventDue.toLocaleDateString()}\n` +
-                                  `💡 **Purpose**: ${nextEventData.description}`;
+                    nextEventInfo = `\n\n**Next activity**: ${nextEventData.nextEvent} in **${nextEventData.daysUntilNext} days** on ${nextEventDue.toLocaleDateString()}\n` +
+                                  `**Purpose**: ${nextEventData.description}`;
                 }
                 
                 if (nextEventData.restrictionDays > 0) {
-                    nextEventInfo += `\n\n🚫 **Farm activities are now restricted for ${nextEventData.restrictionDays} days** to allow proper timing between treatments.`;
+                    nextEventInfo += `\n\n**Farm activities are now restricted for ${nextEventData.restrictionDays} days** to allow proper timing between treatments.`;
                 }
                 
                 eventResponse = baseEventResponse + nextEventInfo;
@@ -1605,33 +2058,33 @@ const handleCropSimChat = asyncErrorHandler(async (req, res) => {
                 
                 // Fallback to simple response
                 const eventMessages = {
-                    irrigation: `🌧️ **Great!** I've recorded your irrigation. Your crop's growth increased by **${growthIncrease.toFixed(1)}%**! Current growth: **${updatedCrop.growth_percent.toFixed(1)}%**`,
-                    fertilization: `🌱 **Excellent!** Fertilization applied. This boosted growth by **${growthIncrease.toFixed(1)}%**! Current growth: **${updatedCrop.growth_percent.toFixed(1)}%**`,
-                    pest_check: `🔍 **Good farming practice!** Pest check completed. Growth boost: **${growthIncrease.toFixed(1)}%**. Current growth: **${updatedCrop.growth_percent.toFixed(1)}%**`
+                    irrigation: `**Great!** I've recorded your irrigation. Your crop's growth increased by **${growthIncrease.toFixed(1)}%**! Current growth: **${updatedCrop.growth_percent.toFixed(1)}%**`,
+                    fertilization: `**Excellent!** Fertilization applied. This boosted growth by **${growthIncrease.toFixed(1)}%**! Current growth: **${updatedCrop.growth_percent.toFixed(1)}%**`,
+                    pest_check: `**Good farming practice!** Pest check completed. Growth boost: **${growthIncrease.toFixed(1)}%**. Current growth: **${updatedCrop.growth_percent.toFixed(1)}%**`
                 };
                 
-                const baseEventResponse = eventMessages[detection.eventType] || `✅ Farm activity recorded. Growth boost: **${growthIncrease.toFixed(1)}%**`;
+                const baseEventResponse = eventMessages[detection.eventType] || `Farm activity recorded. Growth boost: **${growthIncrease.toFixed(1)}%**`;
                 
                 // Add next event information
                 let nextEventInfo = "";
                 if (nextEventData.daysUntilNext <= 0) {
                     // Event is due now or overdue
                     if (nextEventData.daysUntilNext === 0) {
-                        nextEventInfo = `\n\n⚠️ **${nextEventData.nextEvent}** is **due now!** ${nextEventData.description}`;
+                        nextEventInfo = `\n\n**${nextEventData.nextEvent}** is **due now!** ${nextEventData.description}`;
                     } else {
                         const overdueDays = Math.abs(nextEventData.daysUntilNext);
-                        nextEventInfo = `\n\n⚠️ **${nextEventData.nextEvent}** is **overdue by ${overdueDays} day${overdueDays !== 1 ? 's' : ''}!** ${nextEventData.description}`;
+                        nextEventInfo = `\n\n**${nextEventData.nextEvent}** is **overdue by ${overdueDays} day${overdueDays !== 1 ? 's' : ''}!** ${nextEventData.description}`;
                     }
                 } else if (nextEventData.daysUntilNext <= 3) {
-                    nextEventInfo = `\n\n📅 **Next activity**: ${nextEventData.nextEvent} in **${nextEventData.daysUntilNext} day${nextEventData.daysUntilNext !== 1 ? 's' : ''}** (${nextEventDue.toLocaleDateString()})\n` +
-                                  `💡 **Purpose**: ${nextEventData.description}`;
+                    nextEventInfo = `\n\n**Next activity**: ${nextEventData.nextEvent} in **${nextEventData.daysUntilNext} day${nextEventData.daysUntilNext !== 1 ? 's' : ''}** (${nextEventDue.toLocaleDateString()})\n` +
+                                  `**Purpose**: ${nextEventData.description}`;
                 } else {
-                    nextEventInfo = `\n\n📅 **Next activity**: ${nextEventData.nextEvent} in **${nextEventData.daysUntilNext} days** on ${nextEventDue.toLocaleDateString()}\n` +
-                                  `💡 **Purpose**: ${nextEventData.description}`;
+                    nextEventInfo = `\n\n**Next activity**: ${nextEventData.nextEvent} in **${nextEventData.daysUntilNext} days** on ${nextEventDue.toLocaleDateString()}\n` +
+                                  `**Purpose**: ${nextEventData.description}`;
                 }
                 
                 if (nextEventData.restrictionDays > 0) {
-                    nextEventInfo += `\n\n🚫 **Farm activities are now restricted for ${nextEventData.restrictionDays} days** to allow proper timing between treatments.`;
+                    nextEventInfo += `\n\n**Farm activities are now restricted for ${nextEventData.restrictionDays} days** to allow proper timing between treatments.`;
                 }
                 
                 eventResponse = baseEventResponse + nextEventInfo;
@@ -1654,7 +2107,7 @@ const handleCropSimChat = asyncErrorHandler(async (req, res) => {
             };
         }
         
-        queryResponse = await processQuery(queryToProcess, updatedCrop.toObject(), farmContext, userId, user, eventInfo);
+        queryResponse = await processQuery(queryToProcess, updatedCrop.toObject(), farmContext, userId, user, eventInfo, conversationHistory);
     }
 
     // Step 4: Combine responses
@@ -1670,6 +2123,11 @@ const handleCropSimChat = asyncErrorHandler(async (req, res) => {
     }
 
     console.log('Sending final response:', finalResponse);
+    console.log('Backend: Sending crop data to frontend:', {
+        cropId: updatedCrop._id,
+        growth_percent: updatedCrop.growth_percent,
+        hasDetection: !!detection
+    });
 
     res.status(200).json(
         new ApiResponse(200, {

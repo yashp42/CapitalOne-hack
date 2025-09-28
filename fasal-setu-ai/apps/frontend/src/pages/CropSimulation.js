@@ -151,31 +151,58 @@ function CropPlant({ stage, farmData }) {
   // Always load soil texture - this is safe to call unconditionally
   const soilTexture = useLoader(TextureLoader, '/assets/soil-texture.jpg');
 
+  // Create separate texture instances for each soil layer to prevent UV distortion
+  const soilTextures = useMemo(() => {
+    if (!soilTexture) {
+      return [];
+    }
+    
+    const textures = [];
+    const layerConfigs = [
+      { repeat: [2, 2] },      // Main layer
+      { repeat: [2.5, 2.5] },  // Secondary layer  
+      { repeat: [3, 3] },      // Extended layer
+      { repeat: [3.5, 3.5] },  // Fourth layer
+      { repeat: [4, 4] }       // Fifth layer
+    ];
+    
+    layerConfigs.forEach((config, index) => {
+      // Create a completely independent texture clone
+      const texture = soilTexture.clone();
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(config.repeat[0], config.repeat[1]);
+      texture.offset.set(0, 0);
+      texture.needsUpdate = true;
+      
+      textures.push(texture);
+    });
+    
+    return textures;
+  }, [soilTexture]);
+
   // Configure texture properties and mark as ready when loaded
   useEffect(() => {
     if (soilTexture) {
-      // Configure texture wrapping and repeat
+      // Configure main texture properties
       soilTexture.wrapS = soilTexture.wrapT = THREE.RepeatWrapping;
       soilTexture.repeat.set(2, 2);
       soilTexture.offset.set(0, 0);
       
-      // Wait for texture to be fully loaded before marking as ready
-      if (soilTexture.image && soilTexture.image.complete) {
-        setSoilTextureReady(true);
-      } else {
-        // Listen for when texture image loads
-        const checkTextureLoad = () => {
-          if (soilTexture.image && soilTexture.image.complete) {
-            setSoilTextureReady(true);
-          } else {
-            // Check again shortly
-            setTimeout(checkTextureLoad, 100);
-          }
-        };
-        checkTextureLoad();
-      }
+      // Mark texture as ready immediately since useLoader ensures it's loaded
+      setSoilTextureReady(true);
+      console.log('Soil texture configured and ready');
     }
-  }, [soilTexture]);  // Reduced animation frequency for better performance
+
+    // Cleanup function to dispose of cloned textures
+    return () => {
+      soilTextures.forEach(texture => {
+        if (texture && texture.dispose) {
+          texture.dispose();
+        }
+      });
+    };
+  }, [soilTexture, soilTextures]);  // Reduced animation frequency for better performance
   useFrame((state) => {
     // Simpler wind animation - only every 20 seconds instead of 10
     const windCycle = Math.sin(state.clock.elapsedTime * 0.05) * 0.5; // 20-second cycle
@@ -257,30 +284,28 @@ function CropPlant({ stage, farmData }) {
         {/* Main soil layer with realistic texture */}
         <Box args={[fieldWidth, 1, fieldDepth]} position={[0, -0.5, 0]}>
           <meshStandardMaterial 
-            map={soilTexture}
-            color={soilTextureReady ? "#D2B48C" : "#6B4423"} // Sandy brown tint with texture, fallback to brown
+            map={soilTextures[0] || soilTexture}
+            color={"#D2B48C"} // Sandy brown tint with texture
             roughness={0.95}
             metalness={0.05}
-            normalScale={soilTextureReady ? [0.8, 0.8] : [0, 0]}
           />
         </Box>
         
         {/* Secondary soil layer for depth with darker texture */}
         <Box args={[fieldWidth + 10, 0.3, fieldDepth + 8]} position={[0, -0.85, 0]}>
           <meshStandardMaterial 
-            map={soilTexture}
-            color={soilTextureReady ? "#B8906B" : "#5A3A1F"} // Darker sandy brown or fallback
+            map={soilTextures[1] || soilTexture}
+            color={"#B8906B"} // Darker sandy brown
             roughness={0.98}
             metalness={0.02}
-            normalScale={soilTextureReady ? [0.6, 0.6] : [0, 0]}
           />
         </Box>
 
         {/* Extended soil border for seamless appearance */}
         <Box args={[fieldWidth + 20, 0.2, fieldDepth + 16]} position={[0, -1.1, 0]}>
           <meshStandardMaterial 
-            map={soilTexture}
-            color={soilTextureReady ? "#A0824B" : "#4A3A1F"} // Even darker sandy brown
+            map={soilTextures[2] || soilTexture}
+            color={"#A0824B"} // Even darker sandy brown
             roughness={0.99}
             metalness={0.01}
           />
@@ -289,8 +314,8 @@ function CropPlant({ stage, farmData }) {
         {/* Fourth soil layer for massive field coverage */}
         <Box args={[fieldWidth + 30, 0.15, fieldDepth + 24]} position={[0, -1.3, 0]}>
           <meshStandardMaterial 
-            map={soilTexture}
-            color={soilTextureReady ? "#8B7355" : "#3A2A1F"} // Deep brown soil
+            map={soilTextures[3] || soilTexture}
+            color={"#8B7355"} // Deep brown soil
             roughness={0.99}
             metalness={0.01}
           />
@@ -299,8 +324,8 @@ function CropPlant({ stage, farmData }) {
         {/* Fifth soil layer for ultra-massive coverage */}
         <Box args={[fieldWidth + 40, 0.1, fieldDepth + 32]} position={[0, -1.45, 0]}>
           <meshStandardMaterial 
-            map={soilTexture}
-            color={soilTextureReady ? "#6B5A3D" : "#2A1A0F"} // Deepest soil foundation
+            map={soilTextures[4] || soilTexture}
+            color={"#6B5A3D"} // Deepest soil foundation
             roughness={0.99}
             metalness={0.01}
           />
@@ -1293,10 +1318,17 @@ const CropSimulation = () => {
       // Crop simulation always uses my_farm mode with crop-specific context
       console.log('Using crop simulation API in my_farm mode');
       console.log('Sending farm context with real weather/soil data:', JSON.stringify(farmContext, null, 2));
+      // Build conversation history for context
+      const conversationHistory = chatMessages.map(msg => ({
+        sender: msg.isBot ? 'assistant' : 'user',
+        text: msg.text
+      }));
+
       response = await cropSimChatAPI.sendMessage({
         message: currentMessage,
         cropId: cropId,
         farmContext: farmContext,
+        conversationHistory: conversationHistory,
         mode: 'my_farm' // Crop simulation always uses my_farm mode
       });
 
@@ -1310,6 +1342,8 @@ const CropSimulation = () => {
           // Handle crop simulation response with crop updates
           const oldStage = cropStage;
           const newStage = response.data.crop.growth_percent;
+          console.log('Frontend: Updating crop stage from', oldStage, 'to', newStage);
+          console.log('Frontend: Received crop data:', response.data.crop);
           setCropStage(newStage);
           setCurrentCrop(response.data.crop);
           updatedCropData = response.data.crop;
@@ -1421,8 +1455,8 @@ const CropSimulation = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-secondary-100 via-white to-secondary-100 pt-20 sm:pt-24 pb-8 sm:pb-12">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[90rem]">
+    <div className="min-h-screen bg-gradient-to-r from-yellow-200/30 via-secondary-200/80 to-secondary-200 pt-20 sm:pt-24 pb-8 sm:pb-12">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 sm:max-w-[75vw]">
         <motion.div
           initial="hidden"
           animate="visible"
@@ -1430,12 +1464,24 @@ const CropSimulation = () => {
           className="space-y-8 lg:grid lg:grid-cols-5 lg:gap-8 lg:space-y-0 items-start"
         >
           {/* Main Content Area - Reordered for mobile */}
-          <div className="lg:col-span-3 lg:col-start-1 space-y-4 sm:space-y-6 lg:order-1 rounded-lg overflow-hidden mx-auto w-full">
+          <div className="relative lg:col-span-3 lg:col-start-1 space-y-4 sm:space-y-6 lg:order-1 rounded-lg mx-auto w-full" style={{ overflow: 'visible' }}>
+            {/* Agricultural Robot - Behind the entire main content area (hidden on mobile) */}
+            <div className="hidden lg:block absolute -left-52 bottom-24 transform z-0 pointer-events-none">
+              <img 
+                src="/assets/Gemini_Generated_Image_31w3xn31w3xn31w3-removebg-preview.png" 
+                alt="Agricultural Robot" 
+                className="w-96 h-auto duration-300"
+                style={{ 
+                  transform: 'rotate(-3deg) scale(1.1)',
+                  filter: 'drop-shadow(8px 10px 20px rgba(0,0,0,0.25))'
+                }}
+              />
+            </div>
             
             {/* Real Crop Growth Visualization */}
             <motion.div
               variants={itemVariants}
-              className="bg-primary-500/20 shadow-sm p-6 mb-8 rounded-lg"
+              className="relative bg-white shadow-sm p-6 mb-8 rounded-lg z-10 border-2 border-primary-300/60"
             >
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b border-gray-200">
                 <h2 className="text-2xl font-bold text-black mb-4 sm:mb-0">{harvestData && `Your ${harvestData.crop_name.charAt(0).toUpperCase() + harvestData.crop_name.slice(1) || 'Crop'} Field Visualization`}</h2>
@@ -1446,7 +1492,7 @@ const CropSimulation = () => {
                   </div>
                   <div className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-secondary-50 to-secondary-100 rounded-lg border border-secondary-200/50">
                     <FaSeedling className="text-secondary-700 text-sm" />
-                    <span className="text-sm font-medium text-secondary-800">{farmData.cropStage}</span>
+                    <span className="text-sm font-medium text-secondary-800">{Math.round(cropStage)}%</span>
                   </div>
                 </div>
               </div>
@@ -1513,7 +1559,7 @@ const CropSimulation = () => {
           {/* Chatbot Sidebar */}
           <motion.div
             variants={itemVariants}
-            className="lg:col-span-2 lg:col-start-4 lg:order-2 w-full max-w-full bg-gradient-to-br from-white to-primary-50/30 rounded-lg border-2 border-secondary-500/20 shadow-sm p-4 sm:p-6 h-fit max-h-[calc(100vh-50px)] lg:sticky lg:top-24 overflow-hidden"
+            className="lg:col-span-2 lg:col-start-4 lg:order-2 w-full max-w-full bg-gradient-to-br from-white to-primary-400/30 rounded-lg border-2 border-primary-300/60 shadow-sm p-4 sm:p-6 h-fit max-h-[calc(100vh-45px)] lg:sticky lg:top-[120px] overflow-hidden"
           >
             <div className="flex items-center space-x-3 mb-6 pb-4 border-b border-gray-200/50">
               <div className="w-8 h-8 bg-gradient-to-br from-primary-100 to-primary-200 rounded-lg flex items-center justify-center border border-primary-300/50">
@@ -1682,7 +1728,7 @@ const CropSimulation = () => {
             {/* Dashboard */}
             <motion.div
               variants={itemVariants}
-              className="bg-primary-500/20 rounded-lg border border-secondary-200/50 shadow-sm p-8 w-full"
+              className="bg-white rounded-lg border-2 border-primary-200/70 shadow-md p-8 w-full"
             >
               <div className="mb-8">
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">Farm Analytics</h2>
@@ -1690,7 +1736,7 @@ const CropSimulation = () => {
               </div>
               
               {/* Key Metrics */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
                 <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200/50 rounded-lg p-4 text-center shadow-sm">
                   <FaTemperatureHigh className="text-xl text-primary-600 mx-auto mb-2" />
                   <p className="text-xs font-medium text-gray-600 mb-1">Temperature</p>
