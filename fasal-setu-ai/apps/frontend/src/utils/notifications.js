@@ -22,7 +22,7 @@ class CropNotificationManager {
             console.log('Service Worker is ready');
 
             // Get VAPID public key
-            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/notifications/vapid-public-key`);
+            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080/api'}/notifications/vapid-public-key`);
             
             if (!response.ok) {
                 throw new Error(`Failed to fetch VAPID key: ${response.status}`);
@@ -74,7 +74,7 @@ class CropNotificationManager {
 
             // Send subscription to server
             console.log('Sending subscription to server...');
-            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/notifications/subscribe`, {
+            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080/api'}/notifications/subscribe`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -102,7 +102,7 @@ class CropNotificationManager {
                 await subscription.unsubscribe();
             }
 
-            await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/notifications/unsubscribe`, {
+            await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8080/api'}/notifications/unsubscribe`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
