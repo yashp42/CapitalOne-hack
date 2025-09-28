@@ -62,6 +62,18 @@ router.post("/synthesize", async (req, res) => {
 });
 
 /**
+ * GET /api/tts/test
+ * Simple test endpoint to verify routes are working
+ */
+router.get("/test", (req, res) => {
+  res.json({
+    message: "TTS routes are working!",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV
+  });
+});
+
+/**
  * GET /api/tts/health
  * Health check endpoint for TTS service
  */
