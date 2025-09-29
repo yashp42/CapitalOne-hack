@@ -420,7 +420,7 @@ const Chatbot = () => {
   };
 
   return (
-    <div className="h-screen bg-gray-50 relative overflow-hidden page-wrapper"
+    <div className="h-dvh bg-gray-50 relative overflow-hidden page-wrapper"
       style={{
         minHeight: '100svh',     /* stable on iOS 16+ */
         minHeight: '100dvh',     /* newer devices */
