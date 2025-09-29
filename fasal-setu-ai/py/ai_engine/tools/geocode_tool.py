@@ -1,24 +1,36 @@
 """
 Geocode tool (offline, deterministic)
 
-Looks up centroid lat/lon for (state, district) from:
-  data/static_json/geo/district_centroids.json
+Enhanced with Kerala village-level resolution. Looks up:
+1. Kerala villages from data/static_json/geo/kerala_villages.json
+2. District centroids from data/static_json/geo/district_centroids.json
 
-Input args (must use one of these formats):
-    - {"state": "...", "district": "..."}  # Preferred: explicit pair
-    - {"query": "District, State"}         # Will parse "district, state" in either order
-
-Fallback (low confidence) supported ONLY for district-only when LLM omitted state (state inferred).
+Input args (formats in order of precedence):
+    - {"state": "Kerala", "village": "..."} # Kerala village lookup
+    - {"state": "...", "district": "..."}   # District centroid lookup
+    - {"query": "Village/District, State"}  # Free text parsing
 
 Returns (common envelope):
 {
-  "data": { "lat": 13.21, "lon": 77.64, "matched_state": "Karnataka",
-            "matched_district": "Bengaluru Rural",
-            "confidence": 0.95, "method": "static_centroid" },
-  "source_stamp": { "type":"local_dataset", "path":"data/static_json/geo/district_centroids.json" }
+  "data": {
+    "lat": 13.21, 
+    "lon": 77.64, 
+    "matched_state": "Kerala",
+    "matched_district": "Ernakulam",
+    "matched_village": "Kalady",  # Only for Kerala village matches
+    "confidence": 0.95, 
+    "method": "kerala_village" | "static_centroid"
+  },
+  "source_stamp": { 
+    "type": "local_dataset",
+    "path": "data/static_json/geo/{dataset}.json"
+  }
 }
 
-Note: Planner SHOULD still provide both district + state. Do NOT rely on state-only calls; choose a district (e.g. capital) instead.
+Special handling for Kerala:
+- Village name triggers exact lookup in kerala_villages.json
+- Falls back to district centroid if village not found
+- Higher confidence (0.98) for village-level matches
 """
 from __future__ import annotations
 
@@ -38,7 +50,8 @@ except Exception:  # fallback for script-mode execution
         GEO_DIR = Path(__file__).resolve().parent / ".." / "data" / "static_json" / "geo"
         GEO_DIR = GEO_DIR.resolve()
 
-DATA_PATH = GEO_DIR / "district_centroids.json"
+DISTRICT_CENTROIDS_PATH = GEO_DIR / "district_centroids.json"
+KERALA_VILLAGES_PATH = GEO_DIR / "kerala_villages.json"
 
 # common aliases (extend as needed)
 _STATE_ALIASES = {
@@ -90,10 +103,11 @@ def _alias_district(s: str) -> str:
 
 
 @lru_cache(maxsize=1)
-def _load_rows() -> List[Dict[str, Any]]:
-    if not DATA_PATH.exists():
-        raise FileNotFoundError(f"Geo file not found: {DATA_PATH}")
-    with open(DATA_PATH, "r", encoding="utf-8") as f:
+def _load_district_centroids() -> List[Dict[str, Any]]:
+    """Load and cache district centroids data"""
+    if not DISTRICT_CENTROIDS_PATH.exists():
+        raise FileNotFoundError(f"Geo file not found: {DISTRICT_CENTROIDS_PATH}")
+    with open(DISTRICT_CENTROIDS_PATH, "r", encoding="utf-8") as f:
         data = json.load(f)
     # accept both {"records":[...]} and plain list [...]
     rows = data.get("records", data)
@@ -105,10 +119,31 @@ def _load_rows() -> List[Dict[str, Any]]:
         r["_district_norm"] = _alias_district(r.get("district"))
     return rows
 
+@lru_cache(maxsize=1)
+def _load_kerala_villages() -> List[Dict[str, Any]]:
+    """Load and cache Kerala villages data"""
+    if not KERALA_VILLAGES_PATH.exists():
+        return []  # graceful degradation if villages file not found
+    try:
+        with open(KERALA_VILLAGES_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data.get("records", [])
+    except Exception:
+        return []  # graceful degradation on any error
+
+
+def _find_kerala_village(village: str) -> Optional[Dict[str, Any]]:
+    """Find Kerala village by exact name match"""
+    village_norm = _norm(village)
+    for record in _load_kerala_villages():
+        if (_norm(record.get("village", "")) == village_norm and 
+            _norm(record.get("state", "")) == "kerala"):
+            return record
+    return None
 
 def _find_exact(state: str, district: str) -> Optional[Dict[str, Any]]:
     s, d = _alias_state(state), _alias_district(district)
-    for r in _load_rows():
+    for r in _load_district_centroids():
         if r["_state_norm"] == s and r["_district_norm"] == d:
             return r
     return None
@@ -116,14 +151,15 @@ def _find_exact(state: str, district: str) -> Optional[Dict[str, Any]]:
 
 def _best_by_district_only(district: str) -> Optional[Tuple[Dict[str, Any], float]]:
     d = _alias_district(district)
-    cand = [r for r in _load_rows() if r["_district_norm"] == d]
+    rows = _load_district_centroids()
+    cand = [r for r in rows if r["_district_norm"] == d]
     if cand:
         return cand[0], 0.80  # ambiguous but exact district string
     # fuzzy on district
-    all_d = list({r["_district_norm"] for r in _load_rows()})
+    all_d = list({r["_district_norm"] for r in rows})
     close = get_close_matches(d, all_d, n=1, cutoff=0.88)
     if close:
-        for r in _load_rows():
+        for r in rows:
             if r["_district_norm"] == close[0]:
                 return r, 0.70
     return None
@@ -155,7 +191,28 @@ def run(args: Dict[str, Any]) -> Dict[str, Any]:
     # validate input
     state = args.get("state")
     district = args.get("district")
+    village = args.get("village")
     query = args.get("query")
+    
+    # Special handling for Kerala village lookup
+    if village and (not state or state.lower() == "kerala"):
+        village_record = _find_kerala_village(village)
+        if village_record:
+            return {
+                "data": {
+                    "lat": float(village_record["lat"]),
+                    "lon": float(village_record["lon"]),
+                    "matched_state": "Kerala",
+                    "matched_district": village_record["district"],
+                    "matched_village": village_record["village"],
+                    "confidence": 0.98,
+                    "method": "kerala_village"
+                },
+                "source_stamp": {
+                    "type": "local_dataset",
+                    "path": "data/static_json/geo/kerala_villages.json"
+                }
+            }
 
     parsed_variant_tried = False
     if (not state or not district) and query:

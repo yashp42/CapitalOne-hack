@@ -10,14 +10,16 @@ Rules:
 - Output STRICT JSON only. No prose, no code fences.
 - "missing" MUST be an array. Use [] if nothing is missing.
 - You can chain multiple tool calls. For example:
-  1. Use geocode_tool to get coordinates from state/district
+  1. Use geocode_tool to get coordinates from state/district/village
   2. Use those coordinates in weather_outlook
   3. Use the weather data for decision making
 - Allowed tools and their capabilities:
-  - geocode_tool: {state, district} → {lat, lon} for any Indian district
+  - geocode_tool: 
+    Kerala format: {state: "Kerala", village: "Village Name"} → {lat, lon, district}
+    Other states: {state, district} → {lat, lon}
   - weather_outlook: {lat, lon, days?} → daily/hourly weather forecast
   - prices_fetch: {state, district, commodity?} → mandi prices
-  - regional_crop_info: {state, district, crop?} → comprehensive crop data (varieties, calendars, practices, contingencies, soil/weather requirements)
+  - regional_crop_info: {state, district, crop?} → comprehensive crop data
   - policy_match: {state, profile} → matching policies
   - pesticide_lookup: {crop, pest, stage?} → safe pesticides
   - storage_find: {state, district, lat?, lon?} → storage facilities
@@ -25,23 +27,42 @@ Rules:
   - soil_api: {lat, lon} → soil properties
   - web_search: {query} → web results
 - For location-based queries:
-  1. If lat/lon present → use directly in weather_outlook/soil_api
-  2. If state/district present → use geocode_tool first
-  3. If only state is present (district missing): do NOT mark district as missing.
-    - Treat state-only as sufficient: call `regional_crop_info` with {"state": "<state>"} to get state-wide info.
-    - For weather_outlook, call `geocode_tool` with a free-text query for the state's capital (e.g. {"query": "Patna, Bihar"}) or {"query": "<state> capital"} so the pipeline can get lat/lon.
-  4. If location unclear and no state/district → add ["lat","lon"] to missing
+  1. Kerala-specific resolution:
+     - If village mentioned: Use {"state": "Kerala", "village": "village_name"}
+     - Village lookup returns district automatically for regional_crop_info
+     - Higher confidence (0.98) for village matches
+     - Fall back to district if village not found
+  
+  2. Standard location resolution:
+     - If lat/lon present → use directly in weather_outlook/soil_api
+     - If state/district present → use geocode_tool first
+     - If only state present:
+       * Use for regional_crop_info as-is
+       * For weather: use state capital coordinates
+     - If location unclear → add ["lat","lon"] to missing
   
   Geocode best-practices for the planner (use these examples when composing tool_calls):
-  - Prefer structured args when available:
+  
+  Kerala-specific examples:
+  - Village-level resolution (preferred for Kerala):
+    {"tool": "geocode_tool", "args": {"state": "Kerala", "village": "Kalady"}}
+  - District-level fallback:
+    {"tool": "geocode_tool", "args": {"state": "Kerala", "district": "Ernakulam"}}
+    
+  Standard examples for other states:
+  - Structured state+district:
     {"tool": "geocode_tool", "args": {"state": "Karnataka", "district": "Bengaluru Rural"}}
-  - If farmer query mentions only a district name, YOU must determine the appropriate state for that district before calling geocode_tool:
+  - District with inferred state:
     {"tool": "geocode_tool", "args": {"state": "Uttar Pradesh", "district": "Varanasi"}}
-  - If farmer query contains a free-text location, format as "District, State" and call geocode with query:
+  - Free-text location:
     {"tool": "geocode_tool", "args": {"query": "Bengaluru Rural, Karnataka"}}
-  - If only state is known, query the state capital (do not add district to missing):
+  - State capital for state-only:
     {"tool": "geocode_tool", "args": {"query": "<state> capital"}}
-  - Do not report missing ["lat","lon"] if you plan to call geocode_tool; call geocode_tool instead and use its result to fill lat/lon for downstream tools.
+    
+  Remember:
+  - Kerala villages provide highest precision
+  - Do not report missing ["lat","lon"] if geocode_tool will be called
+  - Chain tool results properly (lat/lon → weather, district → crop info)
 - Use farmer profile fields when available. Do not invent values.
 - For greetings/smalltalk → use general_answer only.
 - If the query doesn't clearly fit into any specific intent category (irrigation, variety selection, temperature risk, etc.), use the "other" intent with "general_information" template.
