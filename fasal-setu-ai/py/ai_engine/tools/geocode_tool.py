@@ -132,13 +132,58 @@ def _load_kerala_villages() -> List[Dict[str, Any]]:
         return []  # graceful degradation on any error
 
 
-def _find_kerala_village(village: str) -> Optional[Dict[str, Any]]:
-    """Find Kerala village by exact name match"""
+def _find_kerala_village(village: str, district: Optional[str] = None) -> Tuple[Optional[Dict[str, Any]], float]:
+    """Find Kerala village with fuzzy matching and district validation"""
     village_norm = _norm(village)
-    for record in _load_kerala_villages():
-        if (_norm(record.get("village", "")) == village_norm and 
-            _norm(record.get("state", "")) == "kerala"):
-            return record
+    villages = _load_kerala_villages()
+    
+    # Exact match with district validation
+    if district:
+        district_norm = _norm(district)
+        for record in villages:
+            if (record["_village_norm"] == village_norm and
+                record["_district_norm"] == district_norm):
+                return record, 1.0
+    
+    # Exact match without district
+    exact_matches = []
+    for record in villages:
+        if record["_village_norm"] == village_norm:
+            exact_matches.append(record)
+    
+    if len(exact_matches) == 1:
+        return exact_matches[0], 0.98
+    elif len(exact_matches) > 1:
+        # If district provided, try to find best match
+        if district:
+            district_norm = _norm(district)
+            for record in exact_matches:
+                if record["_district_norm"] == district_norm:
+                    return record, 0.98
+    
+    # Fuzzy matching if no exact match
+    village_names = [r["_village_norm"] for r in villages]
+    matches = get_close_matches(village_norm, village_names, n=1, cutoff=0.85)
+    
+    if matches:
+        for record in villages:
+            if record["_village_norm"] == matches[0]:
+                return record, 0.85
+    
+    return None, 0.0
+
+def _get_district_village(district: str) -> Optional[Dict[str, Any]]:
+    """Get a representative village from a district"""
+    district_norm = _norm(district)
+    villages = _load_kerala_villages()
+    
+    # Get all villages in district
+    district_villages = [v for v in villages if v.get("_district_norm") == district_norm]
+    
+    if district_villages:
+        # Return a consistent village (first one)
+        return district_villages[0]
+    
     return None
 
 def _find_exact(state: str, district: str) -> Optional[Dict[str, Any]]:
@@ -194,25 +239,85 @@ def run(args: Dict[str, Any]) -> Dict[str, Any]:
     village = args.get("village")
     query = args.get("query")
     
-    # Special handling for Kerala village lookup
-    if village and (not state or state.lower() == "kerala"):
-        village_record = _find_kerala_village(village)
-        if village_record:
-            return {
-                "data": {
-                    "lat": float(village_record["lat"]),
-                    "lon": float(village_record["lon"]),
-                    "matched_state": "Kerala",
-                    "matched_district": village_record["district"],
-                    "matched_village": village_record["village"],
-                    "confidence": 0.98,
-                    "method": "kerala_village"
-                },
-                "source_stamp": {
-                    "type": "local_dataset",
-                    "path": "data/static_json/geo/kerala_villages.json"
+    # Special handling for Kerala location resolution
+    if state and state.lower() == "kerala" or (village and not state):
+        # 1. Village-level resolution
+        if village:
+            village_record, confidence = _find_kerala_village(village, district)
+            if village_record:
+                return {
+                    "data": {
+                        "lat": float(village_record["lat"]),
+                        "lon": float(village_record["lon"]),
+                        "matched_state": "Kerala",
+                        "matched_district": village_record["district"],
+                        "matched_village": village_record["village"],
+                        "confidence": confidence,
+                        "method": "kerala_village"
+                    },
+                    "source_stamp": {
+                        "type": "local_dataset",
+                        "path": "data/static_json/geo/kerala_villages.json"
+                    }
                 }
-            }
+        
+        # 2. District-level resolution with village coordinates
+        if district:
+            # Try to get a representative village from the district
+            district_village = _get_district_village(district)
+            if district_village:
+                return {
+                    "data": {
+                        "lat": float(district_village["lat"]),
+                        "lon": float(district_village["lon"]),
+                        "matched_state": "Kerala",
+                        "matched_district": district,
+                        "matched_village": district_village["village"],
+                        "confidence": 0.90,
+                        "method": "kerala_district_village"
+                    },
+                    "source_stamp": {
+                        "type": "local_dataset",
+                        "path": "data/static_json/geo/kerala_villages.json"
+                    }
+                }
+            
+            # Fallback to district centroid
+            district_record = _find_exact("kerala", district)
+            if district_record:
+                return {
+                    "data": {
+                        "lat": float(district_record["lat"]),
+                        "lon": float(district_record["lon"]),
+                        "matched_state": "Kerala",
+                        "matched_district": district_record["district"],
+                        "confidence": 0.85,
+                        "method": "kerala_district_centroid"
+                    },
+                    "source_stamp": {
+                        "type": "local_dataset",
+                        "path": "data/static_json/geo/district_centroids.json"
+                    }
+                }
+                
+        # 3. State-level resolution (use capital district)
+        if not district and not village:
+            capital_record = _find_exact("kerala", "thiruvananthapuram")
+            if capital_record:
+                return {
+                    "data": {
+                        "lat": float(capital_record["lat"]),
+                        "lon": float(capital_record["lon"]),
+                        "matched_state": "Kerala",
+                        "matched_district": "Thiruvananthapuram",
+                        "confidence": 0.80,
+                        "method": "kerala_state_capital"
+                    },
+                    "source_stamp": {
+                        "type": "local_dataset",
+                        "path": "data/static_json/geo/district_centroids.json"
+                    }
+                }
 
     parsed_variant_tried = False
     if (not state or not district) and query:

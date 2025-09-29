@@ -42,16 +42,41 @@ storage_find: Warehouses/storage {state, district?, lat?, lon?, limit?}.
 rag_search: Knowledge retrieval {query, k?}.
 web_search: Real-time web for explicit "latest" / news / export demand queries.
 
-CHAIN PATTERNS (REFERENCE)
---------------------------
-Irrigation: geocode_tool → weather_outlook (+ soil_api if moisture/pH) → regional_crop_info (stage norms) → rag_search (thresholds)
-Temperature risk: geocode_tool (if needed) → weather_outlook(days:7) → regional_crop_info(crop) → rag_search("<crop> temperature threshold <stage>")
-Variety selection: regional_crop_info → rag_search (trait comparison) (weather_outlook only if climate suitability implied)
-Variety selection special rule: If user supplies a specific district (e.g. "Ludhiana, Punjab") and asks which crop/variety to plant, fetch district weather (geocode_tool + weather_outlook) BUT call regional_crop_info with only the state (omit district) to retrieve the full state-wide crop list for broader ranking. This preserves local weather context while expanding candidate set.
-Market advisory: regional_crop_info (for crop list if unspecified) → prices_fetch (each candidate commodity) → storage_find (if holding decision) → rag_search (profitability patterns) → web_search (only if explicit recent trend/news)
-Credit/policy: policy_match → rag_search (if clarification) (web_search only if explicit current announcement)
-Pesticide: regional_crop_info (if stage context missing) → pesticide_lookup → rag_search (IPM / resistance) → weather_outlook (if spray timing/weather risk mentioned)
-Soil/nutrient: geocode_tool → soil_api → rag_search("<crop> nutrient recommendation <soil attribute>") → regional_crop_info
+TOOL CHAINING PATTERNS
+---------------------
+1. Sequential Chains (Dependencies)
+   a) Irrigation Decision:
+      geocode_tool → weather_outlook → soil_api
+      THEN regional_crop_info → rag_search
+      WHY: Location feeds weather, weather+soil inform timing
+
+   b) Temperature Risk:
+      [geocode_tool + weather_outlook(days:7)] PARALLEL
+      THEN regional_crop_info 
+      THEN rag_search("<crop> temperature threshold")
+      WHY: Weather and crop data can load concurrently
+
+2. Parallel Processing
+   a) Market Analysis:
+      prices_fetch(commodity1) | prices_fetch(commodity2) | storage_find
+      WHY: Price queries are independent
+
+   b) Location Context:
+      weather_outlook | soil_api | regional_crop_info
+      WHY: Same location, different data types
+
+3. Hybrid Patterns
+   a) Pesticide Advisory:
+      [weather_outlook | regional_crop_info] PARALLEL
+      THEN pesticide_lookup(crop, stage) 
+      THEN rag_search("resistance management")
+      WHY: Weather/crop parallel, pesticide selection sequential
+
+   b) Variety Selection:
+      regional_crop_info(state-wide)
+      THEN [weather_outlook | soil_api] PARALLEL
+      THEN rag_search("variety traits")
+      WHY: Get varieties first, then local conditions
 General conceptual: rag_search first if no actionable data; else gather structured first.
 
 LOCATION HANDLING
