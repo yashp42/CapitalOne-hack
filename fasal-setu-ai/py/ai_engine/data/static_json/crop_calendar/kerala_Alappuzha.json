@@ -1,0 +1,138 @@
+{
+  "state": "Kerala",
+  "district": "Alappuzha",
+  "agro_climatic_zone": "Problem Areas, KE-5 (NARP)",
+  "source_type": "CRIDA_contingency",
+  "source_url": null,
+  "doc_date": "2011-06-30",
+  "last_checked": null,
+  "normal_annual_rain_mm": 2252,
+  "rainfall_pattern_notes": "SW monsoon (June-Sep) ~1511 mm, NE monsoon (Oct-Dec) ~464 mm, Winter (Jan-Mar) ~94 mm, Summer (Apr-May) ~430 mm",
+  "dominant_soils": ["Laterite", "Clay loam", "Sandy loam", "Kari soils", "Coastal sandy soils"],
+  "crops": [
+    {
+      "crop_name": "paddy",
+      "season": "Kharif",
+      "planting_window": { "start": "04-01", "end": "08-31" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": null, "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "delayed_onset",
+          "stage_window": "early season drought",
+          "measures": [
+            "Shift sowing dates by 2-4 weeks depending on onset",
+            "Use medium/short duration varieties instead of long-duration photosensitive ones",
+            "Transplant instead of dibbling under delay",
+            "Apply organic manures to improve soil moisture retention",
+            "Provide life-saving irrigation"
+          ],
+          "alt_crops": ["sesame", "pulses", "vegetables"],
+          "inputs_support_notes": "Seed agencies, NREGS, CLDP, micro-irrigation schemes",
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "mid_season_drought",
+          "stage_window": "vegetative to flowering",
+          "measures": [
+            "Provide irrigation facilities",
+            "Weed control",
+            "Organic matter application",
+            "Life-saving irrigation for banana and vegetables in intercrops"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "late_season_drought",
+          "stage_window": "terminal drought",
+          "measures": [
+            "Harvest rice at physiological maturity",
+            "Provide irrigation for intercrops like banana and vegetables"
+          ],
+          "alt_crops": ["sesame", "pulses", "vegetables"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "flooding",
+          "stage_window": "seedling to harvest",
+          "measures": [
+            "Elevate bunds above flood mark around padashekarams",
+            "Drain excess water using pumps",
+            "Use flood tolerant varieties",
+            "Apply foliar sprays (KNO3 or urea + MOP) if root damage occurs",
+            "Use combine harvesters and salt-mix drying for wet grain"
+          ],
+          "alt_crops": ["vegetables", "banana", "tuber crops"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "sea_water_intrusion",
+          "stage_window": "below MSL paddy lands",
+          "measures": [
+            "Operate Thanneer Mukkam Barrage in consultation with crop calendar",
+            "Use saline tolerant varieties",
+            "Apply gypsum",
+            "Seal and flood fields with fresh water before barrage operation"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "sesame",
+      "season": "Kharif",
+      "planting_window": { "start": "04-01", "end": "06-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": null, "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "excess_rain",
+          "stage_window": "vegetative to maturity",
+          "measures": [
+            "Provide drainage",
+            "Harvest at physiological maturity",
+            "Store properly to avoid damage"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["sesame"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    }
+  ],
+  "dataset_sources": [
+    {
+      "key": "CRIDA_2011",
+      "title": "CRIDA Contingency Crop Planning for Kerala - Alappuzha",
+      "url": null,
+      "tier": "primary",
+      "last_checked": null
+    }
+  ]
+}
