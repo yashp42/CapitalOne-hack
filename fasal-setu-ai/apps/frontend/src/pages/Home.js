@@ -17,6 +17,7 @@ const Home = () => {
   const [currentLanguageIndex, setCurrentLanguageIndex] = useState(0);
   const [heroImageLoaded, setHeroImageLoaded] = useState(false);
   const [aboutImageLoaded, setAboutImageLoaded] = useState(false);
+  const [mockupLoaded, setMockupLoaded] = useState(false);
 
   // Language variations for the tagline - focused on Kerala
   const taglineLanguages = [
@@ -208,7 +209,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gray-50 relative overflow-x-hidden page-wrapper">
       {/* Hero Section */}
-      <section className="relative bg-section flex items-center justify-center overflow-hidden" style={{ paddingTop: '6rem', paddingBottom: '2rem' }}>
+      <section className="relative bg-section overflow-hidden h-screen max-h-screen">
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           {/* Gradient Fallback - Shows immediately while image loads */}
@@ -243,194 +244,177 @@ const Home = () => {
         />
 
         {/* Hero Content */}
-        <div className="relative z-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 min-h-[calc(100vh-8rem)] items-center">
-            {/* Left Content */}
-            <motion.div 
-              initial="hidden"
-              animate="visible"
-              variants={containerVariants}
-              className="flex flex-col justify-center space-y-4 sm:space-y-6 lg:space-y-8 text-center lg:text-left order-1 lg:order-1"
-            >
-              {/* Badge */}
+        <div className="relative z-10 h-full flex items-center px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-0 pb-4 lg:pb-0">
+          <div className="w-full max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12 h-full lg:items-center">
+              {/* Left Content */}
               <motion.div 
-                variants={itemVariants}
-                className="flex justify-center lg:justify-start"
+                initial="hidden"
+                animate="visible"
+                variants={containerVariants}
+                className="flex flex-col justify-center space-y-2 sm:space-y-4 lg:space-y-6 text-center lg:text-left order-1 lg:order-1"
               >
-                <div className="inline-block px-4 sm:px-5 py-2 rounded-full bg-gradient-to-r from-primary-100/80 to-secondary-100/80 backdrop-blur-sm border border-primary-300/50">
-                  <span className="text-primary-700 text-xs sm:text-sm font-medium">AI Solutions for Kerala Farmers</span>
-                </div>
-              </motion.div>
-
-              {/* Title */}
-              <div className="w-fit mx-auto lg:mx-0 relative">
-                <motion.h1 
-                  initial="hidden"
-                  animate="visible"
-                  variants={titleContainerVariants}
-                  className="text-3xl xs:text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight title-text-stability mobile-text-fix animating"
-                  style={{ 
-                    willChange: "opacity",
-                    contain: "layout style paint"
-                  }}
-                  onAnimationComplete={() => {
-                    const titleElement = document.querySelector('.title-text-stability');
-                    if (titleElement) titleElement.classList.remove('animating');
-                  }}
+                {/* Badge */}
+                <motion.div 
+                  variants={itemVariants}
+                  className="flex justify-center lg:justify-start mt-4 sm:mt-6"
                 >
-                  {titleLetters.map((letter, index) => (
-                    <motion.span
-                      key={index}
-                      variants={letterVariants}
-                      className="inline-block bg-gradient-to-r from-primary-500 to-primary-700 bg-clip-text text-transparent"
-                      style={{
-                        display: "inline-block",
-                        WebkitFontSmoothing: "antialiased",
-                        fontSmooth: "always",
-                        textRendering: "optimizeSpeed"
-                      }}
-                      whileHover={{
-                        scale: 1.05,
+                  <div className="inline-flex items-center justify-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-gradient-to-r from-primary-100/80 to-secondary-100/80 backdrop-blur-sm border border-primary-300/50">
+                    <span className="text-primary-700 text-[10px] sm:text-xs font-medium text-center">AI Solutions for Kerala Farmers</span>
+                  </div>
+                </motion.div>
+
+                {/* Title */}
+                <div className="w-fit mx-auto lg:mx-0 relative">
+                  <motion.h1 
+                    initial="hidden"
+                    animate="visible"
+                    variants={titleContainerVariants}
+                    className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight title-text-stability mobile-text-fix animating"
+                    style={{ 
+                      willChange: "opacity",
+                      contain: "layout style paint"
+                    }}
+                    onAnimationComplete={() => {
+                      const titleElement = document.querySelector('.title-text-stability');
+                      if (titleElement) titleElement.classList.remove('animating');
+                    }}
+                  >
+                    {titleLetters.map((letter, index) => (
+                      <motion.span
+                        key={index}
+                        variants={letterVariants}
+                        className="inline-block bg-gradient-to-r from-primary-500 to-primary-700 bg-clip-text text-transparent"
+                        style={{
+                          display: "inline-block",
+                          WebkitFontSmoothing: "antialiased",
+                          fontSmooth: "always",
+                          textRendering: "optimizeSpeed"
+                        }}
+                        whileHover={{
+                          scale: 1.05,
+                          transition: { duration: 0.15, ease: [0.2, 0.8, 0.2, 1] }
+                        }}
+                      >
+                        {letter.char}
+                      </motion.span>
+                    ))}
+                  </motion.h1>
+                  
+                  {/* Animated Gradient Underline */}
+                  <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    variants={underlineVariants}
+                    className="absolute bottom-0 left-0 w-full h-0.5 sm:h-1 bg-gradient-to-r from-primary-400 via-secondary-400 to-primary-500 rounded-full"
+                    style={{
+                      background: "linear-gradient(90deg, #22c55e 0%, #c5ae8b 50%, #22c55e 100%)",
+                      boxShadow: "0 0 20px rgba(34, 197, 94, 0.5)"
+                    }}
+                  />
+                </div>
+                
+                {/* Dynamic Tagline */}
+                <div className="h-6 sm:h-8 flex items-center justify-center lg:justify-start">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={currentLanguageIndex}
+                      variants={taglineVariants}
+                      initial="exit"
+                      animate="enter"
+                      exit="exit"
+                      className="text-xs sm:text-sm lg:text-base text-gray-700 font-light"
+                    >
+                      {taglineLanguages[currentLanguageIndex].text}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+
+                {/* Description */}
+                <motion.p 
+                  variants={itemVariants}
+                  className="text-xs sm:text-sm lg:text-base text-gray-600 max-w-xl mx-auto lg:mx-0 font-light leading-relaxed"
+                >
+                  <span className="text-primary-600">AI-powered</span> agricultural advisor specifically designed for 
+                  <span className="text-secondary-600">{" Kerala's unique farming"}</span> conditions and crop patterns.
+                </motion.p>
+
+                {/* Action Buttons */}
+                <motion.div
+                  variants={itemVariants}
+                  className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center lg:justify-start"
+                >
+                  <Link to="/chatbot" className="w-full sm:w-auto">
+                    <motion.button
+                      whileHover={{ 
+                        scale: 1.05, 
+                        y: -2,
                         transition: { duration: 0.15, ease: [0.2, 0.8, 0.2, 1] }
                       }}
+                      whileTap={{ scale: 0.95 }}
+                      className="group relative w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold overflow-hidden transition-all duration-300"
                     >
-                      {letter.char}
-                    </motion.span>
-                  ))}
-                </motion.h1>
-                
-                {/* Animated Gradient Underline */}
-                <motion.div
-                  initial="hidden"
-                  animate="visible"
-                  variants={underlineVariants}
-                  className="absolute bottom-0 left-0 w-full h-1 sm:h-1.5 bg-gradient-to-r from-primary-400 via-secondary-400 to-primary-500 rounded-full"
-                  style={{
-                    background: "linear-gradient(90deg, #22c55e 0%, #c5ae8b 50%, #22c55e 100%)",
-                    boxShadow: "0 0 20px rgba(34, 197, 94, 0.5)"
-                  }}
-                />
+                      <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-primary-300 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <span className="relative flex items-center justify-center gap-2">
+                        <FaRobot className="text-xs sm:text-sm" /> Chat with AI
+                      </span>
+                    </motion.button>
+                  </Link>
+
+                  <Link to="/my-farm" className="w-full sm:w-auto">
+                    <motion.button
+                      whileHover={{ 
+                        scale: 1.05, 
+                        y: -2,
+                        transition: { duration: 0.15, ease: [0.2, 0.8, 0.2, 1] }
+                      }}
+                      whileTap={{ scale: 0.95 }}
+                      className="group relative w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-secondary-600 to-secondary-500 text-white rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold overflow-hidden transition-all duration-300"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-secondary-400 to-secondary-300 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <span className="relative flex items-center justify-center gap-2">
+                        <FaSeedling className="text-xs sm:text-sm" /> Crop Simulator
+                      </span>
+                    </motion.button>
+                  </Link>
+                </motion.div>
+              </motion.div>
+
+              {/* Right Mockup Image */}
+              <div className="flex flex-col items-center justify-center space-y-2 sm:space-y-4 order-2 lg:order-2 opacity-100 transition-opacity duration-1000 ease-in-out">
+                <div className="w-full max-w-xs sm:max-w-md lg:max-w-lg xl:max-w-xl mx-auto relative">
+                  {/* Transparent Placeholder */}
+                  {!mockupLoaded && (
+                    <div 
+                      className="w-full rounded-lg sm:rounded-xl flex items-center justify-center animate-pulse bg-black/10"
+                      style={{ aspectRatio: '1/1' }} // Typical phone mockup aspect ratio
+                    >
+                      
+                    </div>
+                  )}
+                  
+                  {/* Mockup Image */}
+                  <img
+                    src="/assets/mockup.png"
+                    alt="Fasal Setu AI Interface"
+                    className={`w-full h-auto rounded-lg sm:rounded-xl transition-all duration-500 hover:scale-105 ${
+                      mockupLoaded ? 'opacity-100' : 'opacity-0 absolute inset-0'
+                    }`}
+                    onLoad={() => setMockupLoaded(true)}
+                    onError={() => setMockupLoaded(false)}
+                  />
+                </div>
+
+                {/* Caption Text */}
+                <div className="text-center max-w-xs sm:max-w-sm mx-auto">
+                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                    <span className="font-medium text-primary-600">It's that easy</span> to get straightforward and 
+                    to-the-point agricultural advice for <span className="font-medium text-secondary-600">Kerala farmers</span>
+                  </p>
+                </div>
               </div>
-              
-              {/* Dynamic Tagline */}
-              <div className="h-8 sm:h-10 flex items-center justify-center lg:justify-start">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentLanguageIndex}
-                    variants={taglineVariants}
-                    initial="exit"
-                    animate="enter"
-                    exit="exit"
-                    className="text-sm sm:text-lg md:text-xl text-gray-700 font-light"
-                  >
-                    {taglineLanguages[currentLanguageIndex].text}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-
-              {/* Description */}
-              <motion.p 
-                variants={itemVariants}
-                className="text-sm sm:text-base lg:text-lg text-gray-600 max-w-2xl mx-auto lg:mx-0 font-light leading-relaxed"
-              >
-                <span className="text-primary-600">AI-powered</span> agricultural advisor specifically designed for 
-                <span className="text-secondary-600">{" Kerala's unique farming"}</span> conditions and crop patterns.
-              </motion.p>
-
-              {/* Action Buttons */}
-              <motion.div
-                variants={itemVariants}
-                className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start"
-              >
-                <Link to="/chatbot" className="w-full sm:w-auto">
-                  <motion.button
-                    whileHover={{ 
-                      scale: 1.05, 
-                      y: -2,
-                      transition: { duration: 0.15, ease: [0.2, 0.8, 0.2, 1] }
-                    }}
-                    whileTap={{ scale: 0.95 }}
-                    className="group relative w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-xl sm:rounded-2xl text-sm sm:text-base font-semibold overflow-hidden transition-all duration-300"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-primary-300 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <span className="relative flex items-center justify-center gap-2">
-                      <FaRobot className="text-sm sm:text-base" /> Chat with AI
-                    </span>
-                  </motion.button>
-                </Link>
-
-                <Link to="/my-farm" className="w-full sm:w-auto">
-                  <motion.button
-                    whileHover={{ 
-                      scale: 1.05, 
-                      y: -2,
-                      transition: { duration: 0.15, ease: [0.2, 0.8, 0.2, 1] }
-                    }}
-                    whileTap={{ scale: 0.95 }}
-                    className="group relative w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-secondary-600 to-secondary-500 text-white rounded-xl sm:rounded-2xl text-sm sm:text-base font-semibold overflow-hidden transition-all duration-300"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-secondary-400 to-secondary-300 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <span className="relative flex items-center justify-center gap-2">
-                      <FaSeedling className="text-sm sm:text-base" /> Crop Simulator
-                    </span>
-                  </motion.button>
-                </Link>
-              </motion.div>
-            </motion.div>
-
-            {/* Right Mockup Image */}
-            <motion.div 
-              initial="hidden"
-              animate="visible"
-              variants={containerVariants}
-              className="flex flex-col items-center justify-center space-y-4 sm:space-y-6 order-2 lg:order-2"
-            >
-              <motion.div
-                variants={itemVariants}
-                className="w-full max-w-lg lg:max-w-xl xl:max-w-2xl mx-auto"
-              >
-                {/* Mockup Image */}
-                <motion.img
-                  whileHover={{ 
-                    scale: 1.02,
-                    transition: { duration: 0.3 }
-                  }}
-                  src="/assets/mockup.png"
-                  alt="Fasal Setu AI Interface"
-                  className="w-full h-auto rounded-xl"
-                />
-              </motion.div>
-
-              {/* Caption Text */}
-              <motion.div
-                variants={itemVariants}
-                className="text-center max-w-md mx-auto"
-              >
-                <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                  <span className="font-medium text-primary-600">It's that easy</span> to get straightforward and 
-                  to-the-point agricultural advice for <span className="font-medium text-secondary-600">Kerala farmers</span>
-                </p>
-              </motion.div>
-            </motion.div>
+            </div>
           </div>
-
-          {/* Scroll Indicator - Centered at bottom */}
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={itemVariants}
-            className="flex justify-center pt-8 lg:pt-12"
-          >
-            <motion.div
-              animate={{ y: [0, 8, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="inline-block"
-            >
-              <div className="w-4 h-6 sm:w-5 sm:h-8 border-2 border-primary-600 rounded-full flex justify-center">
-                <div className="w-0.5 h-2 bg-primary-600 rounded-full mt-1" />
-              </div>
-            </motion.div>
-          </motion.div>
         </div>
       </section>
 
