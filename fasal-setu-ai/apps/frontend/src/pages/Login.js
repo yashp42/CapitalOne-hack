@@ -341,7 +341,17 @@ const Login = () => {
         setTimeout(() => reject(new Error('Coordinate fetch timeout')), 8000); // 8 second timeout
       });
       
-      const coordinatePromise = authAPI.getCoordinates(state, district, village);
+      const coordinatePromise = fetch(`/api/location/coordinates`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          state,
+          district,
+          village
+        })
+      }).then(res => res.json());
       
       const result = await Promise.race([coordinatePromise, timeoutPromise]);
       
