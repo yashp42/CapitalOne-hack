@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema({
         trim: true
     },
 
-    // Phone Authentication (India only)
+    // Phone Authentication (Kerala farmers only)
     phoneNumber: {
         type: String,
         required: true,
@@ -38,31 +38,43 @@ const userSchema = new mongoose.Schema({
         type: String
     },
 
-    // Language and Location Preferences
+    // Language Preferences (Kerala focused)
     preferred_language: {
-    type: String,
-    default: "en-IN",
-    enum: [
-        "en-IN", // English
-        "hi-IN", // Hindi
-        "bn-IN", // Bengali
-        "ta-IN", // Tamil
-        "te-IN", // Telugu
-        "gu-IN", // Gujarati
-        "kn-IN", // Kannada
-        "ml-IN", // Malayalam
-        "mr-IN", // Marathi
-        "pa-IN", // Punjabi
-        "ur-IN"  // Urdu
-    ]
+        type: String,
+        default: "ml-IN", // Default to Malayalam for Kerala
+        enum: [
+            "ml-IN", // Malayalam (primary)
+            "en-IN", // English
+            "ta-IN", // Tamil (for some border areas)
+            "kn-IN"  // Kannada (for some border areas)
+        ]
     },
 
 
     location: {
-        state: { type: String, trim: true },      // for prices_fetch, policy_match, calendar_lookup
-        district: { type: String, trim: true },
-        lat: { type: Number },        // for weather_outlook
-        lon: { type: Number }
+        state: { 
+            type: String, 
+            default: "Kerala",
+            immutable: true, // Cannot be changed - app is Kerala-specific
+            trim: true 
+        },
+        district: { 
+            type: String, 
+            required: true,
+            trim: true,
+            enum: [
+                "Thiruvananthapuram", "Kollam", "Pathanamthitta", "Alappuzha", "Kottayam", 
+                "Idukki", "Ernakulam", "Thrissur", "Palakkad", "Malappuram", 
+                "Kozhikode", "Wayanad", "Kannur", "Kasaragod"
+            ]
+        },
+        village: { 
+            type: String, 
+            required: true,
+            trim: true
+        },
+        lat: { type: Number },        // Auto-populated from village data
+        lon: { type: Number }         // Auto-populated from village data
     },
 
     // Farm Information

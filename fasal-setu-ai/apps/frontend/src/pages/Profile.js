@@ -110,6 +110,8 @@ const Profile = () => {
               ...profileData,
               state: profileData.location?.state,
               district: profileData.location?.district,
+              village: profileData.location?.village,
+              village: profileData.location?.village,
               createdAt: profileData.created_at,
             };
             console.log('Mapped profile data (direct):', mappedData);
@@ -225,6 +227,9 @@ const Profile = () => {
       }
       if (editForm.district && editForm.district.trim()) {
         locationData.district = editForm.district.trim();
+      }
+      if (editForm.village && editForm.village.trim()) {
+        locationData.village = editForm.village.trim();
       }
 
       // Only include coordinates if they exist and are valid numbers
@@ -527,6 +532,20 @@ const Profile = () => {
                         className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       />
                     </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Village
+                      </label>
+                      <input
+                        type="text"
+                        name="village"
+                        value={editForm.village || ''}
+                        onChange={handleInputChange}
+                        placeholder="Enter your village"
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      />
+                    </div>
                   </div>
 
                   {/* Additional fields if available */}
@@ -617,6 +636,20 @@ const Profile = () => {
                         </p>
                       </div>
                     </div>
+
+                    {profile.village && (
+                      <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">
+                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                          <FaHome className="text-blue-600 text-xl" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Village</p>
+                          <p className="text-lg font-semibold text-gray-800">
+                            {profile.village}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">

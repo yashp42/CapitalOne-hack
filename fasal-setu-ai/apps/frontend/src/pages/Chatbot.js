@@ -196,6 +196,31 @@ const Chatbot = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Validate profile context for location data
+  useEffect(() => {
+    if (userProfile) {
+      const hasLocation = userProfile.village || userProfile.district || userProfile.state || 
+        (userProfile.coordinates && userProfile.coordinates.lat && userProfile.coordinates.lon);
+      
+      if (!hasLocation) {
+        console.warn("Chatbot: No location data available in profile. AI responses may be less accurate.");
+        console.log("Current profile location data:", {
+          village: userProfile.village,
+          district: userProfile.district,
+          state: userProfile.state,
+          coordinates: userProfile.coordinates
+        });
+      } else {
+        console.log("Chatbot: Location context available for AI engine:", {
+          village: userProfile.village,
+          district: userProfile.district,
+          state: userProfile.state,
+          hasCoordinates: !!(userProfile.coordinates && userProfile.coordinates.lat && userProfile.coordinates.lon)
+        });
+      }
+    }
+  }, [userProfile]);
+
   const handleSendMessage = useCallback(async () => {
     if (inputMessage.trim() && connectionStatus !== 'disconnected') {
       // Add user message
@@ -240,6 +265,7 @@ const Chatbot = () => {
             user_id: userProfile.id, // CRITICAL: Using 'id' not '_id' as returned by API
             state: userProfile.state || userProfile.location?.state,
             district: userProfile.district || userProfile.location?.district,
+            village: userProfile.village || userProfile.location?.village,
             lat: userProfile.lat || userProfile.latitude || userProfile.location?.lat,
             lon: userProfile.lon || userProfile.lng || userProfile.longitude || userProfile.location?.lon,
             farm_size: userProfile.farmSize || userProfile.land_area_acres,
@@ -253,6 +279,17 @@ const Chatbot = () => {
               delete requestPayload.profile[key];
             }
           });
+          
+          // Log location context for debugging
+          if (requestPayload.profile.village || requestPayload.profile.district || requestPayload.profile.state) {
+            console.log("Location context being sent to AI:", {
+              state: requestPayload.profile.state,
+              district: requestPayload.profile.district,
+              village: requestPayload.profile.village,
+              coordinates: requestPayload.profile.lat && requestPayload.profile.lon ? 
+                `${requestPayload.profile.lat}, ${requestPayload.profile.lon}` : 'Not available'
+            });
+          }
           
           console.log("Sending simplified profile to AI engine:", requestPayload.profile);
         }

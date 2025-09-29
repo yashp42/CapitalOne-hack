@@ -71,6 +71,21 @@ Your primary role is to:
 
 - If you don't have enough data, ask for specific missing information
 
+**CRITICAL: DATA-DRIVEN EVENT SCHEDULING**
+
+When scheduling any farming activities (irrigation, fertilization, pest control, harvesting):
+
+- **ALWAYS analyze available farm data first** - weather forecasts, soil conditions, crop growth stage, recent activities
+- **Weather Assessment**: Check temperature trends, precipitation forecasts, humidity levels for next 7-14 days
+- **Soil Analysis**: Consider current soil moisture, temperature, nutrient levels, and pH when available
+- **Crop Stage Evaluation**: Factor in current growth percentage, days after sowing, variety-specific requirements
+- **Recent Activity Review**: Check when last irrigation, fertilization, or pest control was performed
+- **Timing Optimization**: Schedule events based on optimal conditions, not just calendar dates
+- **Conflict Avoidance**: Don't schedule irrigation before heavy rain, avoid fertilizing during drought stress
+- **Explain Decision**: Always provide brief reasoning based on the specific data that influenced your scheduling
+
+Example: Instead of "Irrigate in 3 days", say "Irrigate on October 3rd - soil moisture low, no rain forecast until Oct 5th, crop at 45% growth needs consistent moisture"
+
 
 
 Guidelines for assessment queries:
@@ -339,6 +354,7 @@ const formatFinalResponse = async ({
     decisionEngineResponse,
     userProfile,
     cropContext,
+    farmContext,
     query,
     hasEvent = false,
     eventType = null,
@@ -351,7 +367,7 @@ const formatFinalResponse = async ({
 **ORIGINAL QUERY:** "${query}"
 
 **USER CONTEXT:**
-- Location: ${userProfile.location?.state || 'Unknown'}, ${userProfile.location?.district || 'Unknown'}
+- Location: ${userProfile.location?.state || 'Unknown'}, ${userProfile.location?.district || 'Unknown'}${userProfile.location?.village ? `, ${userProfile.location.village}` : ''}
 - Farm Size: ${userProfile.farm_size_acres || 0} acres
 - Experience: ${userProfile.farming_experience || 'intermediate'}
 - Primary Crops: ${userProfile.primary_crops?.join(', ') || 'Not specified'}
@@ -376,6 +392,48 @@ const formatFinalResponse = async ({
 - Days Until Event: ${cropContext.next_recommendations?.next_event_days_until || 'Unknown'}
 - Event Description: ${cropContext.next_recommendations?.next_event_description || 'No description'}
 - Restriction Active: ${cropContext.next_recommendations?.restriction_active ? 'Yes - activities restricted until ' + new Date(cropContext.next_recommendations.restriction_until).toLocaleDateString() : 'No'}`;
+
+        // Add comprehensive farm context data for data-driven decisions
+        if (farmContext) {
+            contextPrompt += `\n\n**FARM CONTEXT DATA FOR ANALYSIS:**`;
+            
+            // Weather data
+            if (farmContext.weather) {
+                contextPrompt += `\n**WEATHER CONDITIONS:**
+- Current Temperature: ${farmContext.weather.temperature || 'Unknown'}°C
+- Current Conditions: ${farmContext.weather.current_conditions || 'Unknown'}
+- Timezone: ${farmContext.weather.timezone || 'Unknown'}`;
+                
+                if (farmContext.weather.real_forecast && farmContext.weather.real_forecast.time) {
+                    contextPrompt += `\n**7-DAY WEATHER FORECAST:**\n${farmContext.weather.real_forecast.time.slice(0, 7).map((date, i) => 
+                        `${date}: ${farmContext.weather.real_forecast.temperature_2m_max?.[i] || 'N/A'}°C max, ${farmContext.weather.real_forecast.temperature_2m_min?.[i] || 'N/A'}°C min, Rain: ${farmContext.weather.real_forecast.precipitation_sum?.[i] || 0}mm, Humidity: ${farmContext.weather.real_forecast.relative_humidity_2m?.[i] || 'N/A'}%`
+                    ).join('\n')}`;
+                }
+            }
+            
+            // Soil data
+            if (farmContext.soil) {
+                contextPrompt += `\n\n**SOIL CONDITIONS:**
+- Soil Type: ${farmContext.soil.soil_type || 'Unknown'}
+- pH Level: ${farmContext.soil.ph_level || 'Unknown'}
+- Organic Matter: ${farmContext.soil.organic_matter_percentage || 'Unknown'}%
+- Nitrogen: ${farmContext.soil.nitrogen_level || 'Unknown'}
+- Phosphorus: ${farmContext.soil.phosphorus_level || 'Unknown'}
+- Potassium: ${farmContext.soil.potassium_level || 'Unknown'}
+- Moisture Level: ${farmContext.soil.moisture_level || 'Unknown'}
+- Temperature: ${farmContext.soil.temperature || 'Unknown'}°C
+- Drainage: ${farmContext.soil.drainage_quality || 'Unknown'}
+- Last Tested: ${farmContext.soil.last_tested_date || 'Unknown'}`;
+            }
+            
+            // Market data
+            if (farmContext.market_prices) {
+                contextPrompt += `\n\n**MARKET CONDITIONS:**
+- Current Prices Available: ${farmContext.market_prices.length || 0} market entries`;
+            }
+            
+            contextPrompt += `\n\n**CRITICAL: Use this farm context data to make informed scheduling decisions. Always reference specific weather forecasts, soil conditions, or market factors when recommending timing for irrigation, fertilization, pest control, or harvesting.**`;
+        }
 
         // Add Decision Engine response if available
         if (decisionEngineResponse) {
@@ -405,17 +463,33 @@ ${JSON.stringify(decisionEngineResponse, null, 2)}`;
 - **NEVER include citations, references, or numbered annotations like [1], [2], etc. Provide information directly**
 - **IMPORTANT: Always respond in the same language as the farmer's original query. If they asked in Hindi, respond in Hindi. If in English, respond in English. If in any other language, match that language.**
 
+**CRITICAL: DATA-DRIVEN SCHEDULING INSTRUCTIONS:**
+- ALWAYS assess the complete farm context before scheduling any events
+- Analyze weather forecast data (temperature, precipitation, humidity) for the next 7-14 days
+- Consider soil conditions (moisture, temperature, pH, nutrients) from available data
+- Factor in crop growth stage, days after sowing, and variety-specific requirements
+- Evaluate current scheduled events and validate their appropriateness against real conditions
+- For irrigation scheduling: Check soil moisture levels, recent rainfall, upcoming precipitation forecasts
+- For fertilization: Consider soil nutrient levels, crop growth stage, and weather conditions
+- For pest management: Factor in temperature, humidity, and crop vulnerability stage
+
 **SCHEDULE VALIDATION INSTRUCTIONS:**
-- If the query is about irrigation timing and you have a scheduled irrigation event, check if the scheduled date makes sense
-- If the scheduled irrigation is appropriate (within 1-2 days of optimal timing), align your response with it
-- If the scheduled irrigation is significantly wrong (>3 days off from optimal timing), provide the correct date instead
+- If the query is about irrigation timing and you have a scheduled irrigation event, check if the scheduled date makes sense given:
+  * Current soil moisture conditions
+  * Weather forecast (avoid irrigating before heavy rain)
+  * Crop water requirements at current growth stage
+  * Temperature and evapotranspiration rates
+- If the scheduled irrigation is appropriate (within 1-2 days of optimal timing based on data analysis), align your response with it
+- If the scheduled irrigation is significantly wrong (>3 days off from optimal timing based on weather/soil data), provide the correct date instead
+- Always explain your scheduling decision based on the specific data you analyzed
 
 **CRITICAL: SCHEDULE UPDATE FORMAT**
 - If you recommend changing the scheduled irrigation date, YOU MUST include the exact format at the end
-- Format: "SCHEDULE_UPDATE_NEEDED: [YYYY-MM-DD] - [reason for change]"
-- Example: "SCHEDULE_UPDATE_NEEDED: 2025-10-03 - Delay due to heavy rain forecast, irrigate after rains subside"
+- Format: "SCHEDULE_UPDATE_NEEDED: [YYYY-MM-DD] - [reason for change based on data analysis]"
+- Example: "SCHEDULE_UPDATE_NEEDED: 2025-10-03 - Delay due to heavy rain forecast (45mm expected Oct 1-2), soil moisture adequate, irrigate after rains subside"
 - This MUST be included when you suggest a different date than currently scheduled
 - The system depends on this exact format to update the schedule automatically
+- Always include specific data points that influenced your scheduling decision
 
 Generate a well-formatted response that combines all the analysis above into helpful farming advice:`;
 
@@ -1282,13 +1356,18 @@ const processQuery = async (query, cropData, farmContext, userId, user, eventInf
                 };
                 
                 const district = (user.location?.district || farmContext.location?.district || "").toLowerCase();
+                const village = (user.location?.village || farmContext.location?.village || "").toLowerCase();
                 const state = (user.location?.state || farmContext.location?.state || "").toLowerCase();
                 
-                // Try to match district first, then state
-                if (locationFallbacks[district]) {
+                // Try to match village first (most specific), then district, then state
+                if (village && locationFallbacks[village]) {
+                    lat = locationFallbacks[village].lat;
+                    lon = locationFallbacks[village].lon;
+                    console.log(`Using fallback coordinates for village ${village}: ${lat}, ${lon}`);
+                } else if (locationFallbacks[district]) {
                     lat = locationFallbacks[district].lat;
                     lon = locationFallbacks[district].lon;
-                    console.log(`Using fallback coordinates for ${district}: ${lat}, ${lon}`);
+                    console.log(`Using fallback coordinates for district ${district}: ${lat}, ${lon}`);
                 } else if (state.includes('uttar pradesh') || state.includes('up')) {
                     // Default to Lucknow for UP if no specific district match
                     lat = locationFallbacks['lucknow'].lat;
@@ -1308,6 +1387,7 @@ const processQuery = async (query, cropData, farmContext, userId, user, eventInf
                 location: {
                     state: cropData.location_override?.state || farmContext.location?.state || "Unknown",
                     district: cropData.location_override?.district || farmContext.location?.district || "Unknown",
+                    village: cropData.location_override?.village || farmContext.location?.village || "Unknown",
                     lat: lat,  // AI Engine expects lat/lon at root level
                     lon: lon
                 },
@@ -1366,7 +1446,7 @@ const processQuery = async (query, cropData, farmContext, userId, user, eventInf
                 mode: requestBody.mode,
                 profileKeys: Object.keys(requestBody.profile),
                 cropName: requestBody.profile.crop.crop_name,
-                location: `${requestBody.profile.user.location.state}, ${requestBody.profile.user.location.district}`,
+                location: `${requestBody.profile.user.location.state}, ${requestBody.profile.user.location.district}${requestBody.profile.user.location.village ? `, ${requestBody.profile.user.location.village}` : ''}`,
                 coordinates: `${requestBody.profile.user.location.lat}, ${requestBody.profile.user.location.lon}`,
                 hasWeatherData: !!requestBody.profile.weather,
                 hasSoilData: !!requestBody.profile.soil
@@ -1437,6 +1517,7 @@ const processQuery = async (query, cropData, farmContext, userId, user, eventInf
                     decisionEngineResponse: decisionEngineResponse,
                     userProfile: userProfile,
                     cropContext: cropContext,
+                    farmContext: farmContext,
                     query: query,
                     hasEvent: eventInfo ? eventInfo.wasProcessed : false,
                     eventType: eventInfo ? eventInfo.eventType : null,
@@ -1651,7 +1732,7 @@ const getIntelligentNextEvent = async (crop, farmContext, completedEventType = n
         const lastPestCheck = crop.derived?.last_pest_check_at ? new Date(crop.derived.last_pest_check_at) : null;
         
         // Build context for LLM
-        const schedulingPrompt = `You are an expert agricultural advisor tasked with scheduling the next farm activity for a crop. Use the provided context to make intelligent scheduling decisions.
+        const schedulingPrompt = `You are an expert agricultural advisor tasked with scheduling the next farm activity for a crop. You MUST analyze ALL provided farm context data before making any scheduling decisions.
 
 **CROP INFORMATION:**
 - Crop: ${crop.crop_name}
@@ -1667,33 +1748,78 @@ const getIntelligentNextEvent = async (crop, farmContext, completedEventType = n
 
 **COMPLETED EVENT TODAY:** ${completedEventType || 'None'}
 
-**WEATHER FORECAST:**
+**CRITICAL: ANALYZE THIS WEATHER DATA BEFORE SCHEDULING**
+**7-DAY WEATHER FORECAST:**
 ${farmContext.weather?.real_forecast ? 
-  farmContext.weather.real_forecast.time.map((date, i) => 
-    `${date}: ${farmContext.weather.real_forecast.temperature_2m_max[i]}°C, Precipitation: ${farmContext.weather.real_forecast.precipitation_sum[i]}mm`
+  farmContext.weather.real_forecast.time.slice(0, 7).map((date, i) => 
+    `${date}: Max ${farmContext.weather.real_forecast.temperature_2m_max?.[i] || 'N/A'}°C, Min ${farmContext.weather.real_forecast.temperature_2m_min?.[i] || 'N/A'}°C, Rain: ${farmContext.weather.real_forecast.precipitation_sum?.[i] || 0}mm, Humidity: ${farmContext.weather.real_forecast.relative_humidity_2m?.[i] || 'N/A'}%`
   ).join('\\n') : 'No weather data available'}
 
+**CRITICAL: ANALYZE THIS SOIL DATA BEFORE SCHEDULING**
 **SOIL CONDITIONS:**
-- Current Moisture: ${farmContext.soil?.moisture || 'Unknown'}%
+- Current Moisture: ${farmContext.soil?.moisture_level || farmContext.soil?.moisture || 'Unknown'}%
 - Temperature: ${farmContext.soil?.temperature || 'Unknown'}°C
-- Type: ${farmContext.soil?.type || 'Unknown'}
+- Type: ${farmContext.soil?.soil_type || farmContext.soil?.type || 'Unknown'}
+- pH Level: ${farmContext.soil?.ph_level || 'Unknown'}
+- Nitrogen: ${farmContext.soil?.nitrogen_level || 'Unknown'}
+- Phosphorus: ${farmContext.soil?.phosphorus_level || 'Unknown'}
+- Potassium: ${farmContext.soil?.potassium_level || 'Unknown'}
+- Drainage: ${farmContext.soil?.drainage_quality || 'Unknown'}
+- Organic Matter: ${farmContext.soil?.organic_matter_percentage || 'Unknown'}%
 
-**INSTRUCTIONS:**
-1. Consider upcoming weather (rain means delay irrigation, avoid fertilization before heavy rain)
-2. Consider soil moisture levels and crop water needs
-3. Consider standard timing between activities for ${crop.crop_name}
-4. If an activity was just completed, consider appropriate rest periods (1-3 days max)
-5. Prioritize the most urgent activity needed for optimal crop health
-6. Avoid scheduling activities during heavy rain periods (>5mm precipitation)
-7. **RESTRICTION PERIODS**: Keep reasonable - irrigation: 1-2 days, fertilization: 2-3 days, pest_check: 1-2 days
+**CURRENT WEATHER CONDITIONS:**
+- Temperature: ${farmContext.weather?.temperature || 'Unknown'}°C
+- Conditions: ${farmContext.weather?.current_conditions || 'Unknown'}
+- Timezone: ${farmContext.weather?.timezone || 'Unknown'}
 
-**OUTPUT FORMAT (JSON):**
+**CRITICAL: DATA-DRIVEN SCHEDULING INSTRUCTIONS**
+YOU MUST ANALYZE ALL THE DATA ABOVE BEFORE SCHEDULING. Your decision MUST be based on:
+
+1. **Weather Analysis**: 
+   - Check for rain in next 7 days (>5mm = avoid irrigation/fertilization)
+   - Temperature extremes (>35°C or <10°C = delay activities)
+   - High humidity (>80% = pest control priority)
+   
+2. **Soil Assessment**:
+   - Low moisture (<30%) + no rain forecast = urgent irrigation needed
+   - High moisture (>70%) + rain forecast = delay irrigation
+   - Nutrient deficiencies (N/P/K levels) = fertilization priority
+   - Poor drainage + rain forecast = delay all activities
+   
+3. **Crop Stage Requirements for ${crop.crop_name}**:
+   - Growth stage determines activity priority
+   - Standard timing between activities
+   - Variety-specific needs
+   
+4. **Activity History**:
+   - Don't repeat same activity within appropriate intervals
+   - If irrigation <3 days ago and soil moisture good, skip irrigation
+   - If fertilization <14 days ago, evaluate if really needed
+   
+5. **Priority Rules** (in order):
+   - Emergency irrigation (soil dry + no rain)
+   - Critical pest control (high temp + humidity)
+   - Scheduled fertilization (growth stage + nutrient needs)
+   - Routine maintenance
+   
+6. **Avoid Conflicts**:
+   - No irrigation 1 day before rain >5mm
+   - No fertilization during stress conditions
+   - No activities during extreme weather
+   
+7. **RESTRICTION PERIODS**: irrigation: 1-2 days, fertilization: 2-3 days, pest_check: 1-2 days
+
+**REQUIRED OUTPUT FORMAT (JSON):**
 {
   "nextEvent": "irrigation|fertilization|pest_check",
-  "daysUntilNext": <number of days from today (minimum 2 to avoid conflicts with weather)>,
-  "description": "<reason for this timing>",
-  "restrictionDays": <days to wait before next activity (maximum 3 days)>,
-  "reasoning": "<explanation of decision considering weather and soil data>"
+  "daysUntilNext": <number of days from today (minimum 1, maximum 14)>,
+  "description": "<brief activity description>",
+  "restrictionDays": <days to wait before next activity (1-3 days)>,
+  "reasoning": "<REQUIRED: Explain decision based on specific weather, soil, and crop data analyzed>",
+  "weatherFactors": "<REQUIRED: Specific weather conditions that influenced this decision>",
+  "soilFactors": "<REQUIRED: Specific soil conditions that influenced this decision>",
+  "cropFactors": "<REQUIRED: Specific crop stage/needs that influenced this decision>",
+  "dataJustification": "<REQUIRED: Summarize key data points that led to this scheduling decision>"
 }
 
 Provide scheduling recommendation:`;
@@ -1883,6 +2009,7 @@ const handleCropSimChat = asyncErrorHandler(async (req, res) => {
         location: {
             state: user.location?.state || "Unknown",
             district: user.location?.district || "Unknown", 
+            village: user.location?.village || "Unknown",
             lat: user.location?.lat,
             lon: user.location?.lon,
             // Include coordinates from frontend farmContext if available
@@ -1900,6 +2027,7 @@ const handleCropSimChat = asyncErrorHandler(async (req, res) => {
             season: crop.season || "kharif",
             location_state: user.location?.state || "Unknown",
             location_district: user.location?.district || "Unknown",
+            location_village: user.location?.village || "Unknown",
             irrigation_needs: "assess_based_on_crop_stage_and_last_irrigation"
         } : {
             // Fallback to default weather context
@@ -1907,6 +2035,7 @@ const handleCropSimChat = asyncErrorHandler(async (req, res) => {
             season: crop.season || "kharif",
             location_state: user.location?.state || "Unknown",
             location_district: user.location?.district || "Unknown",
+            location_village: user.location?.village || "Unknown",
             irrigation_needs: "assess_based_on_crop_stage_and_last_irrigation"
         },
         // Use real soil data from frontend if available, otherwise use defaults
@@ -1930,7 +2059,7 @@ const handleCropSimChat = asyncErrorHandler(async (req, res) => {
         market_prices: {
             crop_name: crop.crop_name,
             current_season: crop.season,
-            location_context: `${user.location?.state || "Unknown"}_${user.location?.district || "Unknown"}`,
+            location_context: `${user.location?.state || "Unknown"}_${user.location?.district || "Unknown"}${user.location?.village ? `_${user.location.village}` : ''}`,
             // Note: Real market API integration should be added here
         }
     };

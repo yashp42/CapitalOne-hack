@@ -13,6 +13,7 @@ import cropSimChatRoutes from "./routes/cropSimChat.route.js";
 import ttsRoutes from "./routes/tts.routes.js";
 import notificationRoutes from "./routes/notifications.route.js";
 import communityRoutes from "./routes/community.routes.js";
+import locationRoutes from "./routes/location.routes.js";
 
 // Import middleware
 import errorHandler from "./middleware/errorHandler.middleware.js";
@@ -141,6 +142,7 @@ app.use("/api/crop-sim", cropSimChatRoutes);
 app.use("/api/tts", ttsRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/community", communityRoutes);
+app.use("/api/location", locationRoutes);
 
 // Extended health check with CORS info
 app.get("/health", (req, res) => {

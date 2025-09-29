@@ -5,6 +5,11 @@ import {ApiResponse} from "../util/ApiResponse.js";
 import {ApiError} from "../util/ApiError.js";
 import asyncErrorHandler from "../util/asyncErrorHandler.js";
 import { verifyRefreshToken } from "../util/jwt.js";
+import { 
+  getVillageCoordinates, 
+  validateKeralaDistrict, 
+  validateKeralaVillage 
+} from "../util/keralaVillages.js";
 
 // Send OTP
 export const sendOTP = asyncErrorHandler(async (req, res) => {
@@ -14,10 +19,10 @@ export const sendOTP = asyncErrorHandler(async (req, res) => {
     throw new ApiError(400, "Phone number is required");
   }
 
-  // Validate Indian phone number format
+  // Validate Kerala phone number format (Kerala farmers only)
   const phoneRegex = /^\+91[6-9]\d{9}$/;
   if (!phoneRegex.test(phoneNumber)) {
-    throw new ApiError(400, "Please provide a valid Indian phone number (+91xxxxxxxxxx)");
+    throw new ApiError(400, "Please provide a valid Kerala phone number (+91xxxxxxxxxx)");
   }
 
   try {
@@ -31,54 +36,40 @@ export const sendOTP = asyncErrorHandler(async (req, res) => {
   }
 });
 
-// Helper function to fetch coordinates for location
-const fetchCoordinatesForLocation = async (state, district) => {
+// Helper function to validate Kerala location and get village coordinates
+const validateKeralaLocationAndGetCoordinates = async (state, district, village) => {
   try {
-    // Using a simple mapping for major Indian districts
-    const locationMap = {
-      // Punjab
-      'punjab_ludhiana': { lat: 30.9010, lon: 75.8573 },
-      'punjab_amritsar': { lat: 31.6340, lon: 74.8723 },
-      'punjab_jalandhar': { lat: 31.3260, lon: 75.5762 },
-      'punjab_patiala': { lat: 30.3365, lon: 76.3922 },
-      
-      // Haryana
-      'haryana_gurgaon': { lat: 28.4595, lon: 77.0266 },
-      'haryana_faridabad': { lat: 28.4089, lon: 77.3178 },
-      'haryana_rohtak': { lat: 28.8955, lon: 76.6066 },
-      
-      // Uttar Pradesh
-      'uttar pradesh_lucknow': { lat: 26.8467, lon: 80.9462 },
-      'uttar pradesh_kanpur': { lat: 26.4499, lon: 80.3319 },
-      'uttar pradesh_agra': { lat: 27.1767, lon: 78.0081 },
-      'uttar pradesh_varanasi': { lat: 25.3176, lon: 82.9739 },
-      'uttar pradesh_meerut': { lat: 28.9845, lon: 77.7064 },
-      
-      // Maharashtra
-      'maharashtra_mumbai': { lat: 19.0760, lon: 72.8777 },
-      'maharashtra_pune': { lat: 18.5204, lon: 73.8567 },
-      'maharashtra_nagpur': { lat: 21.1458, lon: 79.0882 },
-      'maharashtra_nashik': { lat: 19.9975, lon: 73.7898 },
-      
-      // Tamil Nadu
-      'tamil nadu_chennai': { lat: 13.0827, lon: 80.2707 },
-      'tamil nadu_coimbatore': { lat: 11.0168, lon: 76.9558 },
-      'tamil nadu_madurai': { lat: 9.9252, lon: 78.1198 },
-      
-      // Karnataka
-      'karnataka_bangalore': { lat: 12.9716, lon: 77.5946 },
-      'karnataka_mysore': { lat: 12.2958, lon: 76.6394 },
-      'karnataka_hubli': { lat: 15.3647, lon: 75.1240 },
-      
-      // Add more states and districts as needed
+    // Ensure user is from Kerala only
+    if (state?.toLowerCase() !== 'kerala') {
+      throw new ApiError(400, "This app is currently available only for farmers in Kerala");
+    }
+
+    // Validate Kerala district
+    if (!validateKeralaDistrict(district)) {
+      throw new ApiError(400, `Invalid Kerala district: ${district}`);
+    }
+
+    // Validate Kerala village and get coordinates
+    if (!validateKeralaVillage(district, village)) {
+      throw new ApiError(400, `Invalid village "${village}" for district ${district}`);
+    }
+
+    const coordinates = getVillageCoordinates(district, village);
+    if (!coordinates) {
+      throw new ApiError(500, `Unable to get coordinates for village ${village} in ${district}`);
+    }
+
+    return {
+      lat: coordinates.lat,
+      lon: coordinates.lon,
+      coordinate_source: 'kerala_village_precise'
     };
-    
-    const key = `${state.toLowerCase()}_${district.toLowerCase()}`;
-    return locationMap[key] || null;
-    
   } catch (error) {
-    console.error('Error fetching coordinates:', error);
-    return null;
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    console.error('Error validating Kerala location:', error);
+    throw new ApiError(500, "Error validating location data");
   }
 };
 
@@ -121,82 +112,36 @@ export const signup = asyncErrorHandler(async (req, res) => {
     );
   }
 
-  // Prepare user data with defaults and validation
+  // Prepare user data with defaults and Kerala-specific validation
   const userData = {
     firstName: firstName.trim(),
     lastName: lastName ? lastName.trim() : undefined,
     phoneNumber,
     firebaseUid,
     isPhoneVerified: true,
-    preferred_language: preferred_language || 'en'
+    preferred_language: preferred_language || 'malayalam' // Default to Malayalam for Kerala farmers
   };
 
-  // Add location data if provided
-  if (location) {
-    userData.location = {};
-    
-    if (location.state) userData.location.state = location.state.trim();
-    if (location.district) userData.location.district = location.district.trim();
-    
-    // Prioritize precise GPS coordinates over district-based estimation
-    if (location.lat !== undefined && location.lon !== undefined && 
-        location.lat !== '' && location.lon !== '') {
-      // Use precise GPS coordinates provided by user
-      const lat = parseFloat(location.lat);
-      const lon = parseFloat(location.lon);
-      
-      // Validate coordinate ranges for India (approximately)
-      if (lat >= 6.0 && lat <= 37.0 && lon >= 68.0 && lon <= 97.5) {
-        userData.location.lat = lat;
-        userData.location.lon = lon;
-        userData.location.coordinate_source = 'gps'; // Mark as GPS-sourced
-        console.log(`Using precise GPS coordinates: ${lat}, ${lon}`);
-      } else {
-        console.warn('GPS coordinates outside India bounds, falling back to district estimation');
-        // Fall back to district-based estimation
-        if (location.state && location.district) {
-          try {
-            const coordinates = await fetchCoordinatesForLocation(location.state, location.district);
-            if (coordinates) {
-              userData.location.lat = coordinates.lat;
-              userData.location.lon = coordinates.lon;
-              userData.location.coordinate_source = 'district_estimated';
-            }
-          } catch (error) {
-            console.warn('Failed to fetch district coordinates:', error.message);
-          }
-        }
-      }
-    } else if (location.state && location.district) {
-      // Only use district-based estimation if no GPS coordinates provided
-      try {
-        const coordinates = await fetchCoordinatesForLocation(location.state, location.district);
-        if (coordinates) {
-          userData.location.lat = coordinates.lat;
-          userData.location.lon = coordinates.lon;
-          userData.location.coordinate_source = 'district_estimated';
-          console.log(`Using district-based coordinates for ${location.state}, ${location.district}: ${coordinates.lat}, ${coordinates.lon}`);
-        }
-      } catch (error) {
-        console.warn('Failed to fetch district coordinates:', error.message);
-      }
-    }
-    
-    // Final validation for any coordinates that were set
-    if (userData.location.lat !== undefined && userData.location.lon !== undefined) {
-      // Additional validation for reasonable coordinate ranges
-      if (userData.location.lat < -90 || userData.location.lat > 90) {
-        console.warn('Invalid latitude value:', userData.location.lat);
-        delete userData.location.lat;
-        delete userData.location.coordinate_source;
-      }
-      if (userData.location.lon < -180 || userData.location.lon > 180) {
-        console.warn('Invalid longitude value:', userData.location.lon);
-        delete userData.location.lon;
-        delete userData.location.coordinate_source;
-      }
-    }
+  // Add Kerala-specific location data (required for all users)
+  if (!location || !location.state || !location.district || !location.village) {
+    throw new ApiError(400, "Complete location (state, district, and village) is required for Kerala farmers");
   }
+
+  // Validate and process Kerala location with village-level precision
+  const locationData = await validateKeralaLocationAndGetCoordinates(
+    location.state.trim(),
+    location.district.trim(), 
+    location.village.trim()
+  );
+
+  userData.location = {
+    state: location.state.trim(),
+    district: location.district.trim(),
+    village: location.village.trim(),
+    lat: locationData.lat,
+    lon: locationData.lon,
+    coordinate_source: locationData.coordinate_source
+  };
 
   // Add land area if provided
   if (land_area_acres !== undefined && land_area_acres !== null) {

@@ -655,7 +655,6 @@ const Home = () => {
           <p className="text-lg sm:text-xl font-medium text-gray-800 mb-2">
             Fasal Setu AI - The Future of Kerala Agriculture
           </p>
-          <p className="text-gray-600 text-sm sm:text-base">Built for Capital One Hackathon 2025</p>
         </div>
       </footer>
 

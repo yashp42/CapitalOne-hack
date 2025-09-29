@@ -287,11 +287,11 @@ export const authAPI = {
     });
   },
 
-  // Get coordinates for location
-  getCoordinates: async (state, district) => {
-    return apiRequest('/users/get-coordinates', {
+  // Get coordinates for location (Kerala village-level)
+  getCoordinates: async (state, district, village = null) => {
+    return apiRequest('/api/location/coordinates', {
       method: 'POST',
-      body: JSON.stringify({ state, district }),
+      body: JSON.stringify({ state, district, village }),
     });
   }
 };

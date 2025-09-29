@@ -6,197 +6,70 @@ import { useNavigate } from 'react-router-dom';
 import { FaShieldAlt, FaCheck, FaSpinner } from 'react-icons/fa';
 import FloatingChatButton from '../components/FloatingChatButton';
 
-// Indian states and districts data
-const INDIAN_STATES_DISTRICTS = {
-  'Andhra Pradesh': [
-    'Anantapur', 'Chittoor', 'East Godavari', 'Guntur', 'Krishna', 'Kurnool', 'Nellore', 
-    'Prakasam', 'Srikakulam', 'Visakhapatnam', 'Vizianagaram', 'West Godavari', 'YSR Kadapa'
+// Kerala districts and villages data (Kerala farmers only)
+const KERALA_DISTRICTS_VILLAGES = {
+  'Thiruvananthapuram': [
+    'Amboori', 'Anavoor', 'Athiyannoor', 'Chenkal', 'Kallikkad', 
+    'Kanjiramkulam', 'Karode', 'Karumkulam', 'Poovar', 'Vizhinjam'
   ],
-  'Arunachal Pradesh': [
-    'Anjaw', 'Changlang', 'Dibang Valley', 'East Kameng', 'East Siang', 'Kamle', 'Kra Daadi', 
-    'Kurung Kumey', 'Lepa Rada', 'Lohit', 'Longding', 'Lower Dibang Valley', 'Lower Siang', 
-    'Lower Subansiri', 'Namsai', 'Pakke Kessang', 'Papum Pare', 'Shi Yomi', 'Siang', 
-    'Tawang', 'Tirap', 'Upper Siang', 'Upper Subansiri', 'West Kameng', 'West Siang'
+  'Kollam': [
+    'Sakthikulangara', 'Thrikkadavoor', 'Thrikkaruva', 'East Kallada', 'Perinad',
+    'Mayyanad', 'Alappad', 'Oachira', 'Adinad', 'Neendakara'
   ],
-  'Assam': [
-    'Baksa', 'Barpeta', 'Biswanath', 'Bongaigaon', 'Cachar', 'Charaideo', 'Chirang', 
-    'Darrang', 'Dhemaji', 'Dhubri', 'Dibrugarh', 'Dima Hasao', 'Goalpara', 'Golaghat', 
-    'Hailakandi', 'Hojai', 'Jorhat', 'Kamrup', 'Kamrup Metropolitan', 'Karbi Anglong', 
-    'Karimganj', 'Kokrajhar', 'Lakhimpur', 'Majuli', 'Morigaon', 'Nagaon', 'Nalbari', 
-    'Sivasagar', 'Sonitpur', 'South Salmara-Mankachar', 'Tinsukia', 'Udalguri', 'West Karbi Anglong'
+  'Kottayam': [
+    'Kumarakom', 'Ettumanoor', 'Athirampuzha', 'Aymanam', 'Arpookara East',
+    'Kaipuzha', 'Anickad', 'Akalakunnam', 'Chengalam South', 'Ayarkunnam'
   ],
-  'Bihar': [
-    'Araria', 'Arwal', 'Aurangabad', 'Banka', 'Begusarai', 'Bhagalpur', 'Bhojpur', 'Buxar', 
-    'Darbhanga', 'East Champaran', 'Gaya', 'Gopalganj', 'Jamui', 'Jehanabad', 'Kaimur', 
-    'Katihar', 'Khagaria', 'Kishanganj', 'Lakhisarai', 'Madhepura', 'Madhubani', 'Munger', 
-    'Muzaffarpur', 'Nalanda', 'Nawada', 'Patna', 'Purnia', 'Rohtas', 'Saharsa', 'Samastipur', 
-    'Saran', 'Sheikhpura', 'Sheohar', 'Sitamarhi', 'Siwan', 'Supaul', 'Vaishali', 'West Champaran'
+  'Alappuzha': [
+    'Ambalappuzha', 'Kalavoor', 'Karumadi', 'Purakkad', 'Kadakkarappally',
+    'Mararikulam North', 'Panavally', 'Pattanakkad', 'Perumbalam', 'Champakulam'
   ],
-  'Chhattisgarh': [
-    'Balod', 'Baloda Bazar', 'Balrampur', 'Bastar', 'Bemetara', 'Bijapur', 'Bilaspur', 
-    'Dantewada', 'Dhamtari', 'Durg', 'Gariaband', 'Gaurela-Pendra-Marwahi', 'Janjgir-Champa', 
-    'Jashpur', 'Kabirdham', 'Kanker', 'Kondagaon', 'Korba', 'Koriya', 'Mahasamund', 
-    'Mungeli', 'Narayanpur', 'Raigarh', 'Raipur', 'Rajnandgaon', 'Sukma', 'Surajpur', 'Surguja'
+  'Pathanamthitta': [
+    'Ranni', 'Adoor', 'Chittar', 'Seethathodu', 'Kodumon'
   ],
-  'Goa': ['North Goa', 'South Goa'],
-  'Gujarat': [
-    'Ahmedabad', 'Amreli', 'Anand', 'Aravalli', 'Banaskantha', 'Bharuch', 'Bhavnagar', 
-    'Botad', 'Chhota Udaipur', 'Dahod', 'Dang', 'Devbhoomi Dwarka', 'Gandhinagar', 'Gir Somnath', 
-    'Jamnagar', 'Junagadh', 'Kheda', 'Kutch', 'Mahisagar', 'Mehsana', 'Morbi', 'Narmada', 
-    'Navsari', 'Panchmahal', 'Patan', 'Porbandar', 'Rajkot', 'Sabarkantha', 'Surat', 
-    'Surendranagar', 'Tapi', 'Vadodara', 'Valsad'
+  'Idukki': [
+    'Kannan Devan Hills', 'Marayoor', 'Kanthalloor', 'Keezhanthoor', 'Kunchithanny',
+    'Mankulam', 'Mannamkandam', 'Pallivasal', 'Anaviratty', 'Elappara'
   ],
-  'Haryana': [
-    'Ambala', 'Bhiwani', 'Charkhi Dadri', 'Faridabad', 'Fatehabad', 'Gurugram', 'Hisar', 
-    'Jhajjar', 'Jind', 'Kaithal', 'Karnal', 'Kurukshetra', 'Mahendragarh', 'Nuh', 'Palwal', 
-    'Panchkula', 'Panipat', 'Rewari', 'Rohtak', 'Sirsa', 'Sonipat', 'Yamunanagar'
+  'Ernakulam': [
+    'Kizhakkambalam', 'Kalady', 'Ayyampuzha', 'Kadamakkudy', 'Cheranalloor', 'Manjapra'
   ],
-  'Himachal Pradesh': [
-    'Bilaspur', 'Chamba', 'Hamirpur', 'Kangra', 'Kinnaur', 'Kullu', 'Lahaul and Spiti', 
-    'Mandi', 'Shimla', 'Sirmaur', 'Solan', 'Una'
+  'Thrissur': [
+    'Thriprayar', 'Varandarappilly', 'Vellikulangara', 'Annallur', 'Kodakara'
   ],
-  'Jharkhand': [
-    'Bokaro', 'Chatra', 'Deoghar', 'Dhanbad', 'Dumka', 'East Singhbhum', 'Garhwa', 'Giridih', 
-    'Godda', 'Gumla', 'Hazaribagh', 'Jamtara', 'Khunti', 'Koderma', 'Latehar', 'Lohardaga', 
-    'Pakur', 'Palamu', 'Ramgarh', 'Ranchi', 'Sahibganj', 'Seraikela Kharsawan', 'Simdega', 
-    'West Singhbhum'
+  'Palakkad': [
+    'Agali', 'Kottathara', 'Mannarkkad', 'Alathur', 'Erimayur',
+    'Kannambra', 'Kavasseri', 'Kizhakkenchery', 'Alanallur', 'Karimba'
   ],
-  'Karnataka': [
-    'Bagalkot', 'Ballari', 'Belagavi', 'Bengaluru Rural', 'Bengaluru Urban', 'Bidar', 
-    'Chamarajanagar', 'Chikballapur', 'Chikkamagaluru', 'Chitradurga', 'Dakshina Kannada', 
-    'Davangere', 'Dharwad', 'Gadag', 'Hassan', 'Haveri', 'Kalaburagi', 'Kodagu', 'Kolar', 
-    'Koppal', 'Mandya', 'Mysuru', 'Raichur', 'Ramanagara', 'Shivamogga', 'Tumakuru', 
-    'Udupi', 'Uttara Kannada', 'Vijayapura', 'Yadgir'
+  'Malappuram': [
+    'Areekode', 'Pandikkad', 'Vazhakkad', 'Kizhuparamba', 'Urangattiri',
+    'Panakkad', 'Melmuri', 'Chembrasseri', 'Vettikkattiri', 'Kavanoor'
   ],
-  'Kerala': [
-    'Alappuzha', 'Ernakulam', 'Idukki', 'Kannur', 'Kasaragod', 'Kollam', 'Kottayam', 
-    'Kozhikode', 'Malappuram', 'Palakkad', 'Pathanamthitta', 'Thiruvananthapuram', 
-    'Thrissur', 'Wayanad'
+  'Kozhikode': [
+    'Ayancheri', 'Azhiyur', 'Chekkiad', 'Chorode', 'Edacheri',
+    'Eramala', 'Kavilumpara', 'Kayakkodi', 'Kottappally', 'Kunnummal'
   ],
-  'Madhya Pradesh': [
-    'Agar Malwa', 'Alirajpur', 'Anuppur', 'Ashoknagar', 'Balaghat', 'Barwani', 'Betul', 
-    'Bhind', 'Bhopal', 'Burhanpur', 'Chhatarpur', 'Chhindwara', 'Damoh', 'Datia', 'Dewas', 
-    'Dhar', 'Dindori', 'Guna', 'Gwalior', 'Harda', 'Hoshangabad', 'Indore', 'Jabalpur', 
-    'Jhabua', 'Katni', 'Khandwa', 'Khargone', 'Maihar', 'Mandla', 'Mandsaur', 'Morena', 
-    'Narsinghpur', 'Neemuch', 'Niwari', 'Panna', 'Raisen', 'Rajgarh', 'Ratlam', 'Rewa', 
-    'Sagar', 'Satna', 'Sehore', 'Seoni', 'Shahdol', 'Shajapur', 'Sheopur', 'Shivpuri', 
-    'Sidhi', 'Singrauli', 'Tikamgarh', 'Ujjain', 'Umaria', 'Vidisha'
+  'Wayanad': [
+    'Ambalavayal', 'Sulthan Bathery', 'Kuppadi', 'Poothadi', 'Pulpally',
+    'Kidanganad', 'Meenangadi', 'Thavinhal', 'Noolpuzha', 'Panamaram'
   ],
-  'Maharashtra': [
-    'Ahmednagar', 'Akola', 'Amravati', 'Aurangabad', 'Beed', 'Bhandara', 'Buldhana', 
-    'Chandrapur', 'Dhule', 'Gadchiroli', 'Gondia', 'Hingoli', 'Jalgaon', 'Jalna', 'Kolhapur', 
-    'Latur', 'Mumbai City', 'Mumbai Suburban', 'Nagpur', 'Nanded', 'Nandurbar', 'Nashik', 
-    'Osmanabad', 'Palghar', 'Parbhani', 'Pune', 'Raigad', 'Ratnagiri', 'Sangli', 'Satara', 
-    'Sindhudurg', 'Solapur', 'Thane', 'Wardha', 'Washim', 'Yavatmal'
+  'Kannur': [
+    'Alakode', 'Chuzhali', 'Irikkur', 'Kooveri', 'Chengalai',
+    'Cheleri', 'Eramam', 'Malapattam', 'Alapadamba', 'Karivellur'
   ],
-  'Manipur': [
-    'Bishnupur', 'Chandel', 'Churachandpur', 'Imphal East', 'Imphal West', 'Jiribam', 
-    'Kakching', 'Kamjong', 'Kangpokpi', 'Noney', 'Pherzawl', 'Senapati', 'Tamenglong', 
-    'Tengnoupal', 'Thoubal', 'Ukhrul'
-  ],
-  'Meghalaya': [
-    'East Garo Hills', 'East Jaintia Hills', 'East Khasi Hills', 'North Garo Hills', 
-    'Ri Bhoi', 'South Garo Hills', 'South West Garo Hills', 'South West Khasi Hills', 
-    'West Garo Hills', 'West Jaintia Hills', 'West Khasi Hills'
-  ],
-  'Mizoram': [
-    'Aizawl', 'Champhai', 'Hnahthial', 'Khawzawl', 'Kolasib', 'Lawngtlai', 'Lunglei', 
-    'Mamit', 'Saiha', 'Saitual', 'Serchhip'
-  ],
-  'Nagaland': [
-    'Dimapur', 'Kiphire', 'Kohima', 'Longleng', 'Mokokchung', 'Mon', 'Noklak', 'Peren', 
-    'Phek', 'Tuensang', 'Wokha', 'Zunheboto'
-  ],
-  'Odisha': [
-    'Angul', 'Balangir', 'Balasore', 'Bargarh', 'Bhadrak', 'Boudh', 'Cuttack', 'Deogarh', 
-    'Dhenkanal', 'Gajapati', 'Ganjam', 'Jagatsinghpur', 'Jajpur', 'Jharsuguda', 'Kalahandi', 
-    'Kandhamal', 'Kendrapara', 'Kendujhar', 'Khordha', 'Koraput', 'Malkangiri', 'Mayurbhanj', 
-    'Nabarangpur', 'Nayagarh', 'Nuapada', 'Puri', 'Rayagada', 'Sambalpur', 'Subarnapur', 'Sundargarh'
-  ],
-  'Punjab': [
-    'Amritsar', 'Barnala', 'Bathinda', 'Faridkot', 'Fatehgarh Sahib', 'Fazilka', 
-    'Ferozepur', 'Gurdaspur', 'Hoshiarpur', 'Jalandhar', 'Kapurthala', 'Ludhiana', 
-    'Mansa', 'Moga', 'Muktsar', 'Nawanshahr (Shahid Bhagat Singh Nagar)', 'Pathankot', 
-    'Patiala', 'Rupnagar', 'Sahibzada Ajit Singh Nagar (Mohali)', 'Sangrur', 'Tarn Taran'
-  ],
-  'Rajasthan': [
-    'Ajmer', 'Alwar', 'Banswara', 'Baran', 'Barmer', 'Bharatpur', 'Bhilwara', 'Bikaner', 
-    'Bundi', 'Chittorgarh', 'Churu', 'Dausa', 'Dholpur', 'Dungarpur', 'Hanumangarh', 
-    'Jaipur', 'Jaisalmer', 'Jalore', 'Jhalawar', 'Jhunjhunu', 'Jodhpur', 'Karauli', 
-    'Kota', 'Nagaur', 'Pali', 'Pratapgarh', 'Rajsamand', 'Sawai Madhopur', 'Sikar', 
-    'Sirohi', 'Sri Ganganagar', 'Tonk', 'Udaipur'
-  ],
-  'Sikkim': ['East Sikkim', 'North Sikkim', 'South Sikkim', 'West Sikkim'],
-  'Tamil Nadu': [
-    'Ariyalur', 'Chengalpattu', 'Chennai', 'Coimbatore', 'Cuddalore', 'Dharmapuri', 
-    'Dindigul', 'Erode', 'Kallakurichi', 'Kanchipuram', 'Kanyakumari', 'Karur', 
-    'Krishnagiri', 'Madurai', 'Mayiladuthurai', 'Nagapattinam', 'Namakkal', 'Nilgiris', 
-    'Perambalur', 'Pudukkottai', 'Ramanathapuram', 'Ranipet', 'Salem', 'Sivaganga', 
-    'Tenkasi', 'Thanjavur', 'Theni', 'Thoothukudi', 'Tiruchirappalli', 'Tirunelveli', 
-    'Tirupathur', 'Tiruppur', 'Tiruvallur', 'Tiruvannamalai', 'Tiruvarur', 'Vellore', 
-    'Viluppuram', 'Virudhunagar'
-  ],
-  'Telangana': [
-    'Adilabad', 'Bhadradri Kothagudem', 'Hyderabad', 'Jagtial', 'Jangaon', 'Jayashankar Bhupalpally', 
-    'Jogulamba Gadwal', 'Kamareddy', 'Karimnagar', 'Khammam', 'Komaram Bheem Asifabad', 'Mahabubabad', 
-    'Mahabubnagar', 'Mancherial', 'Medak', 'Medchal–Malkajgiri', 'Mulugu', 'Nagarkurnool', 
-    'Nalgonda', 'Narayanpet', 'Nirmal', 'Nizamabad', 'Peddapalli', 'Rajanna Sircilla', 
-    'Rangareddy', 'Sangareddy', 'Siddipet', 'Suryapet', 'Vikarabad', 'Wanaparthy', 
-    'Warangal Rural', 'Warangal Urban', 'Yadadri Bhuvanagiri'
-  ],
-  'Tripura': ['Dhalai', 'Gomati', 'Khowai', 'North Tripura', 'Sepahijala', 'South Tripura', 'Unakoti', 'West Tripura'],
-  'Uttar Pradesh': [
-    'Agra', 'Aligarh', 'Ambedkar Nagar', 'Amethi', 'Amroha', 'Auraiya', 'Ayodhya', 'Azamgarh', 
-    'Baghpat', 'Bahraich', 'Ballia', 'Balrampur', 'Banda', 'Barabanki', 'Bareilly', 'Basti', 
-    'Bhadohi', 'Bijnor', 'Budaun', 'Bulandshahr', 'Chandauli', 'Chitrakoot', 'Deoria', 
-    'Etah', 'Etawah', 'Farrukhabad', 'Fatehpur', 'Firozabad', 'Gautam Buddha Nagar', 
-    'Ghaziabad', 'Ghazipur', 'Gonda', 'Gorakhpur', 'Hamirpur', 'Hapur', 'Hardoi', 
-    'Hathras', 'Jalaun', 'Jaunpur', 'Jhansi', 'Kannauj', 'Kanpur Dehat', 'Kanpur Nagar', 
-    'Kasganj', 'Kaushambi', 'Kheri', 'Kushinagar', 'Lalitpur', 'Lucknow', 'Maharajganj', 
-    'Mahoba', 'Mainpuri', 'Mathura', 'Mau', 'Meerut', 'Mirzapur', 'Moradabad', 'Muzaffarnagar', 
-    'Pilibhit', 'Pratapgarh', 'Prayagraj', 'Raebareli', 'Rampur', 'Saharanpur', 'Sambhal', 
-    'Sant Kabir Nagar', 'Shahjahanpur', 'Shamli', 'Shravasti', 'Siddharthnagar', 'Sitapur', 
-    'Sonbhadra', 'Sultanpur', 'Unnao', 'Varanasi'
-  ],
-  'Uttarakhand': [
-    'Almora', 'Bageshwar', 'Chamoli', 'Champawat', 'Dehradun', 'Haridwar', 'Nainital', 
-    'Pauri Garhwal', 'Pithoragarh', 'Rudraprayag', 'Tehri Garhwal', 'Udham Singh Nagar', 'Uttarkashi'
-  ],
-  'West Bengal': [
-    'Alipurduar', 'Bankura', 'Birbhum', 'Cooch Behar', 'Dakshin Dinajpur', 'Darjeeling', 
-    'Hooghly', 'Howrah', 'Jalpaiguri', 'Jhargram', 'Kalimpong', 'Kolkata', 'Malda', 
-    'Murshidabad', 'Nadia', 'North 24 Parganas', 'Paschim Bardhaman', 'Paschim Medinipur', 
-    'Purba Bardhaman', 'Purba Medinipur', 'Purulia', 'South 24 Parganas', 'Uttar Dinajpur'
-  ],
-  'Andaman and Nicobar Islands': ['Nicobar', 'North and Middle Andaman', 'South Andaman'],
-  'Chandigarh': ['Chandigarh'],
-  'Dadra and Nagar Haveli and Daman and Diu': ['Dadra and Nagar Haveli', 'Daman', 'Diu'],
-  'Delhi': [
-    'Central Delhi', 'East Delhi', 'New Delhi', 'North Delhi', 'North East Delhi', 
-    'North West Delhi', 'Shahdara', 'South Delhi', 'South East Delhi', 'South West Delhi', 'West Delhi'
-  ],
-  'Jammu and Kashmir': [
-    'Anantnag', 'Bandipora', 'Baramulla', 'Budgam', 'Doda', 'Ganderbal', 'Jammu', 'Kathua', 
-    'Kishtwar', 'Kulgam', 'Kupwara', 'Poonch', 'Pulwama', 'Rajouri', 'Ramban', 'Reasi', 
-    'Samba', 'Shopian', 'Srinagar', 'Udhampur'
-  ],
-  'Ladakh': ['Kargil', 'Leh'],
-  'Lakshadweep': ['Lakshadweep'],
-  'Puducherry': ['Karaikal', 'Mahe', 'Puducherry', 'Yanam']
+  'Kasaragod': [
+    'Badiyadka', 'Bedadka', 'Bayar', 'Bandadka', 'Kumbla'
+  ]
 };
 
+
+
+// Languages available for Kerala farmers
 const LANGUAGES = [
-  { code: 'en-IN', name: 'English (English)' },
-  { code: 'hi-IN', name: 'हिन्दी (Hindi)' },
-  { code: 'bn-IN', name: 'বাংলা (Bengali)' },
-  { code: 'ta-IN', name: 'தமிழ் (Tamil)' },
-  { code: 'te-IN', name: 'తెలుగు (Telugu)' },
-  { code: 'gu-IN', name: 'ગુજરાતી (Gujarati)' },
-  { code: 'kn-IN', name: 'ಕನ್ನಡ (Kannada)' },
   { code: 'ml-IN', name: 'മലയാളം (Malayalam)' },
-  { code: 'mr-IN', name: 'मराठी (Marathi)' },
-  { code: 'pa-IN', name: 'ਪੰਜਾਬੀ (Punjabi)' },
-  { code: 'ur-IN', name: 'اردو (Urdu)' }
+  { code: 'en-IN', name: 'English (English)' },
+  { code: 'ta-IN', name: 'தமிழ் (Tamil)' },
+  { code: 'kn-IN', name: 'ಕನ್ನಡ (Kannada)' }
 ];
 
 
@@ -213,14 +86,15 @@ const Login = () => {
   const [reverseGeocodedLocation, setReverseGeocodedLocation] = useState(null); // Store auto-detected state/district
   const [locationMismatchWarning, setLocationMismatchWarning] = useState(false); // Warning if user changes location manually
 
-  // Function to reverse geocode coordinates using LocationIQ API
+  // Function to reverse geocode coordinates using LocationIQ API with timeout
   const reverseGeocodeLocation = async (lat, lon) => {
     try {
       const options = {
         method: 'GET', 
         headers: {
           accept: 'application/json'
-        }
+        },
+        signal: AbortSignal.timeout(6000) // 6 second timeout
       };
 
       const response = await fetch(
@@ -323,10 +197,11 @@ const Login = () => {
     otp: '',
     firstName: '',
     lastName: '',
-    preferred_language: 'en-IN',
+    preferred_language: 'ml-IN', // Default to Malayalam for Kerala farmers
     location: {
-      state: '',
+      state: 'Kerala', // Fixed to Kerala only
       district: '',
+      village: '', // Added village field for Kerala-specific registration
       lat: '',
       lon: ''
     },
@@ -347,11 +222,28 @@ const Login = () => {
     }
   }, [isAuthenticated, user, navigate]);
 
-  // Preload background image
+  // Preload background image with timeout handling
   useEffect(() => {
     const preloadImage = () => {
       const image = new Image();
-      image.onload = () => setBackgroundImageLoaded(true);
+      
+      // Set a timeout for image loading to prevent hanging
+      const imageTimeout = setTimeout(() => {
+        console.warn('Background image load timeout, using fallback');
+        setBackgroundImageLoaded(false); // Use gradient fallback
+      }, 5000); // 5 second timeout for image loading
+      
+      image.onload = () => {
+        clearTimeout(imageTimeout);
+        setBackgroundImageLoaded(true);
+      };
+      
+      image.onerror = () => {
+        clearTimeout(imageTimeout);
+        console.warn('Background image failed to load, using gradient fallback');
+        setBackgroundImageLoaded(false); // Use gradient fallback
+      };
+      
       image.src = '/assets/360_F_502186443_Kubg3Wl76uE8BYl1tcAuYYXgGKAaO6r4.jpg';
     };
     
@@ -378,16 +270,25 @@ const Login = () => {
     if (name.includes('.')) {
       // Handle nested objects (location.state, finance.has_kcc, etc.)
       const [parent, child] = name.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: type === 'checkbox' ? checked : value
+      setFormData(prev => {
+        const newData = {
+          ...prev,
+          [parent]: {
+            ...prev[parent],
+            [child]: type === 'checkbox' ? checked : value
+          }
+        };
+        
+        // Clear village when district changes
+        if (parent === 'location' && child === 'district') {
+          newData[parent].village = '';
         }
-      }));
+        
+        return newData;
+      });
 
-      // Fetch coordinates when both state and district are selected
-      if (parent === 'location' && (child === 'state' || child === 'district')) {
+      // Fetch coordinates when location fields are changed
+      if (parent === 'location' && (child === 'state' || child === 'district' || child === 'village')) {
         const newLocation = {
           ...formData.location,
           [child]: value
@@ -410,9 +311,17 @@ const Login = () => {
           }
         }
         
-        if (newLocation.state && newLocation.district) {
-          fetchCoordinatesForLocation(newLocation.state, newLocation.district);
-        } else {
+        // Clear village selection when district changes
+        if (child === 'district') {
+          newLocation.village = '';
+          setCoordinates(null);
+        }
+        
+        // Fetch coordinates when village is selected (Kerala-specific)
+        if (child === 'village' && newLocation.state === 'Kerala' && newLocation.district && value) {
+          // Simple immediate fetch for dropdown selection (no debouncing needed for dropdowns)
+          fetchCoordinatesForLocation(newLocation.state, newLocation.district, value);
+        } else if (child !== 'village') {
           setCoordinates(null);
         }
       }
@@ -424,22 +333,38 @@ const Login = () => {
     }
   };
 
-  // Function to fetch coordinates from backend API
-  const fetchCoordinatesForLocation = async (state, district) => {
+  // Function to fetch coordinates from backend API (Kerala village-level) with timeout handling
+  const fetchCoordinatesForLocation = async (state, district, village = null) => {
     try {
-      const result = await authAPI.getCoordinates(state, district);
-      if (result.success && result.data.coordinates) {
-        setCoordinates(result.data.coordinates);
+      // Add timeout wrapper to prevent hanging requests
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Coordinate fetch timeout')), 8000); // 8 second timeout
+      });
+      
+      const coordinatePromise = authAPI.getCoordinates(state, district, village);
+      
+      const result = await Promise.race([coordinatePromise, timeoutPromise]);
+      
+      if (result.success && result.data) {
+        // Handle village-level coordinates
+        const coords = {
+          lat: result.data.lat,
+          lon: result.data.lon,
+          source: 'kerala_village_precise'
+        };
+        setCoordinates(coords);
+        console.log(`Got coordinates for ${village}, ${district}: ${coords.lat}, ${coords.lon}`);
       } else {
         setCoordinates(null);
       }
     } catch (error) {
       console.warn('Failed to fetch coordinates:', error);
       setCoordinates(null);
+      // Don't show error to user for coordinate fetch failures
     }
   };
 
-  // Function to get user's current location
+  // Function to get user's current location with improved error handling
   const getCurrentLocation = () => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
@@ -449,8 +374,8 @@ const Login = () => {
 
       const options = {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000 // Cache for 1 minute
+        timeout: 8000, // Reduced from 10s to 8s to prevent timeouts
+        maximumAge: 30000 // Reduced cache time to 30s for better accuracy
       };
 
       navigator.geolocation.getCurrentPosition(
@@ -497,21 +422,32 @@ const Login = () => {
     try {
       const formattedPhone = formatPhoneNumber(formData.phoneNumber);
       
-      // Send OTP via Firebase
-      const result = await sendOTP(formattedPhone);
+      // Add timeout to OTP sending to prevent hanging
+      const otpPromise = sendOTP(formattedPhone);
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('OTP request timeout')), 15000); // 15 second timeout
+      });
+      
+      const result = await Promise.race([otpPromise, timeoutPromise]);
       
       if (result.success) {
         setStep('otp');
         setMessage({ type: 'success', text: 'OTP sent successfully!' });
         setFormData({ ...formData, phoneNumber: formattedPhone });
       } else {
-        setMessage({ type: 'error', text: result.message });
+        setMessage({ type: 'error', text: result.message || 'Failed to send OTP' });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to send OTP. Please try again.' });
+      console.error('OTP send error:', error);
+      setMessage({ 
+        type: 'error', 
+        text: error.message === 'OTP request timeout' 
+          ? 'Request timed out. Please check your connection and try again.' 
+          : 'Failed to send OTP. Please try again.' 
+      });
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   const handleVerifyOTP = async () => {
@@ -519,7 +455,13 @@ const Login = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      const result = await verifyOTP(formData.otp);
+      // Add timeout to OTP verification to prevent hanging
+      const verifyPromise = verifyOTP(formData.otp);
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('OTP verification timeout')), 12000); // 12 second timeout
+      });
+      
+      const result = await Promise.race([verifyPromise, timeoutPromise]);
       
       if (result.success) {
         const firebaseUser = result.user;
@@ -551,10 +493,16 @@ const Login = () => {
         setMessage({ type: 'error', text: result.message || 'Invalid OTP' });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'OTP verification failed. Please try again.' });
+      console.error('OTP verification error:', error);
+      setMessage({ 
+        type: 'error', 
+        text: error.message === 'OTP verification timeout'
+          ? 'Verification timed out. Please try again.'
+          : 'OTP verification failed. Please try again.'
+      });
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   const handleSignup = async () => {
@@ -567,7 +515,7 @@ const Login = () => {
         throw new Error('Authentication session expired. Please verify OTP again.');
       }
 
-      // Prepare signup data with comprehensive profile
+      // Prepare signup data with comprehensive profile (Kerala-specific)
       const signupData = {
         firstName: formData.firstName,
         lastName: formData.lastName || undefined,
@@ -575,8 +523,9 @@ const Login = () => {
         firebaseUid: currentUser.uid,
         preferred_language: formData.preferred_language,
         location: {
-          state: formData.location.state || undefined,
+          state: 'Kerala', // Always Kerala
           district: formData.location.district || undefined,
+          village: formData.location.village || undefined, // Required village field
           // Include coordinates from GPS or manual input (ensure they're numbers)
           lat: coordinates?.lat || (formData.location.lat ? parseFloat(formData.location.lat) : undefined),
           lon: coordinates?.lon || (formData.location.lon ? parseFloat(formData.location.lon) : undefined)
@@ -589,12 +538,9 @@ const Login = () => {
         }
       };
 
-      // Remove empty nested objects
-      if (!signupData.location.state && 
-          !signupData.location.district && 
-          !signupData.location.lat && 
-          !signupData.location.lon) {
-        delete signupData.location;
+      // Validate Kerala location requirements
+      if (!signupData.location.district || !signupData.location.village) {
+        throw new Error('District and village are required for Kerala farmers');
       }
       
       if (signupData.finance.has_kcc === null && 
@@ -653,10 +599,11 @@ const Login = () => {
       otp: '', 
       firstName: '', 
       lastName: '',
-      preferred_language: 'en-IN',
+      preferred_language: 'ml-IN',
       location: {
-        state: '',
+        state: 'Kerala',
         district: '',
+        village: '',
         lat: '',
         lon: ''
       },
@@ -1032,36 +979,51 @@ const Login = () => {
                           <label className="block text-gray-600 text-xs sm:text-sm font-medium mb-2">
                             State
                           </label>
+                          <input
+                            type="text"
+                            value="Kerala"
+                            disabled
+                            className="w-full px-3 py-2.5 bg-green-50/80 border border-green-300/50 rounded-lg text-gray-600 text-xs sm:text-sm font-medium"
+                          />
+                          <p className="text-xs text-green-600 mt-1">This app serves Kerala farmers only</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-gray-600 text-xs sm:text-sm font-medium mb-2">
+                            District <span className="text-red-500">*</span>
+                          </label>
                           <select
-                            name="location.state"
-                            value={formData.location.state}
+                            name="location.district"
+                            value={formData.location.district}
                             onChange={handleInputChange}
                             className="w-full px-3 py-2.5 bg-white/80 border border-gray-300/50 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-transparent transition-all duration-300 text-xs sm:text-sm"
+                            required
                           >
-                            <option value="">Select State</option>
-                            {Object.keys(INDIAN_STATES_DISTRICTS).map(state => (
-                              <option key={state} value={state}>
-                                {state}
+                            <option value="">Select District</option>
+                            {Object.keys(KERALA_DISTRICTS_VILLAGES).map(district => (
+                              <option key={district} value={district}>
+                                {district}
                               </option>
                             ))}
                           </select>
                         </div>
 
-                        {formData.location.state && (
+                        {formData.location.district && (
                           <div>
                             <label className="block text-gray-600 text-xs sm:text-sm font-medium mb-2">
-                              District
+                              Village <span className="text-red-500">*</span>
                             </label>
                             <select
-                              name="location.district"
-                              value={formData.location.district}
+                              name="location.village"
+                              value={formData.location.village}
                               onChange={handleInputChange}
                               className="w-full px-3 py-2.5 bg-white/80 border border-gray-300/50 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-transparent transition-all duration-300 text-xs sm:text-sm"
+                              required
                             >
-                              <option value="">Select District</option>
-                              {INDIAN_STATES_DISTRICTS[formData.location.state]?.map(district => (
-                                <option key={district} value={district}>
-                                  {district}
+                              <option value="">Select Village</option>
+                              {KERALA_DISTRICTS_VILLAGES[formData.location.district]?.map(village => (
+                                <option key={village} value={village}>
+                                  {village}
                                 </option>
                               ))}
                             </select>
@@ -1074,15 +1036,38 @@ const Login = () => {
                             <div className="flex items-center space-x-1 text-xs text-green-700 mb-1">
                               <span>✅</span>
                               <span>
-                                Precise Location: {coordinates.lat.toFixed(6)}, {coordinates.lon.toFixed(6)}
+                                Village Location: {coordinates.lat.toFixed(6)}, {coordinates.lon.toFixed(6)}
                                 {coordinates.accuracy && ` (±${Math.round(coordinates.accuracy)}m accuracy)`}
                               </span>
                             </div>
+                            <div className="text-xs text-green-600 pl-4">
+                              🌾 Perfect for Kerala agricultural advice and weather forecasts
+                            </div>
                             {reverseGeocodedLocation && (
                               <div className="text-xs text-green-600 pl-4">
-                                📍 Detected: {reverseGeocodedLocation.state}, {reverseGeocodedLocation.district}
+                                📍 GPS Detected: {reverseGeocodedLocation.state}, {reverseGeocodedLocation.district}
                               </div>
                             )}
+                          </div>
+                        )}
+
+                        {/* Village Selection Status */}
+                        {formData.location.district && !formData.location.village && (
+                          <div className="bg-orange-50/50 p-2 rounded-lg border border-orange-200/50">
+                            <div className="flex items-center space-x-1 text-xs text-orange-700">
+                              <span>⚠️</span>
+                              <span>Please select your village for precise agricultural guidance</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Loading coordinates indicator */}
+                        {formData.location.village && !coordinates && (
+                          <div className="bg-blue-50/50 p-2 rounded-lg border border-blue-200/50">
+                            <div className="flex items-center space-x-1 text-xs text-blue-700">
+                              <span className="animate-spin">⏳</span>
+                              <span>Loading village coordinates...</span>
+                            </div>
                           </div>
                         )}
 
@@ -1226,9 +1211,47 @@ const Login = () => {
                       </div>
                     </div>
                     
+                    {/* Form Validation Status */}
+                    <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-200/50">
+                      <p className="text-xs text-blue-800 font-medium mb-2">Required Fields:</p>
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <span className={`w-2 h-2 rounded-full ${formData.firstName.trim() ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                          <span className={`text-xs ${formData.firstName.trim() ? 'text-green-700' : 'text-gray-500'}`}>
+                            First Name
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`w-2 h-2 rounded-full ${formData.location.district ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                          <span className={`text-xs ${formData.location.district ? 'text-green-700' : 'text-gray-500'}`}>
+                            District Selection
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`w-2 h-2 rounded-full ${formData.location.village ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                          <span className={`text-xs ${formData.location.village ? 'text-green-700' : 'text-gray-500'}`}>
+                            Village Selection
+                          </span>
+                        </div>
+                        {coordinates && (
+                          <div className="flex items-center space-x-2">
+                            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                            <span className="text-xs text-green-700">
+                              📍 Village coordinates loaded
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
                     <button
                       onClick={handleSignup}
-                      disabled={loading || !formData.firstName.trim()}
+                      disabled={
+                        loading || 
+                        !formData.firstName.trim() ||
+                        !formData.location.district.trim() ||
+                        !formData.location.village.trim()
+                      }
                       className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:from-primary-500 hover:to-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50 text-xs sm:text-sm hover:scale-[1.02] active:scale-[0.98]"
                     >
                       {loading ? (
@@ -1265,7 +1288,7 @@ const Login = () => {
           {/* Footer */}
           <div className="text-center mt-6 transition-opacity duration-500">
             <p className="text-gray-600 text-xs font-medium">
-              Powered by advanced AI • Trusted by farmers across India
+              Powered by advanced AI • Trusted by farmers across Kerala
             </p>
           </div>
         </div>

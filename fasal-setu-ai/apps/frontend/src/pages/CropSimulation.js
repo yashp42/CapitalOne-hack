@@ -1109,6 +1109,31 @@ const CropSimulation = () => {
     fetchUserProfile();
   }, [user, isAuthenticated]);
 
+  // Validate profile context for location data
+  useEffect(() => {
+    if (userProfile) {
+      const hasLocation = userProfile.village || userProfile.district || userProfile.state || 
+        (userProfile.coordinates && userProfile.coordinates.lat && userProfile.coordinates.lon);
+      
+      if (!hasLocation) {
+        console.warn("CropSimulation: No location data available in profile. AI responses may be less accurate.");
+        console.log("Current profile location data:", {
+          village: userProfile.village,
+          district: userProfile.district,
+          state: userProfile.state,
+          coordinates: userProfile.coordinates
+        });
+      } else {
+        console.log("CropSimulation: Location context available for AI engine:", {
+          village: userProfile.village,
+          district: userProfile.district,
+          state: userProfile.state,
+          hasCoordinates: !!(userProfile.coordinates && userProfile.coordinates.lat && userProfile.coordinates.lon)
+        });
+      }
+    }
+  }, [userProfile]);
+
   // Harvest data processing will be handled by LLM integration
   useEffect(() => {
     // Harvest data processing will be handled by LLM integration
@@ -1309,9 +1334,12 @@ const CropSimulation = () => {
           temperature: farmData.soilTemp || 22
         },
         location: {
-          // Include detailed location information
-          text: user?.location || "India",
-          coordinates: user?.location || { lat: 12.9716, lon: 77.5946 }, // Bangalore fallback
+          // Include detailed location information with village context
+          text: userProfile?.village || userProfile?.district || user?.location || "India",
+          village: userProfile?.village,
+          district: userProfile?.district,
+          state: userProfile?.state,
+          coordinates: userProfile?.coordinates || user?.location || { lat: 12.9716, lon: 77.5946 }, // Bangalore fallback
           timezone: weatherData?.timezone || "Asia/Kolkata"
         }
       };

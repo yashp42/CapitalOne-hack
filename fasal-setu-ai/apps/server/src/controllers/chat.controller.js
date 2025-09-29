@@ -30,8 +30,8 @@ Rules:
 - If intent is "other": ignore Decision Engine, answer reasonably using LLM1 facts + user query.
 - If Decision Engine output is valid and consistent with LLM1 facts: base your plain-text answer on it.
 - If Decision Engine is missing/invalid: answer from LLM1 facts and user query, clearly state uncertainty, and give safe fallback advice.
-- In "my_farm" mode: Use personalized data and speak directly to the user's specific farm situation.
-- In "public_advisor" mode: Provide general advice without referencing personal farm data.
+- In "my_farm" mode: Use personalized data and speak directly to the user's specific farm situation. Utilize location data (state, district, village) to provide hyper-localized advice considering regional weather patterns, soil conditions, and local farming practices.
+- In "public_advisor" mode: Provide general advice without referencing personal farm data, but if location context is available, consider regional agricultural patterns of Kerala.
 - Be concise, farmer-friendly, ≤300 words. Use proper markdown formatting for better readability.
 - Never invent numbers or weather. Only use facts provided. If data is insufficient, say what is missing.
 - Always output in the role of an advisor, not as a system log.
@@ -466,6 +466,7 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
                     location: user.location,
                     state: user.location?.state,
                     district: user.location?.district,
+                    village: user.location?.village,
                     lat: user.location?.lat,
                     lon: user.location?.lon,
                     farmSize: user.land_area_acres,
@@ -507,6 +508,7 @@ export const chatFlow = asyncErrorHandler(async (req, res) => {
             simplifiedProfile = {
                 state: profileData.state ?? profileData.location?.state ?? null,
                 district: profileData.district ?? profileData.location?.district ?? null,
+                village: profileData.village ?? profileData.location?.village ?? null,
                 lat: profileData.lat ?? profileData.latitude ?? profileData.location?.lat ?? null,
                 lon: profileData.lon ?? profileData.longitude ?? profileData.location?.lon ?? null,
                 farm_size: profileData.farmSize ?? profileData.land_area_acres ?? profileData.farm_size ?? null,
