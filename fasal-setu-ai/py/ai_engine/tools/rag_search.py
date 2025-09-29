@@ -18,7 +18,7 @@ Env (.env at repo root or any parent):
   PINECONE_CLOUD=aws
   PINECONE_REGION=us-east-1
   # Legacy ENV (optional): PINECONE_ENV=...
-  PINECONE_INDEX=rag-llm1
+  PINECONE_INDEX=capitalone
   PINECONE_NAMESPACE=default
   EMBED_MODEL=llama-text-embed-v2
   DATA_DIR=/absolute/or/relative/path/to/data

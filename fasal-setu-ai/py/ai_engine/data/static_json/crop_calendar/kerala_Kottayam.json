@@ -1,14 +1,222 @@
 {
   "state": "Kerala",
   "district": "Kottayam",
-  "agro_climatic_zone": "",
+  "agro_climatic_zone": "Southern Zone (KE-2, NARP)",
   "source_type": "CRIDA_contingency",
   "source_url": null,
   "doc_date": "2011-06-30",
   "last_checked": null,
-  "normal_annual_rain_mm": null,
-  "rainfall_pattern_notes": "",
-  "dominant_soils": [],
-  "crops": [],
-  "dataset_sources": []
+  "normal_annual_rain_mm": 2612,
+  "rainfall_pattern_notes": "SW monsoon (June-Sep) ~1706 mm, NE monsoon (Oct-Dec) ~474 mm, Winter (Jan-Mar) ~84 mm, Summer (Apr-May) ~348 mm",
+  "dominant_soils": ["Clay loam", "Alluvial", "Laterite", "Gravelly clay", "Gravelly loam", "Forest soil"],
+  "crops": [
+    {
+      "crop_name": "rice",
+      "season": "Kharif/Rabi/Summer",
+      "planting_window": { "start": "05-15", "end": "12-20" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Sensitive to drought, floods, blast, sheath blight, BPH" },
+      "soil_ideal": { "text": "Acid sulfate soils, laterite soils, alluvial valley soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Canal, tank, well irrigation; life-saving irrigation essential" },
+      "weather_ideal": { "notes": ["Affected by unseasonal rains causing pest/disease outbreaks"] },
+      "contingencies": [
+        {
+          "hazard": "delayed_onset",
+          "stage_window": "early season drought",
+          "measures": [
+            "Use short duration and saline tolerant varieties",
+            "Mat nursery and mechanized transplanting",
+            "Spray boron and potassium to increase drought tolerance",
+            "Use extra short duration varieties if delay exceeds 4 weeks",
+            "Direct seeding in Virippu season if onset is delayed"
+          ],
+          "alt_crops": ["vegetables", "pulses"],
+          "inputs_support_notes": "HY short duration seeds needed; RKVY and NREGS support",
+          "market_mapping": { "commodity_names": ["rice", "paddy"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "mid_season_drought",
+          "stage_window": "vegetative/flowering",
+          "measures": [
+            "Phasic stress irrigation if water available",
+            "Direct sowing in delayed Virippu",
+            "Use of non-photosensitive varieties in Mundakan when delayed",
+            "Foliar sprays: 2% DAP + 1% KCl, 3% kaolin at flowering/grain filling",
+            "Mulching and organic manuring"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": "Schemes: NWDPRA, ATMA",
+          "market_mapping": { "commodity_names": ["rice", "paddy"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "terminal_drought",
+          "stage_window": "maturity",
+          "measures": [
+            "Terminate irrigation 14 days before harvest",
+            "Harvest at physiological maturity",
+            "Use extra short duration drought tolerant varieties"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": "Breeding programs for drought tolerant varieties required",
+          "market_mapping": { "commodity_names": ["rice", "paddy"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "flooding",
+          "stage_window": "all stages",
+          "measures": [
+            "Elevation of bunds around padasekharams",
+            "Pumping excess water with axial flow pumps",
+            "Adopt flood-tolerant varieties",
+            "Crop insurance",
+            "Combine harvesters for rapid harvest",
+            "Salt drying methods for wet grain"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": "Special harvesters for mire conditions",
+          "market_mapping": { "commodity_names": ["rice", "paddy"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "sea_water_intrusion",
+          "stage_window": "kayal lands",
+          "measures": [
+            "Modify Thanneer Mukkam Barrage operation as per crop calendar",
+            "Use saline tolerant varieties",
+            "Apply gypsum",
+            "Seal and flood fields with fresh water before barrage operation"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["rice", "paddy"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "tapioca",
+      "season": "Kharif/Rabi",
+      "planting_window": { "start": "04-01", "end": "09-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Short and medium duration varieties available" },
+      "soil_ideal": { "text": "Laterite and loamy uplands", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Life-saving irrigation in drought" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "coconut",
+      "season": "Perennial",
+      "planting_window": { "start": "05-01", "end": "09-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Vulnerable to root wilt, leaf rot, red palm weevil" },
+      "soil_ideal": { "text": "Laterite, alluvial, sandy loam", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Sprinkler irrigation, husk burial, organic manure" },
+      "weather_ideal": { "notes": ["Sensitive to drought stress"] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "banana",
+      "season": "Perennial",
+      "planting_window": { "start": "05-01", "end": "09-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Sensitive to winds, diseases like pseudostem borer, sigatoka" },
+      "soil_ideal": { "text": "Garden lands", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Drip irrigation and organic manuring advised" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "pepper",
+      "season": "Perennial",
+      "planting_window": { "start": "05-01", "end": "07-31" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Affected by foot rot and quick wilt" },
+      "soil_ideal": { "text": "Lateritic and garden soils with standards", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Mulching and micro-irrigation critical" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "nutmeg",
+      "season": "Perennial",
+      "planting_window": { "start": "06-01", "end": "09-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Shade-loving perennial" },
+      "soil_ideal": { "text": "Garden lands, loamy soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Mulching and micro-irrigation recommended" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "rubber",
+      "season": "Perennial",
+      "planting_window": { "start": "06-01", "end": "09-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Needs high rainfall; prone to tapping issues in heavy rains" },
+      "soil_ideal": { "text": "Lateritic soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Whitewashing, cover crops, rain pits" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "ginger",
+      "season": "Kharif",
+      "planting_window": { "start": "05-01", "end": "07-15" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Warm humid crop" },
+      "soil_ideal": { "text": "Loamy soils rich in organic matter", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Delayed planting possible under late rains" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "cardamom",
+      "season": "Perennial",
+      "planting_window": { "start": "05-01", "end": "07-31" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Requires humid shaded conditions" },
+      "soil_ideal": { "text": "Humid loamy soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Mist irrigation and shading important" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "turmeric",
+      "season": "Kharif",
+      "planting_window": { "start": "05-01", "end": "07-15" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Warm humid conditions required" },
+      "soil_ideal": { "text": "Loamy soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    }
+  ],
+  "dataset_sources": [
+    {
+      "key": "CRIDA_2011",
+      "title": "CRIDA Contingency Crop Planning for Kerala - Kottayam",
+      "url": null,
+      "tier": "primary",
+      "last_checked": null
+    }
+  ]
 }

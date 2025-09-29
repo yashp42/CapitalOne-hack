@@ -1,14 +1,137 @@
 {
   "state": "Kerala",
   "district": "Thiruvananthapuram",
-  "agro_climatic_zone": "",
+  "agro_climatic_zone": "Southern Zone (KE-2, NARP)",
   "source_type": "CRIDA_contingency",
   "source_url": null,
   "doc_date": "2011-06-30",
   "last_checked": null,
-  "normal_annual_rain_mm": null,
-  "rainfall_pattern_notes": "",
-  "dominant_soils": [],
-  "crops": [],
-  "dataset_sources": []
+  "normal_annual_rain_mm": 1679.5,
+  "rainfall_pattern_notes": "SW monsoon (June-Sep) ~807 mm, NE monsoon (Oct-Dec) ~559 mm, Winter (Jan-Feb) ~120 mm, Summer (Mar-May) ~193 mm",
+  "dominant_soils": ["Gravelly sandy clay loam", "Sandy soils", "Sandy loam", "Loamy soils", "Clay loam", "Beach sand"],
+  "crops": [
+    {
+      "crop_name": "rice",
+      "season": "Kharif/Rabi/Summer",
+      "planting_window": { "start": "04-01", "end": "10-15" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Affected by blast, sheath blight, BPH" },
+      "soil_ideal": { "text": "Wetland clayey soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Canal, tanks, wells; life-saving irrigation critical" },
+      "weather_ideal": { "notes": ["Prone to drought, floods, pest/disease outbreaks"] },
+      "contingencies": [
+        {
+          "hazard": "delayed_onset",
+          "stage_window": "early season drought",
+          "measures": [
+            "Direct seeding with short duration varieties",
+            "Mat/community nurseries",
+            "Seed hardening with KCl",
+            "Adjust spacing and nitrogen dose",
+            "Rainwater harvesting"
+          ],
+          "alt_crops": ["pulses", "vegetables"],
+          "inputs_support_notes": "Supported under RKVY, NREGS, BRGF schemes",
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "mid_season_drought",
+          "stage_window": "vegetative to flowering",
+          "measures": [
+            "Irrigation 1–4 days after ponded water disappears",
+            "Shelter belts and mulching",
+            "Spraying KCl and anti-transpirants",
+            "Gap filling and thinning",
+            "In-situ conservation"
+          ],
+          "alt_crops": ["vegetables", "banana"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "terminal_drought",
+          "stage_window": "maturity",
+          "measures": [
+            "Life-saving irrigation",
+            "Harvest at physiological maturity",
+            "Convert biomass to fodder",
+            "Shade and shelter belts"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "flooding",
+          "stage_window": "all stages",
+          "measures": [
+            "Drainage improvements",
+            "Flood-tolerant varieties",
+            "Gap filling, mat nursery",
+            "Harvest at physiological maturity",
+            "Crop insurance"
+          ],
+          "alt_crops": ["vegetables"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "sea_water_intrusion",
+          "stage_window": "wetlands",
+          "measures": [
+            "Drainage improvements",
+            "Salinity tolerant rice varieties",
+            "Crop diversification with pulses and vegetables",
+            "Bund strengthening"
+          ],
+          "alt_crops": ["pulses", "vegetables"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    { "crop_name": "tapioca", "season": "Kharif/Rabi", "planting_window": { "start": "04-01", "end": "08-15" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Drought hardy tuber" }, "soil_ideal": { "text": "Loamy upland soils", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Rainfed crop" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "other tubers", "season": "Kharif", "planting_window": { "start": "02-15", "end": "06-30" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Minor tuber crops" }, "soil_ideal": { "text": "Upland loamy soils", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Rainfed" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "pulses", "season": "Kharif/Rabi", "planting_window": { "start": "04-15", "end": "10-15" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Short duration pulse crops" }, "soil_ideal": { "text": "Loamy and clay loams", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Rainfed, life-saving irrigation" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "banana", "season": "Perennial", "planting_window": { "start": "01-01", "end": "09-30" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Sensitive to pseudostem weevil, sigatoka" }, "soil_ideal": { "text": "Loamy acidic soils", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Mulching, life-saving irrigation" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "plantain", "season": "Perennial", "planting_window": { "start": "01-01", "end": "09-30" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Similar to banana, 10–18 month crop" }, "soil_ideal": { "text": "Garden soils", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Irrigation in summer essential" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "jackfruit", "season": "Perennial", "planting_window": { "start": "06-01", "end": "07-30" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Perennial homestead fruit" }, "soil_ideal": { "text": "Laterite and loam soils", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Rainfed" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "mango", "season": "Perennial", "planting_window": { "start": "06-01", "end": "07-30" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Perennial fruit, prone to stem borer" }, "soil_ideal": { "text": "Loamy upland soils", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Irrigation in dry months" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "papaya", "season": "Perennial", "planting_window": { "start": "06-01", "end": "07-31" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Sensitive to papaya ring spot virus" }, "soil_ideal": { "text": "Garden soils", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Irrigation in summer" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "pineapple", "season": "Biennial", "planting_window": { "start": "05-01", "end": "06-30" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Humid tropical fruit" }, "soil_ideal": { "text": "Well drained laterite soils", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Protective irrigation" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "pepper", "season": "Perennial", "planting_window": { "start": "05-15", "end": "07-31" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Shade-loving spice crop" }, "soil_ideal": { "text": "Garden loams", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Sprinkler irrigation in dry spells" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "ginger", "season": "Kharif", "planting_window": { "start": "05-01", "end": "07-15" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Warm humid spice" }, "soil_ideal": { "text": "Loamy garden soils", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Protective irrigation required" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "nutmeg", "season": "Perennial", "planting_window": { "start": "06-01", "end": "07-31" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Minor spice" }, "soil_ideal": { "text": "Garden loams", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Rainfed" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "clove", "season": "Perennial", "planting_window": { "start": "06-01", "end": "07-31" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Minor spice crop" }, "soil_ideal": { "text": "Loamy soils", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Rainfed crop" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "coconut", "season": "Perennial", "planting_window": { "start": "06-01", "end": "09-30" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Root wilt, bud rot, mite infestations common" }, "soil_ideal": { "text": "Lateritic sandy clay loams", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Mulching, husk burial, drip irrigation" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "rubber", "season": "Perennial", "planting_window": { "start": "06-01", "end": "09-30" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Prone to leaf fall and tapping stress" }, "soil_ideal": { "text": "Laterite and gravelly loams", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Mulching, cover crops, kaolinite swabbing" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "cashew", "season": "Perennial", "planting_window": { "start": "05-01", "end": "07-31" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Hardy plantation crop" }, "soil_ideal": { "text": "Laterite soils", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Rainfed" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "arecanut", "season": "Perennial", "planting_window": { "start": "06-01", "end": "09-30" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Sensitive to waterlogging" }, "soil_ideal": { "text": "Garden loams", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Drainage essential" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "tea", "season": "Perennial", "planting_window": { "start": "06-01", "end": "07-31" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Cool humid perennial" }, "soil_ideal": { "text": "Highland laterites", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Trench planting, shade required" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "vegetables - amaranthus", "season": "Kharif/Rabi", "planting_window": { "start": "06-01", "end": "10-31" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Leafy vegetable" }, "soil_ideal": { "text": "Garden soils", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Sprinkler/drip irrigation in summer" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "vegetables - cucumber", "season": "Kharif", "planting_window": { "start": "06-01", "end": "08-15" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Short cucurbit crop" }, "soil_ideal": { "text": "Garden soils", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Protective irrigation in drought" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "vegetables - snake gourd", "season": "Kharif", "planting_window": { "start": "06-01", "end": "08-15" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Cucurbit vegetable" }, "soil_ideal": { "text": "Garden soils", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Protective irrigation" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "vegetables - bitter gourd", "season": "Kharif", "planting_window": { "start": "06-01", "end": "08-15" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Sensitive to excess rain" }, "soil_ideal": { "text": "Garden soils", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Drip irrigation suitable" }, "weather_ideal": { "notes": [] }, "contingencies": [] },
+    { "crop_name": "vegetables - ladies finger", "season": "Kharif", "planting_window": { "start": "06-01", "end": "08-15" }, "stages": [], "stage_lengths_days": null, "ideal_temp_c": { "range_day": null, "notes": "Short duration okra" }, "soil_ideal": { "text": "Garden soils", "ph_range": null }, "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Protective irrigation" }, "weather_ideal": { "notes": [] }, "contingencies": [] }
+  ],
+  "dataset_sources": [
+    {
+      "key": "CRIDA_2011",
+      "title": "CRIDA Contingency Crop Planning for Kerala - Thiruvananthapuram",
+      "url": null,
+      "tier": "primary",
+      "last_checked": null
+    }
+  ]
 }

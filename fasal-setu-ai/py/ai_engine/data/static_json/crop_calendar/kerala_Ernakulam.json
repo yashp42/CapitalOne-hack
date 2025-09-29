@@ -1,14 +1,231 @@
 {
   "state": "Kerala",
   "district": "Ernakulam",
-  "agro_climatic_zone": "",
+  "agro_climatic_zone": "Central Zone (KE-3, NARP)",
   "source_type": "CRIDA_contingency",
   "source_url": null,
   "doc_date": "2011-06-30",
   "last_checked": null,
-  "normal_annual_rain_mm": null,
-  "rainfall_pattern_notes": "",
-  "dominant_soils": [],
-  "crops": [],
-  "dataset_sources": []
+  "normal_annual_rain_mm": 2838.8,
+  "rainfall_pattern_notes": "SW monsoon (June-Sep) ~2035.4 mm, NE monsoon (Oct-Dec) ~378.6 mm, Winter (Jan-Mar) ~19.6 mm, Summer (Apr-May) ~405.2 mm",
+  "dominant_soils": ["Alluvial", "Hilly", "Pokkali", "Sandy loam", "Laterite", "Forest soil"],
+  "crops": [
+    {
+      "crop_name": "rice",
+      "season": "Kharif",
+      "planting_window": { "start": "04-01", "end": "09-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": "Lowland, pokkali saline soils, mid/upland loamy soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Flood irrigation, canal water, residual moisture use" },
+      "weather_ideal": { "notes": ["Sensitive to drought spells, floods, and sea water intrusion"] },
+      "contingencies": [
+        {
+          "hazard": "delayed_onset",
+          "stage_window": "early season drought",
+          "measures": [
+            "Shift sowing dates by 2–4 weeks",
+            "Select short/medium duration varieties instead of long photosensitive ones",
+            "Change dibbling to transplanting in Kharif crop",
+            "Traditional seed soaking in pokkali lands",
+            "Apply organic manure to improve soil moisture retention"
+          ],
+          "alt_crops": ["pulses", "vegetables"],
+          "inputs_support_notes": "Seed agencies, NREGS, CLDP, micro-irrigation schemes",
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "mid_season_drought",
+          "stage_window": "vegetative to flowering",
+          "measures": [
+            "Provide irrigation facilities",
+            "Weed control",
+            "Organic matter application",
+            "Stress tolerant rice varieties in pokkali lands",
+            "Life-saving irrigation for intercrops"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "late_season_drought",
+          "stage_window": "terminal drought",
+          "measures": [
+            "Harvest rice at physiological maturity",
+            "Only single crop possible in pokkali lands under salinity",
+            "Provide irrigation for intercrops like banana and vegetables"
+          ],
+          "alt_crops": ["pulses", "vegetables"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "flooding",
+          "stage_window": "seedling to harvest",
+          "measures": [
+            "Elevate bunds above flood mark around padashekarams",
+            "Drain excess water using pumps",
+            "Use flood tolerant varieties",
+            "Apply foliar sprays (KNO3 or urea + MOP) at boot leaf stage",
+            "Use combine harvesters, salt-mix drying for wet grain"
+          ],
+          "alt_crops": ["vegetables", "banana", "tubers"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "sea_water_intrusion",
+          "stage_window": "pokkali lands",
+          "measures": [
+            "Cultivate saline tolerant pokkali rice varieties",
+            "Liming, tidal water impounding",
+            "Fill/flush with fresh water before sowing"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "pulses",
+      "season": "Rabi",
+      "planting_window": { "start": "10-01", "end": "01-15" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": null, "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "excess_rain",
+          "stage_window": "vegetative to maturity",
+          "measures": [
+            "Provide drainage",
+            "Cultivate seed-dormant varieties",
+            "Harvest at physiological maturity"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["pulses"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "coconut",
+      "season": "Perennial",
+      "planting_window": { "start": "05-01", "end": "06-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Tolerates high rainfall but sensitive in seedling stage" },
+      "soil_ideal": { "text": "Alluvial, laterite, coastal sandy", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Life-saving irrigation in drought" },
+      "weather_ideal": { "notes": ["Drainage critical under heavy rains"] },
+      "contingencies": [
+        {
+          "hazard": "excess_rain",
+          "stage_window": "seedling",
+          "measures": ["Provide drainage", "Phytosanitation", "Use healthy planting material"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["coconut"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "banana",
+      "season": "Perennial",
+      "planting_window": { "start": "04-01", "end": "12-31" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Requires humid climate, sensitive to drought and waterlogging" },
+      "soil_ideal": { "text": "Garden lands, intercropped with coconut", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Life-saving irrigation under drought" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "excess_rain",
+          "stage_window": "vegetative",
+          "measures": ["Provide drainage", "Propping", "Disease control against rhizome rot"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["banana"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "pepper",
+      "season": "Perennial",
+      "planting_window": { "start": "05-01", "end": "06-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": "Hilly soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "excess_rain",
+          "stage_window": "general",
+          "measures": ["Phytosanitation", "Use foot rot tolerant varieties", "Apply bio-control agents"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["pepper"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "tapioca",
+      "season": "Kharif",
+      "planting_window": { "start": "05-01", "end": "09-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": null },
+      "soil_ideal": { "text": null, "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "excess_rain",
+          "stage_window": "vegetative",
+          "measures": ["Provide drainage", "Use healthy planting material", "Apply bio-control agents"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["tapioca"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    }
+  ],
+  "dataset_sources": [
+    {
+      "key": "CRIDA_2011",
+      "title": "CRIDA Contingency Crop Planning for Kerala - Ernakulam",
+      "url": null,
+      "tier": "primary",
+      "last_checked": null
+    }
+  ]
 }

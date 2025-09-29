@@ -1,14 +1,240 @@
 {
   "state": "Kerala",
   "district": "Kollam",
-  "agro_climatic_zone": "",
+  "agro_climatic_zone": "Southern Zone (NARP)",
   "source_type": "CRIDA_contingency",
   "source_url": null,
   "doc_date": "2011-06-30",
   "last_checked": null,
-  "normal_annual_rain_mm": null,
-  "rainfall_pattern_notes": "",
-  "dominant_soils": [],
-  "crops": [],
-  "dataset_sources": []
+  "normal_annual_rain_mm": 2494.8,
+  "rainfall_pattern_notes": "SW monsoon (June-Sep) ~1395 mm, NE monsoon (Oct-Dec) ~600 mm, Winter (Jan-Mar) ~266 mm, Summer (Apr-May) ~258 mm",
+  "dominant_soils": ["Laterite soils", "Sandy soils", "Sandy loams", "Problem soils (saline/acid)"],
+  "crops": [
+    {
+      "crop_name": "rice",
+      "season": "Kharif/Rabi/Summer",
+      "planting_window": { "start": "05-15", "end": "12-31" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Prefers humid climate; sensitive to drought and floods" },
+      "soil_ideal": { "text": "Laterite, sandy clay loam, sandy loam lowlands", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Canal, well, tank irrigation; life-saving irrigation critical" },
+      "weather_ideal": { "notes": ["Prone to blast, sheath blight, BPH under unseasonal rains"] },
+      "contingencies": [
+        {
+          "hazard": "delayed_onset",
+          "stage_window": "early season drought",
+          "measures": [
+            "Direct seeding of medium/short duration photo-insensitive varieties",
+            "Prefer short-duration varieties",
+            "Mat nursery or community nursery preparation",
+            "Closer spacing and higher seed rate in transplanting",
+            "Foliar spray of 2% DAP + 1% KCl at flowering/grain filling"
+          ],
+          "alt_crops": ["vegetables", "pulses"],
+          "inputs_support_notes": "RKVY Paddy Mission, ATMA",
+          "market_mapping": { "commodity_names": ["rice", "paddy"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "mid_season_drought",
+          "stage_window": "vegetative/flowering",
+          "measures": [
+            "Gap filling, mulching, spraying kaolin",
+            "Split application of fertilizers, spraying anti-transpirants",
+            "Weed control and seed hardening for intermittent drought",
+            "Life-saving irrigation and rainwater harvesting"
+          ],
+          "alt_crops": ["sesame"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["rice", "paddy"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "terminal_drought",
+          "stage_window": "maturity",
+          "measures": [
+            "Use of short-duration tolerant varieties",
+            "Harvesting at physiological maturity",
+            "Terminating irrigation 14 days before harvest"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["rice", "paddy"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "flooding",
+          "stage_window": "all stages",
+          "measures": [
+            "Drainage management",
+            "Cultivation of Vytilla flood-tolerant varieties",
+            "Crop insurance",
+            "Artificial drying facilities"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["rice", "paddy"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "coconut",
+      "season": "Perennial",
+      "planting_window": { "start": "06-01", "end": "09-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Vulnerable to drought, bud rot, and stem bleeding" },
+      "soil_ideal": { "text": "Laterite, sandy loam", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Pitcher irrigation, mulching, coir pith burial" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "banana",
+      "season": "Perennial",
+      "planting_window": { "start": "06-01", "end": "10-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Sensitive to winds and high rainfall" },
+      "soil_ideal": { "text": "Garden lands", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Micro-irrigation suggested" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "pepper",
+      "season": "Perennial",
+      "planting_window": { "start": "05-15", "end": "07-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Requires humidity and shade" },
+      "soil_ideal": { "text": "Laterite and garden soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Mulching and sprinkler irrigation important" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "rubber",
+      "season": "Perennial",
+      "planting_window": { "start": "06-01", "end": "09-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Thrives in high rainfall humid tropics" },
+      "soil_ideal": { "text": "Lateritic soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Whitewashing and silt pits during drought" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "cashew",
+      "season": "Perennial",
+      "planting_window": { "start": "06-01", "end": "08-31" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Drought hardy, thrives in uplands" },
+      "soil_ideal": { "text": "Lateritic uplands", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Rainfed crop" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "tea",
+      "season": "Perennial",
+      "planting_window": { "start": "06-01", "end": "09-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Cool, humid climate preferred" },
+      "soil_ideal": { "text": "Highland laterite soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "vegetables",
+      "season": "Kharif/Rabi",
+      "planting_window": { "start": "05-15", "end": "11-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Warm humid climate; sensitive to erratic rains" },
+      "soil_ideal": { "text": "Garden soils, sandy loams", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Drip and sprinkler irrigation recommended" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "mango",
+      "season": "Perennial",
+      "planting_window": { "start": "06-01", "end": "07-31" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Tropical fruit, requires irrigation during dry spells" },
+      "soil_ideal": { "text": "Lateritic soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Life-saving irrigation during stress" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "jackfruit",
+      "season": "Perennial",
+      "planting_window": { "start": "06-01", "end": "07-31" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Requires humid climate" },
+      "soil_ideal": { "text": "Garden lands and homesteads", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Rainfed" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "amaranthus",
+      "season": "Kharif/Rabi",
+      "planting_window": { "start": "06-01", "end": "09-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Quick maturing leafy vegetable" },
+      "soil_ideal": { "text": "Garden lands", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Requires protective irrigation in dry spells" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "bittergourd",
+      "season": "Kharif",
+      "planting_window": { "start": "06-01", "end": "08-31" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Warm humid climate, sensitive to excess rain" },
+      "soil_ideal": { "text": "Garden lands and sandy soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Drip irrigation suitable" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "green chillies",
+      "season": "Kharif",
+      "planting_window": { "start": "06-01", "end": "08-31" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Warm humid climate required" },
+      "soil_ideal": { "text": "Loamy garden soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Irrigation needed during dry spells" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    }
+  ],
+  "dataset_sources": [
+    {
+      "key": "CRIDA_2011",
+      "title": "CRIDA Contingency Crop Planning for Kerala - Kollam",
+      "url": null,
+      "tier": "primary",
+      "last_checked": null
+    }
+  ]
 }

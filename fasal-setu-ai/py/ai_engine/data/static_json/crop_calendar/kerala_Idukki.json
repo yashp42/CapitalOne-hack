@@ -1,14 +1,300 @@
 {
   "state": "Kerala",
   "district": "Idukki",
-  "agro_climatic_zone": "",
+  "agro_climatic_zone": "High Altitude Zone (KE-4, NARP)",
   "source_type": "CRIDA_contingency",
   "source_url": null,
   "doc_date": "2011-06-30",
   "last_checked": null,
-  "normal_annual_rain_mm": null,
-  "rainfall_pattern_notes": "",
-  "dominant_soils": [],
-  "crops": [],
-  "dataset_sources": []
+  "normal_annual_rain_mm": 1783.3,
+  "rainfall_pattern_notes": "SW monsoon (June-Sep) ~987.6 mm, NE monsoon (Oct-Dec) ~506.6 mm, Winter (Jan-Mar) ~85.5 mm, Summer (Apr-May) ~203.6 mm",
+  "dominant_soils": ["Forest loam", "Laterite", "Brown hydromorphic", "Alluvial"],
+  "crops": [
+    {
+      "crop_name": "rice",
+      "season": "Kharif",
+      "planting_window": { "start": "05-01", "end": "09-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Requires assured moisture, sensitive to drought and floods" },
+      "soil_ideal": { "text": "Lowlands and valley soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Can use canal/tank irrigation; residual soil moisture critical" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "drought",
+          "stage_window": "early season to terminal",
+          "measures": [
+            "Shift sowing dates as per rainfall onset",
+            "Use short-duration varieties in stress periods",
+            "Provide irrigation where possible",
+            "Harvest at physiological maturity during terminal drought"
+          ],
+          "alt_crops": ["pulses", "vegetables"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "flooding",
+          "stage_window": "seedling to harvest",
+          "measures": [
+            "Provide bunding and drainage",
+            "Use flood-tolerant varieties",
+            "Adopt crop insurance and timely drainage"
+          ],
+          "alt_crops": ["vegetables"],
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["paddy", "rice"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "tapioca",
+      "season": "Kharif",
+      "planting_window": { "start": "05-01", "end": "08-31" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Thrives in rainfed uplands" },
+      "soil_ideal": { "text": "Lateritic and loamy soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "excess_rain",
+          "stage_window": "vegetative",
+          "measures": [
+            "Provide drainage",
+            "Mulching and organic matter to stabilize soil",
+            "Use healthy planting material"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["tapioca"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "sugarcane",
+      "season": "Annual",
+      "planting_window": { "start": "12-01", "end": "02-28" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Requires long duration, high rainfall or irrigation" },
+      "soil_ideal": { "text": "Clay loam, alluvial soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Needs protective irrigation under drought" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "drought",
+          "stage_window": "general",
+          "measures": [
+            "Mulching",
+            "Life-saving irrigation if possible",
+            "Adopt drought-tolerant varieties"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["sugarcane"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "ragi",
+      "season": "Kharif",
+      "planting_window": { "start": "06-01", "end": "07-31" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Tolerant to dry spells" },
+      "soil_ideal": { "text": "Loamy and red soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": null },
+      "weather_ideal": { "notes": [] },
+      "contingencies": []
+    },
+    {
+      "crop_name": "pepper",
+      "season": "Perennial",
+      "planting_window": { "start": "05-01", "end": "07-31" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Thrives in humid highlands" },
+      "soil_ideal": { "text": "Forest loam, laterite", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Mist irrigation under stress" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "unseasonal_rains",
+          "stage_window": "general",
+          "measures": [
+            "Remove and burn infected plant debris",
+            "Apply bio-control agents",
+            "Prune vines before monsoon"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["pepper"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "cardamom",
+      "season": "Perennial",
+      "planting_window": { "start": "05-01", "end": "07-31" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Thrives under shade, requires humidity" },
+      "soil_ideal": { "text": "Silty clay to clay soils of Pampadumpara series", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Mist irrigation; shading critical" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "drought",
+          "stage_window": "vegetative",
+          "measures": [
+            "Provide shade nets",
+            "Mulching",
+            "Antitranspirant sprays",
+            "Sprinkler/mist irrigation"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["cardamom"] },
+          "data_gaps": [],
+          "sources": []
+        },
+        {
+          "hazard": "excess_rain",
+          "stage_window": "general",
+          "measures": [
+            "Improve drainage",
+            "Use cover crops",
+            "Strip cropping with fodder grasses"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["cardamom"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "coffee",
+      "season": "Perennial",
+      "planting_window": { "start": "05-01", "end": "07-31" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Requires shade, moderate rainfall" },
+      "soil_ideal": { "text": "Loamy soils of highlands", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Sprinkler irrigation in drought" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "unseasonal_rains",
+          "stage_window": "vegetative",
+          "measures": [
+            "Prune affected branches",
+            "Provide drainage",
+            "Spray Bordeaux mixture"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["coffee"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "tea",
+      "season": "Perennial",
+      "planting_window": { "start": "06-01", "end": "09-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Requires cool, humid conditions" },
+      "soil_ideal": { "text": "Lateritic, forest soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Requires mist irrigation in stress" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "excess_rain",
+          "stage_window": "general",
+          "measures": [
+            "Pruning",
+            "Drainage improvements",
+            "Bordeaux spray"
+          ],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["tea"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "banana",
+      "season": "Perennial",
+      "planting_window": { "start": "05-01", "end": "10-31" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Sensitive to high winds and heavy rain" },
+      "soil_ideal": { "text": "Garden lands, mixed cropping with coconut", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Life-saving irrigation suggested" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "excess_rain",
+          "stage_window": "vegetative",
+          "measures": ["Provide drainage", "Propping", "Use disease-free planting material"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["banana"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    },
+    {
+      "crop_name": "coconut",
+      "season": "Perennial",
+      "planting_window": { "start": "05-01", "end": "06-30" },
+      "stages": [],
+      "stage_lengths_days": null,
+      "ideal_temp_c": { "range_day": null, "notes": "Seedlings vulnerable to drought and excess rain" },
+      "soil_ideal": { "text": "Laterite and loam soils", "ph_range": null },
+      "irrigation_ideal": { "critical_stages": [], "seasonal_requirement_mm": null, "notes": "Life-saving irrigation in drought" },
+      "weather_ideal": { "notes": [] },
+      "contingencies": [
+        {
+          "hazard": "unseasonal_rains",
+          "stage_window": "seedling",
+          "measures": ["Provide drainage", "Phytosanitation", "Use healthy planting material"],
+          "alt_crops": null,
+          "inputs_support_notes": null,
+          "market_mapping": { "commodity_names": ["coconut"] },
+          "data_gaps": [],
+          "sources": []
+        }
+      ]
+    }
+  ],
+  "dataset_sources": [
+    {
+      "key": "CRIDA_2011",
+      "title": "CRIDA Contingency Crop Planning for Kerala - Idukki",
+      "url": null,
+      "tier": "primary",
+      "last_checked": null
+    }
+  ]
 }
